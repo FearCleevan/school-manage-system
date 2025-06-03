@@ -1,0 +1,268 @@
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .modalContent {
+    background: white;
+    padding: 15px;
+    border-radius: 6px;
+    width: 95%;
+    max-width: 1100px; /* Wider modal */
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  }
+  
+  .modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .modalHeader h3 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.1rem; /* Smaller heading */
+  }
+  
+  .closeBtn {
+    background: none;
+    border: none;
+    font-size: 1.3rem; /* Slightly smaller close button */
+    cursor: pointer;
+    color: #777;
+    line-height: 1;
+    padding: 0 5px;
+  }
+  
+  .closeBtn:hover {
+    color: #333;
+  }
+  
+  .subjectForm {
+    display: flex;
+    flex-direction: column;
+    gap: 12px; /* Reduced gap */
+  }
+  
+  .formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 4px; /* Reduced gap */
+  }
+  
+  .formGroup label {
+    font-size: 0.8rem; /* Smaller label */
+    color: #555;
+    font-weight: 500;
+  }
+  
+  .formInput, .formSelect {
+    padding: 6px 10px; /* Smaller padding */
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    font-size: 0.8rem; /* Smaller font */
+  }
+  
+  .formInput:focus, .formSelect:focus {
+    outline: none;
+    border-color: #2c3e50;
+  }
+  
+  .formRow {
+    display: flex;
+    gap: 12px; /* Reduced gap */
+  }
+  
+  .formRow .formGroup {
+    flex: 1;
+  }
+  
+  .termSection {
+    margin-top: 12px; /* Reduced margin */
+    border: 1px solid #eee;
+    padding: 8px; /* Reduced padding */
+    border-radius: 3px;
+  }
+  
+  .termSection h4 {
+    margin: 0 0 8px 0; /* Reduced margin */
+    color: #2c3e50;
+    font-size: 0.9rem; /* Smaller heading */
+  }
+  
+  .termTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 8px; /* Reduced margin */
+    font-size: 0.75rem; /* Smaller table font */
+    border-radius: 5px;
+  }
+
+  /* Add this to your AddSubject.module.css */
+.termTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 8px;
+    font-size: 0.75rem;
+    border-radius: 5px;
+  }
+  
+  .termTable th,
+  .termTable td {
+    padding: 2px;
+    text-align: left;
+  }
+  
+  /* Specific column width adjustments */
+  .termTable th:nth-child(1), /* Subject Code */
+  .termTable td:nth-child(1) {
+    width: 10%;
+  }
+  
+  .termTable th:nth-child(2), /* Description */
+  .termTable td:nth-child(2) {
+    width: 40%; /* Increased from previous */
+  }
+  
+  .termTable th:nth-child(3), /* Lec */
+  .termTable td:nth-child(3),
+  .termTable th:nth-child(4), /* Lab */
+  .termTable td:nth-child(4),
+  .termTable th:nth-child(5), /* Units */
+  .termTable td:nth-child(5) {
+    width: 5%; /* Reduced from previous */
+  }
+  
+  .termTable th:nth-child(6), /* Pre Req */
+  .termTable td:nth-child(6) {
+    width: 10%; /* Reduced from previous */
+  }
+  
+  .termTable th:nth-child(7), /* Actions */
+  .termTable td:nth-child(7) {
+    width: 3%;
+  }
+  
+  /* Keep the rest of your existing CSS */
+  
+  .termTable th {
+    padding: 6px; /* Reduced padding */
+    border: 1px solid #ddd;
+    text-align: left;
+  }
+
+  .termTable td {
+    padding: 2px; /* Reduced padding */
+    text-align: left;
+  }
+  
+  .termTable th {
+    background-color: #f5f5f5;
+    font-size: 0.75rem; /* Smaller header font */
+  }
+  
+  .tableInput {
+    width: 100%;
+    padding: 4px; /* Reduced padding */
+    border: 1px solid #ddd;
+    border-radius: 2px;
+    font-size: 0.75rem; /* Smaller input font */
+  }
+  
+  .addRowBtn {
+    background-color: #2c3e50;
+    color: white;
+    border: none;
+    padding: 4px 8px; /* Smaller padding */
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 0.75rem; /* Smaller font */
+  }
+  
+  .addRowBtn:hover {
+    background-color: #1a252f;
+  }
+  
+  .removeBtn {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 4px 8px; /* Smaller padding */
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 0.75rem; /* Smaller font */
+  }
+  
+  .removeBtn:hover {
+    background-color: #c0392b;
+  }
+  
+  .formActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px; /* Reduced gap */
+    margin-top: 15px; /* Reduced margin */
+    padding-top: 12px; /* Reduced padding */
+    border-top: 1px solid #eee;
+  }
+  
+  .cancelBtn, .submitBtn {
+    padding: 6px 12px; /* Smaller padding */
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.8rem; /* Smaller font */
+    transition: background-color 0.2s;
+  }
+  
+  .cancelBtn {
+    background-color: #f5f5f5;
+    color: #333;
+  }
+  
+  .cancelBtn:hover {
+    background-color: #e9ecef;
+  }
+  
+  .submitBtn {
+    background-color: #2c3e50;
+    color: white;
+  }
+  
+  .submitBtn:hover {
+    background-color: #1a252f;
+  }
+
+  .errorMessage {
+    color: #e74c3c;
+    background-color: #fde8e8;
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    font-size: 0.8rem;
+    border: 1px solid #f5c6cb;
+  }
+
+  .checkboxLabel{
+    margin-left: 10px;
+    gap: 5px;
+    cursor: pointer;
+  }
+
+  .inputWithCheckbox {
+    gap: 5px;
+    cursor: pointer;
+  }

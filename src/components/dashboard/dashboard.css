@@ -1,0 +1,174 @@
+/* Base scaling factor */
+:root {
+  --scale-factor: 0.75;
+}
+
+/* Dashboard Container */
+.dashboard-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: calc(1rem * var(--scale-factor));
+}
+
+/* Header Styles */
+.dashboard-header {
+  background: #ffffff;
+  color: #2c3e50;
+  padding: 0 calc(1.5rem * var(--scale-factor));
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  position: fixed;
+  width: 100%;
+  z-index: 1000;
+  top: 0;
+  height: calc(100px * var(--scale-factor));
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: calc(1rem * var(--scale-factor));
+  margin-left: 50px;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+}
+
+.school-logo {
+  height: calc(80px * var(--scale-factor));
+  width: auto;
+  object-fit: contain;
+}
+
+.header-title {
+  font-size: calc(1.2rem * var(--scale-factor));
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.menu-toggle {
+  background: none;
+  border: none;
+  color: #2c3e50;
+  font-size: calc(1.25rem * var(--scale-factor));
+  cursor: pointer;
+  padding: calc(0.5rem * var(--scale-factor));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: calc(1rem * var(--scale-factor));
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: calc(1rem * var(--scale-factor));
+  margin-right: 50px;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+}
+
+.profile-image {
+  width: calc(60px * var(--scale-factor));
+  height: calc(60px * var(--scale-factor));
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #2c3e50;
+}
+
+.name-access {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
+  margin: 0;
+  font-size: calc(0.95rem * var(--scale-factor));
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.user-role {
+  font-size: calc(0.8rem * var(--scale-factor));
+  color: #7f8c8d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Main Content Area */
+.dashboard-content {
+  display: flex;
+  margin-top: calc(70px * var(--scale-factor));
+  flex: 1;
+}
+
+/* Responsive Styles */
+@media (max-width: 1200px) {
+  .dashboard-content {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 992px) {
+  .header-title {
+    font-size: calc(1rem * var(--scale-factor));
+  }
+  
+  .user-name {
+    font-size: calc(0.85rem * var(--scale-factor));
+  }
+  
+  .user-role {
+    font-size: calc(0.7rem * var(--scale-factor));
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-header {
+    padding: 0 calc(1rem * var(--scale-factor));
+  }
+  
+  .school-logo {
+    height: calc(35px * var(--scale-factor));
+  }
+  
+  .profile-image {
+    width: calc(35px * var(--scale-factor));
+    height: calc(35px * var(--scale-factor));
+  }
+  
+  .menu-toggle {
+    font-size: calc(1.1rem * var(--scale-factor));
+    margin-left: calc(0.5rem * var(--scale-factor));
+  }
+}
+
+@media (max-width: 576px) {
+  .header-title {
+    display: none;
+  }
+  
+  .name-access {
+    display: none;
+  }
+  
+  .dashboard-header {
+    justify-content: space-between;
+    padding: 0 calc(0.75rem * var(--scale-factor));
+  }
+  
+  .dashboard-content {
+    flex-direction: column;
+  }
+}
+

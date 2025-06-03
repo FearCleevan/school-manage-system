@@ -1,0 +1,273 @@
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.modalContainer {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    width: 90%;
+    max-width: 1200px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.modalHeader {
+    padding: 16px 24px;
+    background-color: #2c3e50;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modalHeader h2 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.closeButton {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+}
+
+.modalContent {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.studentDetails {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    border-right: 1px solid #e0e0e0;
+}
+
+.subjectsSection {
+    flex: 2;
+    padding: 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.profileSection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.profileImage {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #3498db;
+}
+
+.profilePlaceholder {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background-color: #3498db;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2.5rem;
+    font-weight: bold;
+    border: 3px solid #2980b9;
+}
+
+.studentName {
+    margin-top: 12px;
+    color: #2c3e50;
+    text-align: center;
+}
+
+.detailsGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+}
+
+.detailItem {
+    display: flex;
+    flex-direction: column;
+}
+
+.detailLabel {
+    font-weight: 600;
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+.detailValue {
+    color: #2c3e50;
+    font-size: 1rem;
+    padding: 4px 0;
+}
+
+.statusBadge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.statusBadge.enrolled {
+    background-color: #2ecc71;
+    color: white;
+}
+
+.statusBadge.not-enrolled {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.statusBadge.pending {
+    background-color: #f39c12;
+    color: white;
+}
+
+.sectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.exportButtons {
+    display: flex;
+    gap: 8px;
+}
+
+.exportButton {
+    background: none;
+    border: 1px solid #bdc3c7;
+    border-radius: 4px;
+    padding: 6px 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9rem;
+}
+
+.exportButton:hover {
+    background-color: #f5f5f5;
+}
+
+.subjectsContainer {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.subjectGroup {
+    margin-bottom: 24px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 16px;
+}
+
+.subjectTitle {
+    margin: 0 0 12px 0;
+    color: #2c3e50;
+    font-size: 1.1rem;
+}
+
+.termContainer {
+    margin-bottom: 16px;
+}
+
+.termTitle {
+    margin: 0 0 8px 0;
+    color: #7f8c8d;
+    font-size: 0.95rem;
+}
+
+.subjectTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 12px;
+}
+
+.subjectTable th,
+.subjectTable td {
+    padding: 10px 12px;
+    text-align: left;
+    border: 1px solid #e0e0e0;
+}
+
+.subjectTable th {
+    background-color: #f5f5f5;
+    font-weight: 600;
+}
+
+.subjectTable tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.subjectTable tr:hover {
+    background-color: #f1f1f1;
+}
+
+.noSubjects {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #7f8c8d;
+    font-style: italic;
+}
+
+.loading,
+.error {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    color: #2c3e50;
+}
+
+.error {
+    color: #e74c3c;
+}
+
+/* Responsive styles */
+@media (max-width: 900px) {
+    .modalContent {
+        flex-direction: column;
+    }
+
+    .studentDetails {
+        border-right: none;
+        border-bottom: 1px solid #e0e0e0;
+    }
+
+    .detailsGrid {
+        grid-template-columns: 1fr;
+    }
+}

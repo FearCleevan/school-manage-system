@@ -1,0 +1,235 @@
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .modalContent {
+    background: white;
+    padding: 15px;
+    border-radius: 6px;
+    width: 95%;
+    max-width: 1100px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  }
+  
+  .modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .modalHeader h3 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.1rem;
+  }
+  
+  .closeBtn {
+    background: none;
+    border: none;
+    font-size: 1.3rem;
+    cursor: pointer;
+    color: #777;
+    line-height: 1;
+    padding: 0 5px;
+  }
+  
+  .closeBtn:hover {
+    color: #333;
+  }
+  
+  .subjectForm {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .formGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .formGroup label {
+    font-size: 0.8rem;
+    color: #555;
+    font-weight: 500;
+  }
+  
+  .formInput, .formSelect {
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    font-size: 0.8rem;
+  }
+  
+  .formInput:focus, .formSelect:focus {
+    outline: none;
+    border-color: #2c3e50;
+  }
+  
+  .formRow {
+    display: flex;
+    gap: 12px;
+  }
+  
+  .formRow .formGroup {
+    flex: 1;
+  }
+  
+  .termSection {
+    margin-top: 12px;
+    border: 1px solid #eee;
+    padding: 8px;
+    border-radius: 3px;
+  }
+  
+  .termSection h4 {
+    margin: 0 0 8px 0;
+    color: #2c3e50;
+    font-size: 0.9rem;
+  }
+  
+  .termTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 8px;
+    font-size: 0.75rem;
+    border-radius: 5px;
+  }
+  
+  .termTable th,
+  .termTable td {
+    padding: 2px;
+    text-align: left;
+  }
+  
+  .termTable th:nth-child(1),
+  .termTable td:nth-child(1) {
+    width: 10%;
+  }
+  
+  .termTable th:nth-child(2),
+  .termTable td:nth-child(2) {
+    width: 40%;
+  }
+  
+  .termTable th:nth-child(3),
+  .termTable td:nth-child(3),
+  .termTable th:nth-child(4),
+  .termTable td:nth-child(4),
+  .termTable th:nth-child(5),
+  .termTable td:nth-child(5) {
+    width: 5%;
+  }
+  
+  .termTable th:nth-child(6),
+  .termTable td:nth-child(6) {
+    width: 10%;
+  }
+  
+  .termTable th:nth-child(7),
+  .termTable td:nth-child(7) {
+    width: 3%;
+  }
+  
+  .termTable th {
+    padding: 6px;
+    border: 1px solid #ddd;
+    text-align: left;
+  }
+  
+  .tableInput {
+    width: 100%;
+    padding: 4px;
+    border: 1px solid #ddd;
+    border-radius: 2px;
+    font-size: 0.75rem;
+  }
+  
+  .addRowBtn {
+    background-color: #2c3e50;
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 0.75rem;
+  }
+  
+  .addRowBtn:hover {
+    background-color: #1a252f;
+  }
+  
+  .removeBtn {
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 0.75rem;
+  }
+  
+  .removeBtn:hover {
+    background-color: #c0392b;
+  }
+  
+  .formActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 15px;
+    padding-top: 12px;
+    border-top: 1px solid #eee;
+  }
+  
+  .cancelBtn, .submitBtn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: background-color 0.2s;
+  }
+  
+  .cancelBtn {
+    background-color: #f5f5f5;
+    color: #333;
+  }
+  
+  .cancelBtn:hover {
+    background-color: #e9ecef;
+  }
+  
+  .submitBtn {
+    background-color: #2c3e50;
+    color: white;
+  }
+  
+  .submitBtn:hover {
+    background-color: #1a252f;
+  }
+  
+  .errorMessage {
+    color: #e74c3c;
+    background-color: #fde8e8;
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    font-size: 0.8rem;
+    border: 1px solid #f5c6cb;
+  }
