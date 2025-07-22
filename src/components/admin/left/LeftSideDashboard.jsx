@@ -25,14 +25,14 @@ const LeftSideDashboard = () => {
     const menuItems = [
         { path: "/dashboard", icon: <FaHome />, label: "Dashboard", permission: "dashboard" },
         { path: "/dashboard/manage-student", icon: <FaGraduationCap />, label: "Student Management", permission: "manageStudent" },
-        { path: "/dashboard/department", icon: <FaBuilding />, label: "Department", permission: "department" },
-        { path: "/dashboard/course", icon: <FaBook />, label: "Course", permission: "course" },
-        { path: "/dashboard/subjects", icon: <FaClipboardList />, label: "Subjects", permission: "subjects" },
-        { path: "/dashboard/payment", icon: <FaMoneyBillWave />, label: "Payment Management", permission: "payment" },
-        { path: "/dashboard/grading-system", icon: <FaChartLine />, label: "Grading System", permission: "gradingSystem" },
-        { path: "/dashboard/attendance", icon: <FaCalendarCheck />, label: "Student Attendance", permission: "attendance" },
-        { path: "/dashboard/announcement", icon: <FaBell />, label: "Announcement", permission: "announcement" },
-        { path: "/dashboard/permission", icon: <FaShieldAlt />, label: "Account Permissions", permission: "accountPermission" },
+        // { path: "/dashboard/department", icon: <FaBuilding />, label: "Department", permission: "department" },
+        // { path: "/dashboard/course", icon: <FaBook />, label: "Course", permission: "course" },
+        { path: "/dashboard/subjects", icon: <FaClipboardList />, label: "Subject and Course Management", permission: "subjects" },
+        // { path: "/dashboard/payment", icon: <FaMoneyBillWave />, label: "Payment Management", permission: "payment" },
+        // { path: "/dashboard/grading-system", icon: <FaChartLine />, label: "Grading System", permission: "gradingSystem" },
+        // { path: "/dashboard/attendance", icon: <FaCalendarCheck />, label: "Student Attendance", permission: "attendance" },
+        // { path: "/dashboard/announcement", icon: <FaBell />, label: "Announcement", permission: "announcement" },
+        // { path: "/dashboard/permission", icon: <FaShieldAlt />, label: "Account Permissions", permission: "accountPermission" },
         { path: "/dashboard/account-user-settings", icon: <FaCog />, label: "Account & User Settings", permission: "accountSettings" }
     ];
 

@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase/config';
 import styles from './AddSubject.module.css';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const AddSubject = ({ show, onClose, onAddSubject }) => {
     const [formData, setFormData] = useState({
@@ -170,6 +172,10 @@ const AddSubject = ({ show, onClose, onAddSubject }) => {
         } catch (err) {
             console.error('Error adding subject:', err);
             setError('Failed to add subject. Please try again.');
+            toast.error('Failed to add subject!', {
+                position: "top-right",
+                autoClose: 3000,
+            });
         } finally {
             setLoading(false);
         }

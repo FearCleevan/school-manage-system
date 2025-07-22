@@ -1,18 +1,20 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import Login from './components/login/Login';
 import Dashboard from './components/dashboard/Dashboard';
 import AccountUserSettings from './components/accountsettings/AccountUserSettings';
 import StudentManagement from './components/manageStudent/StudentManagement';
-import Department from './components/department/Department';
-import Course from './components/course/Course';
+// import Department from './components/department/Department';
+// import Course from './components/course/Course';
 import Subjects from './components/subjects/Subjects';
-import Payment from './components/payment/Payment';
-import GradingSystem from './components/gradingsystem/GradingSystem';
-import Attendance from './components/attendance/Attendance';
-import Announcement from './components/announcement/Announcement';
-import Permission from './components/permission/Permission';
+// import Payment from './components/payment/Payment';
+// import GradingSystem from './components/gradingsystem/GradingSystem';
+// import Attendance from './components/attendance/Attendance';
+// import Announcement from './components/announcement/Announcement';
+// import Permission from './components/permission/Permission';
 
 const ProtectedRoute = ({ children, requiredPermissions = [] }) => {
   const { currentUser, userData, loading, hasPermission } = useAuth();
@@ -61,6 +63,25 @@ function App() {
   return (
     <AuthProvider>
       <Router>
+
+        <ToastContainer
+          position="top-right"
+          autoClose={5000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="colored"
+          style={{
+            fontSize: '14px',
+            fontFamily: 'inherit',
+            zIndex: 999999
+          }}
+        />
+
         <Routes>
           <Route path="/" element={<Login />} />
 
@@ -88,22 +109,22 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
+            {/* <Route
               path="department"
               element={
                 <ProtectedRoute requiredPermissions={['department']}>
                   <Department />
                 </ProtectedRoute>
               }
-            />
-            <Route
+            /> */}
+            {/* <Route
               path="course"
               element={
                 <ProtectedRoute requiredPermissions={['course']}>
                   <Course />
                 </ProtectedRoute>
               }
-            />
+            /> */}
             <Route
               path="subjects"
               element={
@@ -112,7 +133,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
+            {/* <Route
               path="payment"
               element={
                 <ProtectedRoute requiredPermissions={['payment']}>
@@ -151,11 +172,12 @@ function App() {
                   <Permission />
                 </ProtectedRoute>
               }
-            />
+            /> */}
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+
       </Router>
     </AuthProvider>
   );
