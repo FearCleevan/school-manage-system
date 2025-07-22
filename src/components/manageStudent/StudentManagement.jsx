@@ -5,7 +5,7 @@ import {
     FaFilter
 } from 'react-icons/fa';
 import { CSVLink } from 'react-csv';
-import { db, storage } from '../../lib/firebase/config';
+import { db } from '../../lib/firebase/config';
 import { collection, query, where, getDocs, orderBy, writeBatch, doc, deleteDoc } from 'firebase/firestore';
 import * as XLSX from 'xlsx';
 import EnrollModal from '../modals/EnrollModal';
@@ -13,9 +13,11 @@ import EditStudent from '../modals/EditStudent';
 import ExistingStudentEnrollment from '../modals/ExistingStudentEnrollment';
 import './StudentManagement.css';
 import ViewStudentDetails from '../modals/ViewStudentDetails';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
 
 const StudentManagement = () => {
     // State management
@@ -170,7 +172,7 @@ const StudentManagement = () => {
             const batch = writeBatch(db);
             const studentsRef = collection(db, 'students');
 
-            Object.entries(studentsByDepartment).forEach(([dept, students]) => {
+            Object.entries(studentsByDepartment).forEach(([students]) => {
                 students.forEach(student => {
                     const docRef = doc(studentsRef);
                     batch.set(docRef, student);
@@ -268,6 +270,153 @@ const StudentManagement = () => {
         setCurrentPage(1);
     }, [departmentTab]);
 
+    // Export to Excel
+    const exportToExcel = () => {
+        toast.info('Preparing Excel export...', { position: "top-right", autoClose: 2000 });
+        setTimeout(() => {
+            const worksheet = XLSX.utils.json_to_sheet(prepareExportData());
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Students');
+            XLSX.writeFile(workbook, `students_${departmentTab}_${new Date().toISOString().slice(0, 10)}.xlsx`);
+            toast.success('Excel export completed!', { position: "top-right", autoClose: 3000 });
+        }, 500);
+    };
+
+    // Export to PDF
+    const exportToPDF = () => {
+        const doc = new jsPDF();
+        const data = prepareExportData();
+
+        // Add title
+        doc.text(`Student List - ${getDepartmentLabel(departmentTab)}`, 14, 15);
+
+        // Add filters info if any
+        let filtersInfo = [];
+        if (courseFilter) filtersInfo.push(`Course: ${courseFilter}`);
+        if (yearLevelFilter) filtersInfo.push(`Year Level: ${yearLevelFilter}`);
+        if (semesterFilter) filtersInfo.push(`Semester: ${semesterFilter}`);
+        if (searchTerm) filtersInfo.push(`Search: "${searchTerm}"`);
+
+        if (filtersInfo.length > 0) {
+            doc.text(`Filters: ${filtersInfo.join(', ')}`, 14, 25);
+        }
+
+        // Prepare table data
+        const tableData = data.map(student => [
+            student.studentId,
+            `${student.lastName}, ${student.firstName}`,
+            student.phone,
+            student.enrollment.course,
+            student.enrollment.yearLevel,
+            student.enrollment.semester,
+            student.status
+        ]);
+
+        // Add table
+        doc.autoTable({
+            head: [['ID', 'Name', 'Phone', 'Course', 'Year', 'Semester', 'Status']],
+            body: tableData,
+            startY: filtersInfo.length > 0 ? 30 : 20,
+            margin: { top: 20 }
+        });
+
+        doc.save(`students_${departmentTab}_${new Date().toISOString().slice(0, 10)}.pdf`);
+    };
+
+    // Prepare data for export (common for all formats)
+    const prepareExportData = () => {
+        return filteredStudents.map(student => ({
+            studentId: student.studentId,
+            firstName: student.firstName,
+            lastName: student.lastName,
+            middleName: student.middleName || '',
+            email: student.email,
+            phone: student.phone,
+            address: formatAddress(student),
+            department: getDepartmentLabel(student.department),
+            status: student.status,
+            enrollment: {
+                course: student.enrollment?.course || 'Not enrolled',
+                yearLevel: student.enrollment?.yearLevel || 'Not enrolled',
+                semester: student.enrollment?.semester || 'Not enrolled',
+                schoolYear: student.enrollment?.schoolYear || 'Not enrolled'
+            },
+            emergencyContact: student.emergencyContact?.name || '',
+            emergencyPhone: student.emergencyContact?.phone || '',
+            createdAt: student.createdAt?.toDate?.()?.toLocaleDateString() || '',
+            updatedAt: student.updatedAt?.toDate?.()?.toLocaleDateString() || ''
+        }));
+    };
+
+    // Print function
+    const printTable = () => {
+        const printWindow = window.open('', '_blank');
+        const data = prepareExportData();
+
+        const html = `
+        <html>
+            <head>
+                <title>Student List - ${getDepartmentLabel(departmentTab)}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; }
+                    h1 { color: #333; }
+                    .print-info { margin-bottom: 20px; font-size: 14px; }
+                    table { width: 100%; border-collapse: collapse; }
+                    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                    th { background-color: #f2f2f2; }
+                    .status-active { color: green; }
+                    .status-inactive { color: red; }
+                </style>
+            </head>
+            <body>
+                <h1>Student List - ${getDepartmentLabel(departmentTab)}</h1>
+                <div class="print-info">
+                    Generated on: ${new Date().toLocaleString()}<br>
+                    ${filteredStudents.length} records found<br>
+                    ${courseFilter ? `Course: ${courseFilter}<br>` : ''}
+                    ${yearLevelFilter ? `Year Level: ${yearLevelFilter}<br>` : ''}
+                    ${semesterFilter ? `Semester: ${semesterFilter}<br>` : ''}
+                    ${searchTerm ? `Search Term: "${searchTerm}"<br>` : ''}
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Phone</th>
+                            <th>Course</th>
+                            <th>Year</th>
+                            <th>Semester</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.map(student => `
+                            <tr>
+                                <td>${student.studentId}</td>
+                                <td>${student.lastName}, ${student.firstName}</td>
+                                <td>${student.phone}</td>
+                                <td>${student.enrollment.course}</td>
+                                <td>${student.enrollment.yearLevel}</td>
+                                <td>${student.enrollment.semester}</td>
+                                <td class="status-${student.status.toLowerCase()}">${student.status}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </body>
+        </html>
+    `;
+
+        printWindow.document.write(html);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 500);
+    };
+
     // Fetch students from Firestore
     useEffect(() => {
         const fetchStudents = async () => {
@@ -323,7 +472,7 @@ const StudentManagement = () => {
         };
 
         fetchStudents();
-    }, [departmentTab, sortConfig, courseFilter, yearLevelFilter, semesterFilter]);
+    }, [departmentTab, courseFilter, yearLevelFilter, semesterFilter, sortConfig]);
 
     // Fetch students from Firestore
     useEffect(() => {
@@ -475,21 +624,21 @@ const StudentManagement = () => {
     };
 
     // Handle modal open
-    const handleOpenNewEnrollModal = () => {
-        setShowNewEnrollModal(true);
-        toast.info('Opening new student enrollment form', {
-            position: "top-right",
-            autoClose: 2000,
-        });
-    };
+    // const handleOpenNewEnrollModal = () => {
+    //     setShowNewEnrollModal(true);
+    //     toast.info('Opening new student enrollment form', {
+    //         position: "top-right",
+    //         autoClose: 2000,
+    //     });
+    // };
 
-    const handleOpenExistingEnrollModal = () => {
-        setShowExistingEnrollModal(true);
-        toast.info('Opening existing student enrollment form', {
-            position: "top-right",
-            autoClose: 2000,
-        });
-    };
+    // const handleOpenExistingEnrollModal = () => {
+    //     setShowExistingEnrollModal(true);
+    //     toast.info('Opening existing student enrollment form', {
+    //         position: "top-right",
+    //         autoClose: 2000,
+    //     });
+    // };
 
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
     const [studentToDelete, setStudentToDelete] = useState(null);
@@ -544,7 +693,7 @@ const StudentManagement = () => {
                             <>
                                 <p>This query requires a Firestore index.</p>
                                 <a
-                                    href={`https://console.firebase.google.com/v1/r/project/${YOUR_PROJECT_ID}/firestore/indexes`}
+                                    href="https://console.firebase.google.com/v1/r/project/school-system-4cf7a/firestore/indexes"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="index-link"
@@ -681,17 +830,20 @@ const StudentManagement = () => {
                         </div>
 
                         <div className="export-buttons">
-                            <CSVLink
-                                data={filteredStudents}
-                                filename={`students-${departmentTab}.csv`}
-                                className="export-btn"
-                            >
+                            <button className="export-btn" onClick={exportToExcel}>
                                 <FaFileExcel /> Excel
-                            </CSVLink>
-                            <button className="export-btn">
+                            </button>
+                            <button className="export-btn" onClick={exportToPDF}>
                                 <FaFilePdf /> PDF
                             </button>
-                            <button className="export-btn">
+                            <CSVLink
+                                data={prepareExportData()}
+                                filename={`students_${departmentTab}_${new Date().toISOString().slice(0, 10)}.csv`}
+                                className="export-btn"
+                            >
+                                <FaFileExcel /> CSV
+                            </CSVLink>
+                            <button className="export-btn" onClick={printTable}>
                                 <FaPrint /> Print
                             </button>
                             <button
