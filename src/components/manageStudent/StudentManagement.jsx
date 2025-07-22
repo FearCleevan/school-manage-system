@@ -14,6 +14,8 @@ import ExistingStudentEnrollment from '../modals/ExistingStudentEnrollment';
 import './StudentManagement.css';
 import ViewStudentDetails from '../modals/ViewStudentDetails';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const StudentManagement = () => {
     // State management
@@ -78,6 +80,10 @@ const StudentManagement = () => {
                 student.id === updatedStudent.id ? { ...student, ...updatedStudent } : student
             )
         );
+        toast.success('Student updated successfully!', {
+            position: "top-right",
+            autoClose: 3000,
+        });
     };
 
     // function to process the imported file
@@ -86,6 +92,10 @@ const StudentManagement = () => {
 
         setImportStatus('Reading file...');
         setImportProgress(10);
+        toast.info('Starting student import...', {
+            position: "top-right",
+            autoClose: 2000,
+        });
 
         try {
             const data = await importFile.arrayBuffer();
@@ -93,8 +103,12 @@ const StudentManagement = () => {
             const worksheet = workbook.Sheets[workbook.SheetNames[0]];
             const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
-            setImportStatus('Validating data...');
-            setImportProgress(30);
+            setImportStatus('Successfully imported!');
+            setImportProgress(100);
+            toast.success('Students imported successfully!', {
+                position: "top-right",
+                autoClose: 3000,
+            });
 
             // Group students by department
             const studentsByDepartment = {
@@ -188,6 +202,10 @@ const StudentManagement = () => {
             console.error('Import error:', error);
             setImportStatus(`Error: ${error.message}`);
             setImportProgress(0);
+            toast.error(`Import failed: ${error.message}`, {
+                position: "top-right",
+                autoClose: 4000,
+            });
         }
     };
 
@@ -459,10 +477,18 @@ const StudentManagement = () => {
     // Handle modal open
     const handleOpenNewEnrollModal = () => {
         setShowNewEnrollModal(true);
+        toast.info('Opening new student enrollment form', {
+            position: "top-right",
+            autoClose: 2000,
+        });
     };
 
     const handleOpenExistingEnrollModal = () => {
         setShowExistingEnrollModal(true);
+        toast.info('Opening existing student enrollment form', {
+            position: "top-right",
+            autoClose: 2000,
+        });
     };
 
     const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -482,9 +508,17 @@ const StudentManagement = () => {
             setStudents(students.filter(student => student.id !== studentToDelete.id));
             setDeleteModalOpen(false);
             setStudentToDelete(null);
+            toast.success('Student deleted successfully!', {
+                position: "top-right",
+                autoClose: 3000,
+            });
         } catch (error) {
             console.error('Error deleting student:', error);
             setError('Failed to delete student. Please try again.');
+            toast.error('Failed to delete student!', {
+                position: "top-right",
+                autoClose: 3000,
+            });
         }
     };
 
@@ -768,7 +802,13 @@ const StudentManagement = () => {
                                                     <button
                                                         className="view-btn"
                                                         title="View"
-                                                        onClick={() => setViewStudentId(student.id)}
+                                                        onClick={() => {
+                                                            setViewStudentId(student.id);
+                                                            toast.info(`Viewing ${student.firstName} ${student.lastName}'s details`, {
+                                                                position: "top-right",
+                                                                autoClose: 2000,
+                                                            });
+                                                        }}
                                                     >
                                                         <FaEye />
                                                     </button>
@@ -778,16 +818,14 @@ const StudentManagement = () => {
                                                         onClick={() => {
                                                             setEditingStudent(student);
                                                             setShowEditModal(true);
+                                                            toast.info(`Editing ${student.firstName} ${student.lastName}'s record`, {
+                                                                position: "top-right",
+                                                                autoClose: 2000,
+                                                            });
                                                         }}
                                                     >
                                                         <FaEdit />
                                                     </button>
-                                                    <DeleteConfirmationModal
-                                                        isOpen={deleteModalOpen}
-                                                        onClose={cancelDelete}
-                                                        onConfirm={confirmDelete}
-                                                        student={studentToDelete}
-                                                    />
                                                     <button
                                                         className="delete-btn"
                                                         title="Delete"
@@ -796,6 +834,13 @@ const StudentManagement = () => {
                                                         <FaTrash />
                                                     </button>
                                                 </div>
+
+                                                <DeleteConfirmationModal
+                                                    isOpen={deleteModalOpen}
+                                                    onClose={cancelDelete}
+                                                    onConfirm={confirmDelete}
+                                                    student={studentToDelete}
+                                                />
                                             </td>
                                         </tr>
                                     ))

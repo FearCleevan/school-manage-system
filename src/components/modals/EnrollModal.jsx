@@ -3,6 +3,8 @@ import styles from './EnrollModal.module.css';
 import { db, auth } from '../../lib/firebase/config';
 import { doc, runTransaction, collection, addDoc } from 'firebase/firestore';
 import { uploadToCloudinary } from '../../lib/firebase/storage';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const EnrollModal = ({ show, onClose }) => {
     const [formData, setFormData] = useState({
@@ -125,7 +127,10 @@ const EnrollModal = ({ show, onClose }) => {
         e.preventDefault();
 
         if (!auth.currentUser) {
-            alert('Please sign in to enroll students');
+            toast.error('Please sign in to enroll students', {
+                position: "top-right",
+                autoClose: 3000,
+            });
             return;
         }
 
@@ -153,8 +158,16 @@ const EnrollModal = ({ show, onClose }) => {
                 try {
                     const cloudinaryResponse = await uploadToCloudinary(formData.profilePhoto);
                     photoURL = cloudinaryResponse?.secure_url || null;
+                    toast.info('Profile photo uploaded successfully', {
+                        position: "top-right",
+                        autoClose: 2000,
+                    });
                 } catch (error) {
                     console.error('Photo upload failed:', error);
+                    toast.warn('Profile photo upload failed, continuing without photo', {
+                        position: "top-right",
+                        autoClose: 3000,
+                    });
                 }
             }
 
@@ -191,12 +204,19 @@ const EnrollModal = ({ show, onClose }) => {
 
             await addDoc(collection(db, 'students'), studentData);
 
-            alert(`Student ${generatedId} enrolled successfully!`);
+            toast.success(`Student ${generatedId} enrolled successfully!`, {
+                position: "top-right",
+                autoClose: 4000,
+            });
+
             resetForm();
             onClose();
         } catch (error) {
             console.error('Enrollment error:', error);
-            alert(error.message || 'Failed to enroll student. Please try again.');
+            toast.error(error.message || 'Failed to enroll student. Please try again.', {
+                position: "top-right",
+                autoClose: 4000,
+            });
         } finally {
             setIsSubmitting(false);
         }
@@ -233,7 +253,7 @@ const EnrollModal = ({ show, onClose }) => {
             <div className={`${styles.enrollModal} ${styles.scaledModal}`}>
                 <div className={styles.modalHeader}>
                     <h2 className={styles.modalTitle}>Enroll New Student</h2>
-                    <button 
+                    <button
                         className={styles.closeBtn}
                         onClick={onClose}
                         disabled={isSubmitting}
