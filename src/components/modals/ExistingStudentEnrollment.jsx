@@ -299,476 +299,495 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
     const schoolYear = studentData.enrollment?.schoolYear || '2025-2026';
 
     printWindow.document.write(`
-          <html>
-            <head>
-              <title>Student Enrollment Details</title>
-              <style>
-                @page {
-                  size: A4;
-                  margin: 1cm;
-                }
-                body { 
-                  font-family: Arial, sans-serif; 
-                  margin: 0;
-                  padding: 0;
-                }
-                .header {
-                  display: flex;
-                  justify-content: space-between;
-                  align-items: center;
-                  margin-bottom: 20px;
-                  padding-bottom: 10px;
-                  border-bottom: 2px solid #333;
-                }
-                .school-info {
-                  text-align: right;
-                }
-                .school-name {
-                  font-size: 18px;
-                  font-weight: bold;
-                  margin-bottom: 5px;
-                }
-                .school-address {
-                  font-size: 12px;
-                }
-                .logo {
-                  height: 80px;
-                  width: auto;
-                }
-                .registration-title {
-                  text-align: center;
-                  font-size: 16px;
-                  font-weight: bold;
-                  margin: 15px 0;
-                  text-decoration: underline;
-                }
-                .student-info {
-                  width: 100%;
-                  margin-bottom: 20px;
-                }
-                .student-info-row {
-                  display: flex;
-                  margin-bottom: 8px;
-                }
-                .info-label {
-                  font-weight: bold;
-                  min-width: 120px;
-                }
-                .subjects-title {
-                  text-align: center;
-                  font-weight: bold;
-                  margin: 20px 0 10px 0;
-                  padding-bottom: 5px;
-                  border-bottom: 1px solid #000;
-                }
-                .subject-table {
-                  width: 100%;
-                  border-collapse: collapse;
-                  margin-bottom: 20px;
-                }
-                .subject-table th, .subject-table td {
-                  border: 1px solid #ddd;
-                  padding: 8px;
-                  text-align: left;
-                }
-                .subject-table th {
-                  background-color: #f2f2f2;
-                  text-align: center;
-                }
-                .term-title {
-                  background-color: #f5f5f5;
-                  padding: 5px 10px;
-                  margin: 20px 0 10px 0;
-                  text-align: center;
-                }
-                .total-units {
-                  text-align: right;
-                  font-weight: bold;
-                  margin-bottom: 20px;
-                }
-                .footer {
-                  display: flex;
-                  justify-content: space-between;
-                  margin-top: 40px;
-                  font-size: 12px;
-                }
-                .footer-section {
-                  width: 23%;
-                }
-                .footer-label {
-                  font-weight: bold;
-                  margin-bottom: 30px;
-                }
-                .footer-line {
-                  border-top: 1px solid #000;
-                  padding-top: 5px;
-                  margin-top: 30px;
-                }
-                .page-break {
-                  page-break-after: always;
-                }
-                .copy-title {
-                  text-align: center;
-                  font-weight: bold;
-                  margin: 20px 0;
-                  font-size: 14px;
-                }
-              </style>
-            </head>
-            <body>
-              <!-- Student's Copy -->
-              <div class="copy-title">STUDENT'S COPY</div>
-              
-              <div class="header">
-                <img src="/school-logo.png" class="logo" alt="School Logo">
-                <div class="school-info">
-                  <div class="school-name">SAMPLE POLYTECHNIC COLLEGE</div>
-                  <div class="school-address">123 Education St., Learning City, 2000</div>
-                </div>
-              </div>
-              
-              <div class="registration-title">REGISTRATION DETAILS</div>
-              
-              <table class="student-info">
-                <tr class="student-info-row">
-                  <td class="info-label">Date of Admission/Enrollment:</td>
-                  <td>${currentDate}</td>
-                  <td class="info-label">School Year:</td>
-                  <td>${schoolYear}</td>
-                  <td class="info-label">Status:</td>
-                  <td>${studentData.status || 'Enrolled'}</td>
+  <html>
+    <head>
+      <title>${studentName} Enrollment Form</title>
+      <style>
+        @page {
+          size: legal;
+          margin: 0.5cm;
+        }
+        body { 
+          font-family: Arial, sans-serif; 
+          margin: 0;
+          padding: 0;
+          font-size: 10px;
+          line-height: 1.2;
+        }
+        .header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 10px;
+          padding-bottom: 5px;
+          border-bottom: 1px solid #333;
+        }
+        .school-info {
+          text-align: right;
+        }
+        .school-name {
+          font-size: 14px;
+          font-weight: bold;
+          margin-bottom: 3px;
+        }
+        .school-address {
+          font-size: 10px;
+        }
+        .logo {
+          height: 60px;
+          width: auto;
+        }
+        .registration-title {
+          text-align: center;
+          font-size: 12px;
+          font-weight: bold;
+          margin: 10px 0;
+          text-decoration: underline;
+        }
+        .student-info {
+          width: 100%;
+          margin-bottom: 10px;
+          border-collapse: collapse;
+        }
+        .student-info td {
+          padding: 3px;
+          vertical-align: top;
+        }
+        .info-label {
+          font-weight: bold;
+          min-width: 100px;
+          white-space: nowrap;
+        }
+        .subjects-title {
+          text-align: center;
+          font-weight: bold;
+          margin: 10px 0 5px 0;
+          padding-bottom: 3px;
+          border-bottom: 1px solid #000;
+          font-size: 11px;
+        }
+        .subject-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 10px;
+          font-size: 9px;
+        }
+        .subject-table th, .subject-table td {
+          border: 1px solid #ddd;
+          padding: 4px;
+          text-align: left;
+        }
+        .subject-table th {
+          background-color: #f2f2f2;
+          text-align: center;
+          font-size: 9px;
+        }
+        .term-title {
+          background-color: #f5f5f5;
+          padding: 3px 5px;
+          margin: 10px 0 5px 0;
+          text-align: center;
+          font-size: 10px;
+          font-weight: bold;
+        }
+        .total-units {
+          text-align: right;
+          font-weight: bold;
+          margin-bottom: 10px;
+          font-size: 10px;
+        }
+        .footer {
+          display: flex;
+          justify-content: space-between;
+          margin-top: 15px;
+          font-size: 9px;
+        }
+        .footer-section {
+          width: 23%;
+        }
+        .footer-label {
+          font-weight: bold;
+          margin-bottom: 20px;
+          font-size: 9px;
+        }
+        .footer-line {
+          border-top: 1px solid #000;
+          padding-top: 3px;
+          margin-top: 20px;
+        }
+        .copy-title {
+          text-align: center;
+          font-weight: bold;
+          margin: 10px 0;
+          font-size: 11px;
+          text-decoration: underline;
+        }
+        .page-break {
+          page-break-after: always;
+        }
+        .compact-row {
+          margin-bottom: 5px;
+        }
+      </style>
+    </head>
+    <body>
+      <!-- Student's Copy -->
+      <div class="copy-title">STUDENT'S COPY</div>
+      
+      <div class="header">
+        <img src="/school-logo.png" class="logo" alt="School Logo">
+        <div class="school-info">
+          <div class="school-name">SAMPLE POLYTECHNIC COLLEGE</div>
+          <div class="school-address">123 Education St., Learning City, 2000</div>
+        </div>
+      </div>
+      
+      <div class="registration-title">REGISTRATION DETAILS</div>
+      
+      <table class="student-info">
+        <tr>
+          <td class="info-label">Date of Admission/Enrollment:</td>
+          <td>${currentDate}</td>
+          <td class="info-label">School Year:</td>
+          <td>${schoolYear}</td>
+          <td class="info-label">Status:</td>
+          <td>${studentData.status || 'Enrolled'}</td>
+        </tr>
+        <tr>
+          <td class="info-label">Family Name:</td>
+          <td>${studentData.lastName}</td>
+          <td class="info-label">First Name:</td>
+          <td>${studentData.firstName}</td>
+          <td class="info-label">Middle Name:</td>
+          <td>${studentData.middleName || ''}</td>
+        </tr>
+        <tr>
+          <td class="info-label">Course:</td>
+          <td colspan="3">${studentData.enrollment?.course || 'Not enrolled'}</td>
+          <td class="info-label">Year Level:</td>
+          <td>${studentData.enrollment?.yearLevel || 'Not enrolled'}</td>
+        </tr>
+        <tr>
+          <td class="info-label">Semester:</td>
+          <td>${studentData.enrollment?.semester || 'Not enrolled'}</td>
+          <td colspan="4"></td>
+        </tr>
+      </table>
+      
+      <div class="subjects-title">ENROLLED SUBJECTS</div>
+      
+      ${subjects.map(subject => `
+        <div class="compact-row">
+          ${subject.terms.firstTerm.length > 0 ? `
+            <div class="term-title">FIRST TERM</div>
+            <table class="subject-table">
+              <thead>
+                <tr>
+                  <th style="width: 12%">Code</th>
+                  <th style="width: 35%">Description</th>
+                  <th style="width: 5%">Lec</th>
+                  <th style="width: 5%">Lab</th>
+                  <th style="width: 5%">Units</th>
+                  <th style="width: 10%">Days</th>
+                  <th style="width: 15%">Time</th>
+                  <th style="width: 13%">Room No.</th>
                 </tr>
-                <tr class="student-info-row">
-                  <td class="info-label">Family Name:</td>
-                  <td>${studentData.lastName}</td>
-                  <td class="info-label">First Name:</td>
-                  <td>${studentData.firstName}</td>
-                  <td class="info-label">Middle Name:</td>
-                  <td>${studentData.middleName || ''}</td>
+              </thead>
+              <tbody>
+                ${subject.terms.firstTerm.map(course => `
+                  <tr>
+                    <td>${course.subjectCode}</td>
+                    <td>${course.description}</td>
+                    <td>${course.lec}</td>
+                    <td>${course.lab}</td>
+                    <td>${course.units}</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            <div class="total-units">
+              Total Units: ${subject.terms.firstTerm.reduce((sum, course) => sum + (parseFloat(course.units) || 0, 0))}
+            </div>
+          ` : ''}
+          
+          ${subject.terms.secondTerm.length > 0 ? `
+            <div class="term-title">SECOND TERM</div>
+            <table class="subject-table">
+              <thead>
+                <tr>
+                  <th style="width: 12%">Code</th>
+                  <th style="width: 35%">Description</th>
+                  <th style="width: 5%">Lec</th>
+                  <th style="width: 5%">Lab</th>
+                  <th style="width: 5%">Units</th>
+                  <th style="width: 10%">Days</th>
+                  <th style="width: 15%">Time</th>
+                  <th style="width: 13%">Room No.</th>
                 </tr>
-                <tr class="student-info-row">
-                  <td class="info-label">Course:</td>
-                  <td>${studentData.enrollment?.course || 'Not enrolled'}</td>
-                  <td class="info-label">Year Level:</td>
-                  <td>${studentData.enrollment?.yearLevel || 'Not enrolled'}</td>
-                  <td class="info-label">Semester:</td>
-                  <td>${studentData.enrollment?.semester || 'Not enrolled'}</td>
+              </thead>
+              <tbody>
+                ${subject.terms.secondTerm.map(course => `
+                  <tr>
+                    <td>${course.subjectCode}</td>
+                    <td>${course.description}</td>
+                    <td>${course.lec}</td>
+                    <td>${course.lab}</td>
+                    <td>${course.units}</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            <div class="total-units">
+              Total Units: ${subject.terms.secondTerm.reduce((sum, course) => sum + (parseFloat(course.units) || 0, 0))}
+            </div>
+          ` : ''}
+          
+          ${studentData.enrollment?.semester === 'Summer' ? `
+            <div class="term-title">SUMMER</div>
+            <table class="subject-table">
+              <thead>
+                <tr>
+                  <th style="width: 12%">Code</th>
+                  <th style="width: 35%">Description</th>
+                  <th style="width: 5%">Lec</th>
+                  <th style="width: 5%">Lab</th>
+                  <th style="width: 5%">Units</th>
+                  <th style="width: 10%">Days</th>
+                  <th style="width: 15%">Time</th>
+                  <th style="width: 13%">Room No.</th>
                 </tr>
-              </table>
-              
-              <div class="subjects-title">ENROLLED SUBJECTS</div>
-              
-              ${subjects.map(subject => `
-                <div>
-                  ${subject.terms.firstTerm.length > 0 ? `
-                    <div class="term-title">FIRST TERM</div>
-                    <table class="subject-table">
-                      <thead>
-                        <tr>
-                          <th>Code</th>
-                          <th>Description</th>
-                          <th>Lec</th>
-                          <th>Lab</th>
-                          <th>Units</th>
-                          <th>Days</th>
-                          <th>Time</th>
-                          <th>Room No.</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        ${subject.terms.firstTerm.map(course => `
-                          <tr>
-                            <td>${course.subjectCode}</td>
-                            <td>${course.description}</td>
-                            <td>${course.lec}</td>
-                            <td>${course.lab}</td>
-                            <td>${course.units}</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                          </tr>
-                        `).join('')}
-                      </tbody>
-                    </table>
-                    <div class="total-units">
-                      Total Units: ${subject.terms.firstTerm.reduce((sum, course) => sum + (parseFloat(course.units) || 0, 0))}
-                    </div>
-                  ` : ''}
-                  
-                  ${subject.terms.secondTerm.length > 0 ? `
-                    <div class="term-title">SECOND TERM</div>
-                    <table class="subject-table">
-                      <thead>
-                        <tr>
-                          <th>Code</th>
-                          <th>Description</th>
-                          <th>Lec</th>
-                          <th>Lab</th>
-                          <th>Units</th>
-                          <th>Days</th>
-                          <th>Time</th>
-                          <th>Room No.</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        ${subject.terms.secondTerm.map(course => `
-                          <tr>
-                            <td>${course.subjectCode}</td>
-                            <td>${course.description}</td>
-                            <td>${course.lec}</td>
-                            <td>${course.lab}</td>
-                            <td>${course.units}</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                          </tr>
-                        `).join('')}
-                      </tbody>
-                    </table>
-                    <div class="total-units">
-                      Total Units: ${subject.terms.secondTerm.reduce((sum, course) => sum + (parseFloat(course.units) || 0, 0))}
-                    </div>
-                  ` : ''}
-                  
-                  ${studentData.enrollment?.semester === 'Summer' ? `
-                    <div class="term-title">SUMMER</div>
-                    <table class="subject-table">
-                      <thead>
-                        <tr>
-                          <th>Code</th>
-                          <th>Description</th>
-                          <th>Lec</th>
-                          <th>Lab</th>
-                          <th>Units</th>
-                          <th>Days</th>
-                          <th>Time</th>
-                          <th>Room No.</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        ${subject.terms.firstTerm.map(course => `
-                          <tr>
-                            <td>${course.subjectCode}</td>
-                            <td>${course.description}</td>
-                            <td>${course.lec}</td>
-                            <td>${course.lab}</td>
-                            <td>${course.units}</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                          </tr>
-                        `).join('')}
-                      </tbody>
-                    </table>
-                    <div class="total-units">
-                      Total Units: ${subject.terms.firstTerm.reduce((sum, course) => sum + (parseFloat(course.units) || 0, 0))}
-                    </div>
-                  ` : ''}
-                </div>
-              `).join('')}
-              
-              <div class="footer">
-                <div class="footer-section">
-                  <div class="footer-label">Confirmed By:</div>
-                  <div>Student's Signature / Date:</div>
-                  <div class="footer-line"></div>
-                </div>
-                <div class="footer-section">
-                  <div class="footer-label">Approved By:</div>
-                  <div>Program Head Dean of College / Date:</div>
-                  <div class="footer-line"></div>
-                </div>
-                <div class="footer-section">
-                  <div class="footer-label">Assisted By:</div>
-                  <div>Cashier / Date</div>
-                  <div class="footer-line"></div>
-                </div>
-                <div class="footer-section">
-                  <div class="footer-label">Copy Received By:</div>
-                  <div>Registrar / Date</div>
-                  <div class="footer-line"></div>
-                </div>
-              </div>
-              
-              <!-- Registrar's Copy -->
-              <div class="page-break"></div>
-              <div class="copy-title">REGISTRAR'S COPY</div>
-              
-              <!-- Repeat all content for registrar's copy -->
-              <div class="header">
-                <img src="/school-logo.png" class="logo" alt="School Logo">
-                <div class="school-info">
-                  <div class="school-name">SAMPLE POLYTECHNIC COLLEGE</div>
-                  <div class="school-address">123 Education St., Learning City, 2000</div>
-                </div>
-              </div>
-              
-              <div class="registration-title">REGISTRATION DETAILS</div>
-              
-              <table class="student-info">
-                <tr class="student-info-row">
-                  <td class="info-label">Date of Admission/Enrollment:</td>
-                  <td>${currentDate}</td>
-                  <td class="info-label">School Year:</td>
-                  <td>${schoolYear}</td>
-                  <td class="info-label">Status:</td>
-                  <td>${studentData.status || 'Enrolled'}</td>
+              </thead>
+              <tbody>
+                ${subject.terms.firstTerm.map(course => `
+                  <tr>
+                    <td>${course.subjectCode}</td>
+                    <td>${course.description}</td>
+                    <td>${course.lec}</td>
+                    <td>${course.lab}</td>
+                    <td>${course.units}</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            <div class="total-units">
+              Total Units: ${subject.terms.firstTerm.reduce((sum, course) => sum + (parseFloat(course.units) || 0, 0))}
+            </div>
+          ` : ''}
+        </div>
+      `).join('')}
+      
+      <div class="footer">
+        <div class="footer-section">
+          <div class="footer-label">Confirmed By:</div>
+          <div>Student's Signature / Date:</div>
+          <div class="footer-line"></div>
+        </div>
+        <div class="footer-section">
+          <div class="footer-label">Approved By:</div>
+          <div>Program Head Dean of College / Date:</div>
+          <div class="footer-line"></div>
+        </div>
+        <div class="footer-section">
+          <div class="footer-label">Assisted By:</div>
+          <div>Cashier / Date</div>
+          <div class="footer-line"></div>
+        </div>
+        <div class="footer-section">
+          <div class="footer-label">Copy Received By:</div>
+          <div>Registrar / Date</div>
+          <div class="footer-line"></div>
+        </div>
+      </div>
+      
+      <!-- Registrar's Copy -->
+      <!-- <div class="page-break"></div> -->
+      <div class="copy-title">REGISTRAR'S COPY</div>
+      
+      <div class="header">
+        <img src="/school-logo.png" class="logo" alt="School Logo">
+        <div class="school-info">
+          <div class="school-name">SAMPLE POLYTECHNIC COLLEGE</div>
+          <div class="school-address">123 Education St., Learning City, 2000</div>
+        </div>
+      </div>
+      
+      <div class="registration-title">REGISTRATION DETAILS</div>
+      
+      <table class="student-info">
+        <tr>
+          <td class="info-label">Date of Admission/Enrollment:</td>
+          <td>${currentDate}</td>
+          <td class="info-label">School Year:</td>
+          <td>${schoolYear}</td>
+          <td class="info-label">Status:</td>
+          <td>${studentData.status || 'Enrolled'}</td>
+        </tr>
+        <tr>
+          <td class="info-label">Family Name:</td>
+          <td>${studentData.lastName}</td>
+          <td class="info-label">First Name:</td>
+          <td>${studentData.firstName}</td>
+          <td class="info-label">Middle Name:</td>
+          <td>${studentData.middleName || ''}</td>
+        </tr>
+        <tr>
+          <td class="info-label">Course:</td>
+          <td colspan="3">${studentData.enrollment?.course || 'Not enrolled'}</td>
+          <td class="info-label">Year Level:</td>
+          <td>${studentData.enrollment?.yearLevel || 'Not enrolled'}</td>
+        </tr>
+        <tr>
+          <td class="info-label">Semester:</td>
+          <td>${studentData.enrollment?.semester || 'Not enrolled'}</td>
+          <td colspan="4"></td>
+        </tr>
+      </table>
+      
+      <div class="subjects-title">ENROLLED SUBJECTS</div>
+      
+      ${subjects.map(subject => `
+        <div class="compact-row">
+          ${subject.terms.firstTerm.length > 0 ? `
+            <div class="term-title">FIRST TERM</div>
+            <table class="subject-table">
+              <thead>
+                <tr>
+                  <th style="width: 12%">Code</th>
+                  <th style="width: 35%">Description</th>
+                  <th style="width: 5%">Lec</th>
+                  <th style="width: 5%">Lab</th>
+                  <th style="width: 5%">Units</th>
+                  <th style="width: 10%">Days</th>
+                  <th style="width: 15%">Time</th>
+                  <th style="width: 13%">Room No.</th>
                 </tr>
-                <tr class="student-info-row">
-                  <td class="info-label">Family Name:</td>
-                  <td>${studentData.lastName}</td>
-                  <td class="info-label">First Name:</td>
-                  <td>${studentData.firstName}</td>
-                  <td class="info-label">Middle Name:</td>
-                  <td>${studentData.middleName || ''}</td>
+              </thead>
+              <tbody>
+                ${subject.terms.firstTerm.map(course => `
+                  <tr>
+                    <td>${course.subjectCode}</td>
+                    <td>${course.description}</td>
+                    <td>${course.lec}</td>
+                    <td>${course.lab}</td>
+                    <td>${course.units}</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            <div class="total-units">
+              Total Units: ${subject.terms.firstTerm.reduce((sum, course) => sum + (parseFloat(course.units) || 0, 0))}
+            </div>
+          ` : ''}
+          
+          ${subject.terms.secondTerm.length > 0 ? `
+            <div class="term-title">SECOND TERM</div>
+            <table class="subject-table">
+              <thead>
+                <tr>
+                  <th style="width: 12%">Code</th>
+                  <th style="width: 35%">Description</th>
+                  <th style="width: 5%">Lec</th>
+                  <th style="width: 5%">Lab</th>
+                  <th style="width: 5%">Units</th>
+                  <th style="width: 10%">Days</th>
+                  <th style="width: 15%">Time</th>
+                  <th style="width: 13%">Room No.</th>
                 </tr>
-                <tr class="student-info-row">
-                  <td class="info-label">Course:</td>
-                  <td>${studentData.enrollment?.course || 'Not enrolled'}</td>
-                  <td class="info-label">Year Level:</td>
-                  <td>${studentData.enrollment?.yearLevel || 'Not enrolled'}</td>
-                  <td class="info-label">Semester:</td>
-                  <td>${studentData.enrollment?.semester || 'Not enrolled'}</td>
+              </thead>
+              <tbody>
+                ${subject.terms.secondTerm.map(course => `
+                  <tr>
+                    <td>${course.subjectCode}</td>
+                    <td>${course.description}</td>
+                    <td>${course.lec}</td>
+                    <td>${course.lab}</td>
+                    <td>${course.units}</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            <div class="total-units">
+              Total Units: ${subject.terms.secondTerm.reduce((sum, course) => sum + (parseFloat(course.units) || 0, 0))}
+            </div>
+          ` : ''}
+          
+          ${studentData.enrollment?.semester === 'Summer' ? `
+            <div class="term-title">SUMMER</div>
+            <table class="subject-table">
+              <thead>
+                <tr>
+                  <th style="width: 12%">Code</th>
+                  <th style="width: 35%">Description</th>
+                  <th style="width: 5%">Lec</th>
+                  <th style="width: 5%">Lab</th>
+                  <th style="width: 5%">Units</th>
+                  <th style="width: 10%">Days</th>
+                  <th style="width: 15%">Time</th>
+                  <th style="width: 13%">Room No.</th>
                 </tr>
-              </table>
-              
-              <div class="subjects-title">ENROLLED SUBJECTS</div>
-              
-              ${subjects.map(subject => `
-                <div>
-                  ${subject.terms.firstTerm.length > 0 ? `
-                    <div class="term-title">FIRST TERM</div>
-                    <table class="subject-table">
-                      <thead>
-                        <tr>
-                          <th>Code</th>
-                          <th>Description</th>
-                          <th>Lec</th>
-                          <th>Lab</th>
-                          <th>Units</th>
-                          <th>Days</th>
-                          <th>Time</th>
-                          <th>Room No.</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        ${subject.terms.firstTerm.map(course => `
-                          <tr>
-                            <td>${course.subjectCode}</td>
-                            <td>${course.description}</td>
-                            <td>${course.lec}</td>
-                            <td>${course.lab}</td>
-                            <td>${course.units}</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                          </tr>
-                        `).join('')}
-                      </tbody>
-                    </table>
-                    <div class="total-units">
-                      Total Units: ${subject.terms.firstTerm.reduce((sum, course) => sum + (parseFloat(course.units) || 0, 0))}
-                    </div>
-                  ` : ''}
-                  
-                  ${subject.terms.secondTerm.length > 0 ? `
-                    <div class="term-title">SECOND TERM</div>
-                    <table class="subject-table">
-                      <thead>
-                        <tr>
-                          <th>Code</th>
-                          <th>Description</th>
-                          <th>Lec</th>
-                          <th>Lab</th>
-                          <th>Units</th>
-                          <th>Days</th>
-                          <th>Time</th>
-                          <th>Room No.</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        ${subject.terms.secondTerm.map(course => `
-                          <tr>
-                            <td>${course.subjectCode}</td>
-                            <td>${course.description}</td>
-                            <td>${course.lec}</td>
-                            <td>${course.lab}</td>
-                            <td>${course.units}</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                          </tr>
-                        `).join('')}
-                      </tbody>
-                    </table>
-                    <div class="total-units">
-                      Total Units: ${subject.terms.secondTerm.reduce((sum, course) => sum + (parseFloat(course.units) || 0, 0))}
-                    </div>
-                  ` : ''}
-                  
-                  ${studentData.enrollment?.semester === 'Summer' ? `
-                    <div class="term-title">SUMMER</div>
-                    <table class="subject-table">
-                      <thead>
-                        <tr>
-                          <th>Code</th>
-                          <th>Description</th>
-                          <th>Lec</th>
-                          <th>Lab</th>
-                          <th>Units</th>
-                          <th>Days</th>
-                          <th>Time</th>
-                          <th>Room No.</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        ${subject.terms.firstTerm.map(course => `
-                          <tr>
-                            <td>${course.subjectCode}</td>
-                            <td>${course.description}</td>
-                            <td>${course.lec}</td>
-                            <td>${course.lab}</td>
-                            <td>${course.units}</td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                          </tr>
-                        `).join('')}
-                      </tbody>
-                    </table>
-                    <div class="total-units">
-                      Total Units: ${subject.terms.firstTerm.reduce((sum, course) => sum + (parseFloat(course.units) || 0, 0))}
-                    </div>
-                  ` : ''}
-                </div>
-              `).join('')}
-              
-              <div class="footer">
-                <div class="footer-section">
-                  <div class="footer-label">Confirmed By:</div>
-                  <div>Student's Signature / Date:</div>
-                  <div class="footer-line"></div>
-                </div>
-                <div class="footer-section">
-                  <div class="footer-label">Approved By:</div>
-                  <div>Program Head Dean of College / Date:</div>
-                  <div class="footer-line"></div>
-                </div>
-                <div class="footer-section">
-                  <div class="footer-label">Assisted By:</div>
-                  <div>Cashier / Date</div>
-                  <div class="footer-line"></div>
-                </div>
-                <div class="footer-section">
-                  <div class="footer-label">Copy Received By:</div>
-                  <div>Registrar / Date</div>
-                  <div class="footer-line"></div>
-                </div>
-              </div>
-              
-            </body>
-          </html>
-        `);
+              </thead>
+              <tbody>
+                ${subject.terms.firstTerm.map(course => `
+                  <tr>
+                    <td>${course.subjectCode}</td>
+                    <td>${course.description}</td>
+                    <td>${course.lec}</td>
+                    <td>${course.lab}</td>
+                    <td>${course.units}</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            <div class="total-units">
+              Total Units: ${subject.terms.firstTerm.reduce((sum, course) => sum + (parseFloat(course.units) || 0, 0))}
+            </div>
+          ` : ''}
+        </div>
+      `).join('')}
+      
+      <div class="footer">
+        <div class="footer-section">
+          <div class="footer-label">Confirmed By:</div>
+          <div>Student's Signature / Date:</div>
+          <div class="footer-line"></div>
+        </div>
+        <div class="footer-section">
+          <div class="footer-label">Approved By:</div>
+          <div>Program Head Dean of College / Date:</div>
+          <div class="footer-line"></div>
+        </div>
+        <div class="footer-section">
+          <div class="footer-label">Assisted By:</div>
+          <div>Cashier / Date</div>
+          <div class="footer-line"></div>
+        </div>
+        <div class="footer-section">
+          <div class="footer-label">Copy Received By:</div>
+          <div>Registrar / Date</div>
+          <div class="footer-line"></div>
+        </div>
+      </div>
+    </body>
+  </html>
+`);
 
     printWindow.document.close();
     setTimeout(() => {
