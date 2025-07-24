@@ -8,7 +8,7 @@ import {
 } from 'react-icons/fa';
 import { createAuthUser, createUserDocument } from '../../lib/firebase/auth';
 import { uploadToCloudinary } from '../../lib/firebase/storage';
-import './createUserModal.css';
+import styles from './CreateUserModal.module.css';
 
 const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
   const [formData, setFormData] = useState({
@@ -52,7 +52,7 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
         return;
       }
 
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      if (file.size > 5 * 1024 * 1024) {
         setError('Image size should be less than 5MB');
         return;
       }
@@ -175,35 +175,38 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-container">
-        <div className="modal-header">
+    <div className={styles.modalOverlay}>
+      <div className={styles.modalContainer}>
+        <div className={styles.modalHeader}>
           <h3>Create New User</h3>
-          <button className="close-btn" onClick={onClose} disabled={isSubmitting}>
+          <button 
+            className={styles.closeBtn} 
+            onClick={onClose} 
+            disabled={isSubmitting}
+          >
             <FaTimes />
           </button>
         </div>
 
-        {error && <div className="error-message">{error}</div>}
+        {error && <div className={styles.errorMessage}>{error}</div>}
 
         <form onSubmit={handleSubmit}>
-          {/* Profile Image Upload */}
-          <div className="profile-upload-container">
-            <div className="profile-image-preview">
+          <div className={styles.profileUploadContainer}>
+            <div className={styles.profileImagePreview}>
               {previewImage ? (
                 <img
                   src={previewImage}
                   alt="Profile Preview"
-                  className="profile-preview"
+                  className={styles.profilePreview}
                 />
               ) : (
-                <FaUserCircle className="default-profile-icon" />
+                <FaUserCircle className={styles.defaultProfileIcon} />
               )}
             </div>
-            <div className="upload-controls">
+            <div className={styles.uploadControls}>
               <button
                 type="button"
-                className="upload-btn"
+                className={styles.uploadBtn}
                 onClick={() => fileInputRef.current.click()}
                 disabled={isSubmitting}
               >
@@ -220,7 +223,7 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
               {previewImage && (
                 <button
                   type="button"
-                  className="remove-btn"
+                  className={styles.removeBtn}
                   onClick={() => {
                     setPreviewImage(null);
                     setFormData(prev => ({ ...prev, profile: null }));
@@ -233,9 +236,8 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
             </div>
           </div>
 
-          {/* Name Fields */}
-          <div className="form-row">
-            <div className="form-group">
+          <div className={styles.formRow}>
+            <div className={styles.formGroup}>
               <label>First Name *</label>
               <input
                 type="text"
@@ -246,7 +248,7 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
                 disabled={isSubmitting}
               />
             </div>
-            <div className="form-group">
+            <div className={styles.formGroup}>
               <label>Middle Name</label>
               <input
                 type="text"
@@ -256,7 +258,10 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
                 disabled={isSubmitting}
               />
             </div>
-            <div className="form-group">
+          </div>
+
+          <div className={styles.formRow}>
+            <div className={styles.formGroup}>
               <label>Last Name *</label>
               <input
                 type="text"
@@ -267,24 +272,21 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
                 disabled={isSubmitting}
               />
             </div>
+            <div className={styles.formGroup}>
+              <label>Email *</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                disabled={isSubmitting}
+              />
+            </div>
           </div>
 
-          {/* Email */}
-          <div className="form-group">
-            <label>Email *</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              disabled={isSubmitting}
-            />
-          </div>
-
-          {/* Role and Status */}
-          <div className="form-row">
-            <div className="form-group">
+          <div className={styles.formRow}>
+            <div className={styles.formGroup}>
               <label>Role *</label>
               <select
                 name="role"
@@ -298,7 +300,7 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
                 <option value="student">Student</option>
               </select>
             </div>
-            <div className="form-group">
+            <div className={styles.formGroup}>
               <label>Status *</label>
               <select
                 name="status"
@@ -313,9 +315,8 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
             </div>
           </div>
 
-          {/* Password Fields */}
-          <div className="form-row">
-            <div className="form-group">
+          <div className={styles.formRow}>
+            <div className={styles.formGroup}>
               <label>Password *</label>
               <input
                 type="password"
@@ -328,7 +329,7 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
                 disabled={isSubmitting}
               />
             </div>
-            <div className="form-group">
+            <div className={styles.formGroup}>
               <label>Confirm Password *</label>
               <input
                 type="password"
@@ -340,39 +341,39 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
                 disabled={isSubmitting}
               />
               {passwordError && (
-                <div className="error-message">{passwordError}</div>
+                <div className={styles.errorMessage}>{passwordError}</div>
               )}
             </div>
           </div>
 
-          {/* Permissions */}
-          <div className="form-group">
+          <div className={styles.formGroup}>
             <label>Menu Permissions</label>
-            <div className="permissions-grid">
+            <div className={styles.permissionsGrid}>
               {permissionOptions.map(({ key, label, icon }) => (
                 <label
                   key={key}
-                  className={`permission-item ${formData.permissions.includes(key) ? 'selected' : ''}`}
+                  className={`${styles.permissionItem} ${
+                    formData.permissions.includes(key) ? styles.selected : ''
+                  }`}
                 >
                   <input
                     type="checkbox"
                     checked={formData.permissions.includes(key)}
                     onChange={() => handlePermissionChange(key)}
-                    className="permission-checkbox"
+                    className={styles.permissionCheckbox}
                     disabled={isSubmitting}
                   />
-                  <span className="permission-icon">{icon}</span>
-                  <span className="permission-label">{label}</span>
+                  <span className={styles.permissionIcon}>{icon}</span>
+                  <span className={styles.permissionLabel}>{label}</span>
                 </label>
               ))}
             </div>
           </div>
 
-          {/* Form Actions */}
-          <div className="modal-actions">
+          <div className={styles.modalActions}>
             <button
               type="button"
-              className="cancel-btn"
+              className={styles.cancelBtn}
               onClick={onClose}
               disabled={isSubmitting}
             >
@@ -380,7 +381,7 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
             </button>
             <button
               type="submit"
-              className="submit-btn"
+              className={styles.submitBtn}
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Creating...' : 'Create User'}

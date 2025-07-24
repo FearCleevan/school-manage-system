@@ -6,7 +6,7 @@ import {
   FaChartLine, FaCalendarCheck, FaBell,
   FaShieldAlt, FaCog
 } from 'react-icons/fa';
-import './editUserModal.css';
+import styles from './EditUserModal.module.css';
 
 const EditUserModal = ({ isOpen, onClose, user, onSave }) => {
   const [formData, setFormData] = useState({
@@ -97,7 +97,6 @@ const EditUserModal = ({ isOpen, onClose, user, onSave }) => {
     setError('');
 
     try {
-      // Validate required fields
       if (!formData.firstName || !formData.lastName) {
         throw new Error('First name and last name are required');
       }
@@ -106,7 +105,6 @@ const EditUserModal = ({ isOpen, onClose, user, onSave }) => {
         throw new Error('At least one permission must be selected');
       }
 
-      // Prepare user data for saving
       const userToSave = {
         id: formData.id,
         firstName: formData.firstName,
@@ -116,12 +114,9 @@ const EditUserModal = ({ isOpen, onClose, user, onSave }) => {
         permissions: formData.permissions
       };
 
-      // Handle profile image
       if (typeof formData.profile === 'object') {
-        // New image file was uploaded
         userToSave.profileImageFile = formData.profile;
       } else if (formData.profile) {
-        // Existing image URL
         userToSave.photoURL = formData.profile;
       }
 
@@ -137,35 +132,38 @@ const EditUserModal = ({ isOpen, onClose, user, onSave }) => {
   if (!isOpen || !user) return null;
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-container">
-        <div className="modal-header">
+    <div className={styles.modalOverlay}>
+      <div className={styles.modalContainer}>
+        <div className={styles.modalHeader}>
           <h3>Edit User Profile</h3>
-          <button className="close-btn" onClick={onClose} disabled={isSubmitting}>
+          <button
+            className={styles.closeBtn}
+            onClick={onClose}
+            disabled={isSubmitting}
+          >
             <FaTimes />
           </button>
         </div>
 
-        {error && <div className="error-message">{error}</div>}
+        {error && <div className={styles.errorMessage}>{error}</div>}
 
         <form onSubmit={handleSubmit}>
-          {/* Profile Image Upload */}
-          <div className="profile-upload-container">
-            <div className="profile-image-preview">
+          <div className={styles.profileUploadContainer}>
+            <div className={styles.profileImagePreview}>
               {previewImage ? (
                 <img
                   src={previewImage}
                   alt="Profile Preview"
-                  className="profile-preview"
+                  className={styles.profilePreview}
                 />
               ) : (
-                <FaUserCircle className="default-profile-icon" />
+                <FaUserCircle className={styles.defaultProfileIcon} />
               )}
             </div>
-            <div className="upload-controls">
+            <div className={styles.uploadControls}>
               <button
                 type="button"
-                className="upload-btn"
+                className={styles.uploadBtn}
                 onClick={() => fileInputRef.current.click()}
                 disabled={isSubmitting}
               >
@@ -182,7 +180,7 @@ const EditUserModal = ({ isOpen, onClose, user, onSave }) => {
               {previewImage && (
                 <button
                   type="button"
-                  className="remove-btn"
+                  className={styles.removeBtn}
                   onClick={() => {
                     setPreviewImage(null);
                     setFormData(prev => ({ ...prev, profile: null }));
@@ -195,9 +193,8 @@ const EditUserModal = ({ isOpen, onClose, user, onSave }) => {
             </div>
           </div>
 
-          {/* Name Fields */}
-          <div className="form-row">
-            <div className="form-group">
+          <div className={styles.formRow}>
+            <div className={styles.formGroup}>
               <label>First Name *</label>
               <input
                 type="text"
@@ -208,7 +205,7 @@ const EditUserModal = ({ isOpen, onClose, user, onSave }) => {
                 disabled={isSubmitting}
               />
             </div>
-            <div className="form-group">
+            <div className={styles.formGroup}>
               <label>Middle Name</label>
               <input
                 type="text"
@@ -218,7 +215,10 @@ const EditUserModal = ({ isOpen, onClose, user, onSave }) => {
                 disabled={isSubmitting}
               />
             </div>
-            <div className="form-group">
+          </div>
+
+          <div className={styles.formRow}>
+            <div className={styles.formGroup}>
               <label>Last Name *</label>
               <input
                 type="text"
@@ -229,10 +229,22 @@ const EditUserModal = ({ isOpen, onClose, user, onSave }) => {
                 disabled={isSubmitting}
               />
             </div>
+            <div className={styles.formGroup}>
+              <label>Status *</label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                required
+                disabled={isSubmitting}
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
           </div>
 
-          {/* Email (disabled) */}
-          <div className="form-group">
+          <div className={styles.formGroup}>
             <label>Email</label>
             <input
               type="email"
@@ -240,53 +252,37 @@ const EditUserModal = ({ isOpen, onClose, user, onSave }) => {
               value={formData.email}
               onChange={handleChange}
               disabled
-              className="disabled-input"
+              className={styles.disabledInput}
             />
           </div>
 
-          {/* Status */}
-          <div className="form-group">
-            <label>Status *</label>
-            <select
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-              required
-              disabled={isSubmitting}
-            >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-          </div>
-
-          {/* Permissions */}
-          <div className="form-group">
+          <div className={styles.formGroup}>
             <label>Menu Permissions *</label>
-            <div className="permissions-grid">
+            <div className={styles.permissionsGrid}>
               {permissionOptions.map(({ key, label, icon }) => (
                 <label
                   key={key}
-                  className={`permission-item ${formData.permissions.includes(key) ? 'selected' : ''}`}
+                  className={`${styles.permissionItem} ${formData.permissions.includes(key) ? styles.selected : ''
+                    }`}
                 >
                   <input
                     type="checkbox"
                     checked={formData.permissions.includes(key)}
                     onChange={() => handlePermissionChange(key)}
-                    className="permission-checkbox"
+                    className={styles.permissionCheckbox}
                     disabled={isSubmitting}
                   />
-                  <span className="permission-icon">{icon}</span>
-                  <span className="permission-label">{label}</span>
+                  <span className={styles.permissionIcon}>{icon}</span>
+                  <span className={styles.permissionLabel}>{label}</span>
                 </label>
               ))}
             </div>
           </div>
 
-          {/* Form Actions */}
-          <div className="modal-actions">
+          <div className={styles.modalActions}>
             <button
               type="button"
-              className="cancel-btn"
+              className={styles.cancelBtn}
               onClick={onClose}
               disabled={isSubmitting}
             >
@@ -294,7 +290,7 @@ const EditUserModal = ({ isOpen, onClose, user, onSave }) => {
             </button>
             <button
               type="submit"
-              className="submit-btn"
+              className={styles.submitBtn}
               disabled={isSubmitting}
             >
               {isSubmitting ? 'Saving...' : 'Save Changes'}

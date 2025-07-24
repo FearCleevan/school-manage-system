@@ -1,0 +1,298 @@
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.3s ease;
+}
+
+.modalContainer {
+    background-color: #ffffff;
+    border-radius: 6px;
+    width: 550px;
+    height: 630px;
+    overflow-y: auto;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transform: translateY(0);
+    transition: all 0.2s ease;
+    padding: 1.5rem;
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.8rem;
+    border-bottom: 1px solid #e0e3e7;
+}
+
+.modalHeader h3 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.closeBtn {
+    background: none;
+    border: none;
+    color: #7f8c8d;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.closeBtn:hover {
+    color: #e74c3c;
+}
+
+.profileUploadContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.profileImagePreview {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background-color: #f8f9fa;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    border: 2px solid #e0e3e7;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.profilePreview {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.defaultProfileIcon {
+    font-size: 3.5rem;
+    color: #bdc3c7;
+}
+
+.uploadControls {
+    display: flex;
+    gap: 0.8rem;
+    margin-top: 0.8rem;
+}
+
+.uploadBtn {
+    padding: 0.5rem 1rem;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.2s ease;
+}
+
+.uploadBtn:hover {
+    background-color: #2980b9;
+}
+
+.removeBtn {
+    padding: 0.5rem 1rem;
+    background-color: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.removeBtn:hover {
+    background-color: #c0392b;
+}
+
+.formRow {
+    display: flex;
+    gap: 0.8rem;
+    margin-bottom: 0.8rem;
+}
+
+.formGroup {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.formGroup label {
+    margin-bottom: 0.3rem;
+    font-size: 0.8rem;
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+.formGroup input,
+.formGroup select {
+    padding: 0.6rem;
+    border: 1px solid #e0e3e7;
+    border-radius: 4px;
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.formGroup input:focus,
+.formGroup select:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+.disabledInput {
+    background-color: #f8f9fa;
+    color: #7f8c8d;
+    cursor: not-allowed;
+}
+
+.errorMessage {
+    color: #e74c3c;
+    font-size: 0.75rem;
+    margin-top: 0.2rem;
+}
+
+.permissionsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.6rem;
+    margin-top: 0.4rem;
+}
+
+.permissionItem {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.6rem;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.permissionItem:hover {
+    background-color: #e9ecef;
+}
+
+.permissionItem.selected {
+    background-color: #e1f0ff;
+    border: 1px solid #3498db;
+}
+
+.permissionCheckbox {
+    margin-right: 0.4rem;
+    cursor: pointer;
+}
+
+.permissionIcon {
+    color: #3498db;
+    font-size: 12px;
+    min-width: 16px;
+}
+
+.permissionLabel {
+    font-size: 12px;
+    color: #2c3e50;
+}
+
+.modalActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.8rem;
+    margin-top: 1.2rem;
+    padding-top: 1.2rem;
+    border-top: 1px solid #e0e3e7;
+}
+
+.cancelBtn {
+    padding: 0.6rem 1.2rem;
+    background-color: #f8f9fa;
+    color: #2c3e50;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cancelBtn:hover {
+    background-color: #e0e6ed;
+}
+
+.submitBtn {
+    padding: 0.6rem 1.2rem;
+    background-color: #2ecc71;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.submitBtn:hover {
+    background-color: #27ae60;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@media (max-width: 600px) {
+    .modalContainer {
+        width: 95%;
+        height: auto;
+        max-height: 90vh;
+        margin: 1rem;
+    }
+
+    .formRow {
+        flex-direction: column;
+    }
+
+    .permissionsGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .modalActions {
+        flex-direction: column;
+    }
+
+    .cancelBtn,
+    .submitBtn {
+        width: 100%;
+    }
+}
+
+.requiredInput {
+    padding: 20px 50px;
+    font-size: 14px;
+}
+

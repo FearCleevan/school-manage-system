@@ -6,10 +6,9 @@ import {
   FaChartLine, FaCalendarCheck, FaBell,
   FaShieldAlt, FaCog
 } from 'react-icons/fa';
-import './viewUserModal.css';
+import styles from './ViewUserModal.module.css';
 
 const ViewUserModal = ({ isOpen, onClose, user }) => {
-  // Permission options with icons matching other modals
   const permissionOptions = [
     { key: 'dashboard', label: 'Dashboard', icon: <FaHome /> },
     { key: 'manageStudent', label: 'Student Management', icon: <FaGraduationCap /> },
@@ -27,80 +26,82 @@ const ViewUserModal = ({ isOpen, onClose, user }) => {
   if (!isOpen || !user) return null;
 
   return (
-    <div className="view-modal-overlay">
-      <div className="view-modal-container">
-        <div className="view-modal-header">
-          <h3 className="view-modal-title">User Profile Details</h3>
-          <button className="view-close-btn" onClick={onClose}>
+    <div className={styles.modalOverlay}>
+      <div className={styles.modalContainer}>
+        <div className={styles.modalHeader}>
+          <h3 className={styles.modalTitle}>User Profile Details</h3>
+          <button className={styles.closeBtn} onClick={onClose}>
             <FaTimes />
           </button>
         </div>
         
-        <div className="view-user-content">
-          <div className="view-profile-section">
+        <div className={styles.userContent}>
+          <div className={styles.profileSection}>
             {user.photoURL ? (
               <img 
                 src={user.photoURL} 
                 alt="Profile" 
-                className="view-profile-image" 
+                className={styles.profileImage} 
               />
             ) : (
-              <div className="view-profile-placeholder">
+              <div className={styles.profilePlaceholder}>
                 <FaUserCircle />
               </div>
             )}
           </div>
 
-          <div className="view-details-grid">
-            <div className="view-detail-item">
-              <span className="view-detail-label">User ID:</span>
-              <span className="view-detail-value">{user.id}</span>
+          <div className={styles.detailsGrid}>
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>User ID:</span>
+              <span className={styles.detailValue}>{user.id}</span>
             </div>
-            <div className="view-detail-item">
-              <span className="view-detail-label">Full Name:</span>
-              <span className="view-detail-value">
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>Full Name:</span>
+              <span className={styles.detailValue}>
                 {user.firstName} {user.middleName} {user.lastName}
               </span>
             </div>
-            <div className="view-detail-item">
-              <span className="view-detail-label">Email:</span>
-              <span className="view-detail-value">{user.email}</span>
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>Email:</span>
+              <span className={styles.detailValue}>{user.email}</span>
             </div>
-            <div className="view-detail-item">
-              <span className="view-detail-label">Role:</span>
-              <span className="view-detail-value view-role-badge">{user.role}</span>
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>Role:</span>
+              <span className={`${styles.detailValue} ${styles.roleBadge}`}>{user.role}</span>
             </div>
-            <div className="view-detail-item">
-              <span className="view-detail-label">Status:</span>
-              <span className={`view-detail-value view-status-badge view-status-${user.status}`}>
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>Status:</span>
+              <span className={`${styles.detailValue} ${styles.statusBadge} ${
+                user.status === 'active' ? styles.statusActive : styles.statusInactive
+              }`}>
                 {user.status}
               </span>
             </div>
-            <div className="view-detail-item">
-              <span className="view-detail-label">Permissions:</span>
-              <div className="view-permissions-grid">
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>Permissions:</span>
+              <div className={styles.permissionsGrid}>
                 {permissionOptions.map(({ key, label, icon }) => (
                   user.permissions?.includes(key) && (
-                    <div key={key} className="view-permission-item" title={label}>
-                      <span className="view-permission-icon">{icon}</span>
-                      <span className="view-permission-label">{label}</span>
+                    <div key={key} className={styles.permissionItem} title={label}>
+                      <span className={styles.permissionIcon}>{icon}</span>
+                      <span className={styles.permissionLabel}>{label}</span>
                     </div>
                   )
                 ))}
                 {user.permissions?.length === 0 && (
-                  <span className="view-no-permissions">No permissions assigned</span>
+                  <span className={styles.noPermissions}>No permissions assigned</span>
                 )}
               </div>
             </div>
-            <div className="view-detail-item">
-              <span className="view-detail-label">Last Login:</span>
-              <span className="view-detail-value">{user.lastLogin || 'Never logged in'}</span>
+            <div className={styles.detailItem}>
+              <span className={styles.detailLabel}>Last Login:</span>
+              <span className={styles.detailValue}>{user.lastLogin || 'Never logged in'}</span>
             </div>
           </div>
         </div>
 
-        <div className="view-modal-footer">
-          <button className="view-close-button" onClick={onClose}>
+        <div className={styles.modalFooter}>
+          <button className={styles.closeButton} onClick={onClose}>
             Close
           </button>
         </div>

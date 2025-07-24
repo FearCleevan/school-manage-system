@@ -4,33 +4,62 @@ import {
     FaUserPlus, FaUserEdit, FaUserShield, FaSearch, FaEye,
     FaFileExport, FaFileImport, FaCalendarCheck, FaBook,
     FaChartLine, FaCog, FaHome, FaQuestionCircle, FaBell,
-    FaMoneyBillWave, FaClipboardList, FaBuilding, FaGraduationCap, FaShieldAlt
+    FaMoneyBillWave, FaClipboardList, FaBuilding, FaGraduationCap,
+    FaShieldAlt, FaTrash
 } from 'react-icons/fa';
 import { CSVLink } from 'react-csv';
 import { auth, db } from '../../lib/firebase/config';
 import { onAuthStateChanged } from 'firebase/auth';
-import { collection, query, where, doc, updateDoc, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, doc, updateDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import CreateUserModal from '../modals/CreateUserModal';
 import EditUserModal from '../modals/EditUserModal';
 import ViewUserModal from '../modals/ViewUserModal';
 import './AccountUserSettings.css';
 
+const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, user }) => {
+    if (!isOpen) return null;
+
+    return (
+        <div className="modal-overlay">
+            <div className="modal-content">
+                <h3>Confirm Deletion</h3>
+                <p>
+                    Are you sure you want to delete {user?.firstName}{" "}
+                    {user?.lastName}?
+                    <br />
+                    Email: {user?.email}
+                </p>
+                <div className="modal-actions">
+                    <button className="btn btn-cancel" onClick={onClose}>
+                        Cancel
+                    </button>
+                    <button className="btn btn-danger" onClick={onConfirm}>
+                        Delete
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const AccountUserSettings = () => {
     // State management
     const [users, setUsers] = useState([]);
     const [currentUser, setCurrentUser] = useState(null);
-    const [activeTab, setActiveTab] = useState('admin', 'teacher');
+    const [activeTab, setActiveTab] = useState('admin');
     const [searchTerm, setSearchTerm] = useState('');
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showViewModal, setShowViewModal] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [file, setFile] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [successMessage, setSuccessMessage] = useState('');
 
     // Permission icons mapping
     const permissionIcons = {
@@ -92,6 +121,7 @@ const AccountUserSettings = () => {
                         console.error("Firestore error:", error);
                         setError('Failed to load users');
                         setLoading(false);
+                        toast.error('Failed to load users');
                     }
                 );
 
@@ -100,6 +130,7 @@ const AccountUserSettings = () => {
                 console.error("Error setting up listener:", err);
                 setError('Error initializing data');
                 setLoading(false);
+                toast.error('Error initializing data');
             }
         });
 
@@ -108,10 +139,12 @@ const AccountUserSettings = () => {
 
     // Filter users based on active tab and search term
     const filteredUsers = users.filter(user =>
-        user.role === activeTab &&
-        (
-            user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
+        user.role === activeTab && (
+            !searchTerm.trim() ||
+            user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            `${user.firstName || ''} ${user.lastName || ''}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user.lastName?.toLowerCase().includes(searchTerm.toLowerCase())
         )
     );
 
@@ -123,12 +156,28 @@ const AccountUserSettings = () => {
 
     const paginate = (pageNumber) => {
         setCurrentPage(pageNumber);
-        window.scrollTo({ top: 0, behavior: 'smooth' }); // Optional: Scroll to top on page change
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleDeleteUser = async () => {
+        try {
+            if (!selectedUser?.id) {
+                throw new Error('No user selected for deletion');
+            }
+
+            await deleteDoc(doc(db, 'users', selectedUser.id));
+            setShowDeleteModal(false);
+            toast.success('User deleted successfully!');
+        } catch (error) {
+            console.error("Error deleting user:", error);
+            toast.error(`Failed to delete user: ${error.message}`);
+        }
     };
 
     // Handler functions
     const handleCreateUser = () => {
         setShowCreateModal(false);
+        toast.success('User created successfully!');
     };
 
     const handleSaveUser = async (updatedUser) => {
@@ -177,11 +226,10 @@ const AccountUserSettings = () => {
             }
 
             await updateDoc(userRef, updateData);
-            setSuccessMessage('User updated successfully!');
-            setTimeout(() => setSuccessMessage(''), 3000);
+            toast.success('User updated successfully!');
         } catch (error) {
             console.error("Detailed error:", error);
-            setError(`Update failed: ${error.message}`);
+            toast.error(`Update failed: ${error.message}`);
         }
     };
 
@@ -189,11 +237,14 @@ const AccountUserSettings = () => {
         try {
             const userRef = doc(db, 'users', userId);
             await updateDoc(userRef, { status: newStatus });
+            toast.success(`User status changed to ${newStatus}`);
         } catch (error) {
             console.error("Error updating status:", error);
-            setError('Failed to update user status');
+            toast.error('Failed to update user status');
         }
     };
+
+
 
     const handleImport = () => {
         if (!file) return;
@@ -218,9 +269,10 @@ const AccountUserSettings = () => {
                     };
                 });
                 setUsers(prev => [...prev, ...importedUsers]);
+                toast.success(`${importedUsers.length} users imported successfully`);
             } catch (err) {
                 console.error("Error parsing CSV:", err);
-                setError('Invalid CSV format');
+                toast.error('Invalid CSV format');
             } finally {
                 setFile(null);
             }
@@ -243,10 +295,12 @@ const AccountUserSettings = () => {
 
     return (
         <div className="account-user-settings">
+
+
             <h2 className="settings-header">Account & User Management</h2>
 
-            {successMessage && <div className="success-message">{successMessage}</div>}
-            {error && <div className="error-message">{error}</div>}
+            {/* {successMessage && <div className="success-message">{successMessage}</div>}
+            {error && <div className="error-message">{error}</div>} */}
 
             {/* Tab Navigation */}
             <div className="settings-tabs">
@@ -346,7 +400,7 @@ const AccountUserSettings = () => {
                 <table>
                     <thead>
                         <tr>
-                            <th>ID</th>
+                            {/* <th>ID</th> */}
                             <th>Profile</th>
                             <th>Name</th>
                             <th>Email</th>
@@ -359,7 +413,7 @@ const AccountUserSettings = () => {
                     <tbody>
                         {currentItems.map(user => (
                             <tr key={user.id}>
-                                <td>{user.id}</td>
+                                {/* <td>{user.id}</td> */}
                                 <td>
                                     <img
                                         src={user.photoURL || '/default-profile.png'}
@@ -414,6 +468,7 @@ const AccountUserSettings = () => {
                                                 setShowViewModal(true);
                                             }}
                                             className="view-btn"
+                                            title="View User"
                                         >
                                             <FaEye />
                                         </button>
@@ -423,8 +478,19 @@ const AccountUserSettings = () => {
                                                 setShowEditModal(true);
                                             }}
                                             className="edit-btn"
+                                            title="Edit User"
                                         >
                                             <FaUserEdit />
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setSelectedUser(user);
+                                                setShowDeleteModal(true);
+                                            }}
+                                            className="delete-btn"
+                                            title="Delete User"
+                                        >
+                                            <FaTrash />
                                         </button>
                                     </div>
                                 </td>
@@ -502,23 +568,35 @@ const AccountUserSettings = () => {
                     </div>
                 </div>
             )}
+
             {/* Modals */}
             <CreateUserModal
                 isOpen={showCreateModal}
                 onClose={() => setShowCreateModal(false)}
                 onCreate={handleCreateUser}
             />
+
             <EditUserModal
                 isOpen={showEditModal}
                 onClose={() => setShowEditModal(false)}
                 user={selectedUser}
                 onSave={handleSaveUser}
             />
+
             <ViewUserModal
                 isOpen={showViewModal}
                 onClose={() => setShowViewModal(false)}
                 user={selectedUser}
             />
+
+            <DeleteConfirmationModal
+                isOpen={showDeleteModal}
+                onClose={() => setShowDeleteModal(false)}
+                onConfirm={handleDeleteUser}
+                user={selectedUser}
+            />
+
+            <ToastContainer position="top-right" autoClose={5000} />
         </div>
     );
 };

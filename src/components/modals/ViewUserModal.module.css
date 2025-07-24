@@ -1,0 +1,250 @@
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    animation: fadeIn 0.3s ease;
+}
+
+.modalContainer {
+    background-color: white;
+    border-radius: 6px;
+    width: 550px;
+    height: 630px;
+    overflow-y: auto;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s ease;
+}
+
+.modalContainer:hover {
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.modalTitle {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.3rem;
+    font-weight: 600;
+}
+
+.closeBtn {
+    background: none;
+    border: none;
+    color: #95a5a6;
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.closeBtn:hover {
+    color: #e74c3c;
+    transform: rotate(90deg);
+}
+
+.profileSection {
+    display: flex;
+    justify-content: center;
+    padding: 1.5rem 1.5rem 1rem;
+}
+
+.profileImage {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid white;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.profilePlaceholder {
+    width: 120px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: #bdc3c7;
+    font-size: 4rem;
+}
+
+.detailsGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    padding: 0 1.5rem 1.5rem;
+}
+
+.detailItem {
+    display: grid;
+    grid-template-columns: 70px 1fr;
+    align-items: start;
+    gap: 1rem;
+}
+
+.detailLabel {
+    font-weight: 500;
+    color: #2c3e50;
+    font-size: 12px;
+    text-align: right;
+}
+
+.detailValue {
+    font-size: 12px;
+    color: #34495e;
+    word-break: break-word;
+}
+
+.roleBadge {
+    display: inline-block;
+    padding: 0.3rem 0.8rem;
+    background-color: #e8f4fc;
+    color: #3498db;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.statusBadge {
+    display: inline-block;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.statusActive {
+    background-color: #e8f8f0;
+    color: #2ecc71;
+}
+
+.statusInactive {
+    background-color: #fdedee;
+    color: #e74c3c;
+}
+
+.permissionsGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.6rem;
+}
+
+.permissionItem {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.8rem;
+    border-radius: 50px;
+    background-color: #e1f0ff;
+    border: 1px solid #2980b9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: all 0.2s ease;
+}
+
+.permissionItem:hover {
+    background-color: #d0e4ff;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.permissionIcon {
+    color: #2980b9;
+    font-size: 12px;
+    min-width: 20px;
+}
+
+.permissionLabel {
+    font-size: 12px;
+    color: #34495e;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.noPermissions {
+    grid-column: 1 / -1;
+    color: #95a5a6;
+    font-style: italic;
+    font-size: 12px;
+    text-align: center;
+    padding: 1rem;
+}
+
+.modalFooter {
+    display: flex;
+    justify-content: center;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #eee;
+}
+
+.closeButton {
+    padding: 0.6rem 1.5rem;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.closeButton:hover {
+    background-color: #2980b9;
+    transform: translateY(-2px);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@media (max-width: 768px) {
+    .modalContainer {
+        width: 90%;
+    }
+    
+    .detailItem {
+        grid-template-columns: 1fr;
+        gap: 0.5rem;
+    }
+    
+    .detailLabel {
+        text-align: left;
+    }
+    
+    .permissionsGrid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+}
+
+@media (max-width: 480px) {
+    .permissionsGrid {
+        grid-template-columns: 1fr;
+    }
+    
+    .profileImage,
+    .profilePlaceholder {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .profilePlaceholder {
+        font-size: 3.5rem;
+    }
+}
