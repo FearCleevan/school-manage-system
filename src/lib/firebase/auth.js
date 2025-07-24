@@ -1,5 +1,11 @@
+//src/lib/firebase/auth.js
 import { auth, db } from './config';
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { 
+  createUserWithEmailAndPassword,
+  reauthenticateWithCredential,
+  updatePassword,
+  EmailAuthProvider 
+} from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 
 export async function createAuthUser(email, password) {
@@ -31,6 +37,33 @@ export async function createUserDocument(user, additionalData = {}) {
     return userRef;
   } catch (error) {
     console.error("Error creating user document:", error);
+    throw error;
+  }
+}
+
+// src/lib/firebase/auth.js
+export async function updateUserPassword(currentUser, currentPassword, newPassword) {
+  try {
+    // Verify we have a current user
+    if (!currentUser || !currentUser.email) {
+      throw new Error('No authenticated user available');
+    }
+
+    // Create credentials with the current password
+    const credential = EmailAuthProvider.credential(
+      currentUser.email, 
+      currentPassword
+    );
+    
+    // Reauthenticate the user
+    await reauthenticateWithCredential(currentUser, credential);
+    
+    // Update the password
+    await updatePassword(currentUser, newPassword);
+    
+    return true;
+  } catch (error) {
+    console.error("Error updating password:", error);
     throw error;
   }
 }

@@ -1,3 +1,4 @@
+//src/lib/firebase/storage.js
 export async function uploadToCloudinary(file) {
   const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
   const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
