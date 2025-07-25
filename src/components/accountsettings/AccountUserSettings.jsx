@@ -16,7 +16,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import CreateUserModal from '../modals/CreateUserModal';
 import EditUserModal from '../modals/EditUserModal';
 import ViewUserModal from '../modals/ViewUserModal';
-import './AccountUserSettings.css';
+import './accountUserSettings.css';
 
 const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, user }) => {
     if (!isOpen) return null;
