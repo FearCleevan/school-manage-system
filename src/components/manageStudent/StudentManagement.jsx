@@ -31,7 +31,7 @@ import * as XLSX from "xlsx";
 import EnrollModal from "../modals/EnrollModal";
 import EditStudent from "../modals/EditStudent";
 import ExistingStudentEnrollment from "../modals/ExistingStudentEnrollment";
-import "./StudentManagement.css";
+import './StudentManagement.css';
 import ViewStudentDetails from "../modals/ViewStudentDetails";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
