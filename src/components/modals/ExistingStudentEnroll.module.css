@@ -517,3 +517,73 @@
 .deleteModalConfirm:hover {
   background-color: #d32f2f;
 }
+
+.clearCustomBtn {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-left: 10px;
+    display: flex;
+    align-items: center;
+}
+
+.clearCustomBtn:hover {
+    background-color: #d32f2f;
+}
+
+.clearCustomBtn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+.subjectActions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    align-items: center;
+}
+
+.editBtn {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.editBtn:hover {
+    background-color: #45a049;
+}
+
+.editBtn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+.clearCustomBtn {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.clearCustomBtn:hover {
+    background-color: #d32f2f;
+}
+
+.clearCustomBtn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}

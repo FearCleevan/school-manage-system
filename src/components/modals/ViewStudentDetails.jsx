@@ -23,13 +23,16 @@ const ViewStudentDetails = ({ studentId, onClose }) => {
 
                 if (docSnap.exists()) {
                     const studentData = docSnap.data();
-                    setStudent({
+                    const studentWithId = {
                         id: docSnap.id,
-                        ...studentData
-                    });
+                        ...studentData,
+                        customizedSubjects: studentData.customizedSubjects || null
+                    };
+                    setStudent(studentWithId);
 
                     if (studentData.enrollment) {
-                        await loadSubjects(studentData.enrollment);
+                        // Pass the student data to loadSubjects
+                        await loadSubjects(studentData.enrollment, studentWithId);
                     }
                 } else {
                     setError('Student not found');
@@ -47,14 +50,20 @@ const ViewStudentDetails = ({ studentId, onClose }) => {
         }
     }, [studentId]);
 
-    const loadSubjects = async (enrollment) => {
+    const loadSubjects = async (enrollment, studentData) => {
         try {
             setSubjectLoading(true);
             setSubjectError(null);
-            
-            const { course, yearLevel, semester } = enrollment;
-            console.log('Loading subjects for:', { course, yearLevel, semester });
 
+            const { course, yearLevel, semester } = enrollment;
+
+            // First check if student has customized subjects
+            if (studentData?.customizedSubjects) {
+                setSubjects(studentData.customizedSubjects);
+                return;
+            }
+
+            // If no customized subjects, load the standard subjects
             const subjectsRef = collection(db, 'subjects');
             const q = query(
                 subjectsRef,
@@ -64,7 +73,6 @@ const ViewStudentDetails = ({ studentId, onClose }) => {
             );
 
             const querySnapshot = await getDocs(q);
-            console.log('Found subjects:', querySnapshot.docs.length);
 
             if (querySnapshot.empty) {
                 setSubjectError('No subjects found for this enrollment');
@@ -211,15 +219,15 @@ const ViewStudentDetails = ({ studentId, onClose }) => {
                                 <div className={styles.sectionHeader}>
                                     <h3>Enrolled Subjects</h3>
                                     <div className={styles.exportButtons}>
-                                        {student.enrollment && (
-                                            <button 
-                                                className={styles.refreshButton}
-                                                onClick={() => loadSubjects(student.enrollment)}
-                                                disabled={subjectLoading}
-                                            >
-                                                <FaRedo /> Refresh
-                                            </button>
-                                        )}
+                                        {/* {student.enrollment && (
+                                            // <button
+                                            //     className={styles.refreshButton}
+                                            //     onClick={() => loadSubjects(student.enrollment)}
+                                            //     disabled={subjectLoading}
+                                            // >
+                                            //     <FaRedo /> Refresh
+                                            // </button>
+                                        )} */}
                                         {subjects.length > 0 && (
                                             <>
                                                 <CSVLink
@@ -253,10 +261,11 @@ const ViewStudentDetails = ({ studentId, onClose }) => {
                                         {subjects.map((subject, index) => (
                                             <div key={index} className={styles.subjectGroup}>
                                                 <h4 className={styles.subjectTitle}>
-                                                    {subject.subjectName}
+                                                    {subject.subjectName || 'Custom Subjects'}
                                                 </h4>
 
-                                                {subject.terms.firstTerm.length > 0 && (
+                                                {/* First Term */}
+                                                {subject.terms?.firstTerm?.length > 0 && (
                                                     <div className={styles.termContainer}>
                                                         <h5 className={styles.termTitle}>First Term</h5>
                                                         <table className={styles.subjectTable}>
@@ -286,7 +295,8 @@ const ViewStudentDetails = ({ studentId, onClose }) => {
                                                     </div>
                                                 )}
 
-                                                {subject.terms.secondTerm.length > 0 && (
+                                                {/* Second Term */}
+                                                {subject.terms?.secondTerm?.length > 0 && (
                                                     <div className={styles.termContainer}>
                                                         <h5 className={styles.termTitle}>Second Term</h5>
                                                         <table className={styles.subjectTable}>
@@ -320,7 +330,7 @@ const ViewStudentDetails = ({ studentId, onClose }) => {
                                     </div>
                                 ) : (
                                     <div className={styles.noSubjects}>
-                                        {student.enrollment 
+                                        {student.enrollment
                                             ? 'No subjects found for this enrollment'
                                             : 'Student is not currently enrolled'}
                                     </div>
