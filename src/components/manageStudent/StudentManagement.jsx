@@ -196,7 +196,7 @@ const StudentManagement = () => {
       const batch = writeBatch(db);
       const studentsRef = collection(db, "students");
 
-      Object.entries(studentsByDepartment).forEach(([dept, deptStudents]) => {
+      Object.entries(studentsByDepartment).forEach(([ deptStudents]) => {
         deptStudents.forEach((student) => {
           const docRef = doc(studentsRef);
           batch.set(docRef, student);
