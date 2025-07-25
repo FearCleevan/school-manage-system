@@ -120,7 +120,7 @@ const StudentManagement = () => {
 
     setImportStatus("Reading file...");
     setImportProgress(10);
-    toast.info("Starting student import...", {
+    toast.info("Starting student imports...", {
       position: "top-right",
       autoClose: 2000,
     });
