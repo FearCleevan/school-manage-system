@@ -1,526 +1,398 @@
-import React, { useState, useEffect } from 'react';
-import {
-    FaSearch, FaFileExcel, FaFilePdf, FaPrint,
-    FaEye, FaEdit, FaTrash, FaSort, FaSortUp, FaSortDown, FaPlus
-} from 'react-icons/fa';
+// src/components/subjects/Subjects.jsx
+import React, { useState } from 'react';
+import { FaGraduationCap } from 'react-icons/fa';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 import { CSVLink } from 'react-csv';
-import { collection, getDocs, query, where } from 'firebase/firestore';
-import { deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../../lib/firebase/config';
+import { collection, doc, deleteDoc, getDocs } from 'firebase/firestore';
+
 import './subjects.css';
+import DeleteConfirmationModal from './components/DeleteConfirmationModal';
+import SubjectsTable from './components/SubjectsTable';
+import TableControls from './components/TableControls';
+import { useSubjectsData } from './hooks/useSubjectsData';
+import { useSubjectsFilters } from './hooks/useSubjectsFilters';
+import { useSubjectsExports } from './hooks/useSubjectsExports';
 import AddSubject from '../modals/AddSubject';
 import ViewSubject from '../modals/ViewSubject';
 import EditSubject from '../modals/EditSubject';
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 
 const Subjects = () => {
-    // State management
-    const [subjects, setSubjects] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(10);
-    const [sortConfig, setSortConfig] = useState({ key: 'subjectId', direction: 'asc' });
-    const [showAddModal, setShowAddModal] = useState(false);
+  // State management
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [sortConfig, setSortConfig] = useState({
+    key: "subjectId",
+    direction: "asc",
+  });
+  
+  // Modals state
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [viewingSubject, setViewingSubject] = useState(null);
+  const [editingSubject, setEditingSubject] = useState(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [subjectToDelete, setSubjectToDelete] = useState(null);
 
-    const [viewingSubject, setViewingSubject] = useState(null);
-    const [showViewModal, setShowViewModal] = useState(false);
+  // Custom hooks
+  const { subjects, loading, error, setSubjects } = useSubjectsData();
+  const {
+    searchTerm,
+    setSearchTerm,
+    filters,
+    handleFilterChange,
+    availableCourses,
+    availableYearLevels,
+    availableSemesters,
+    availableStatuses,
+    resetFilters
+  } = useSubjectsFilters();
+  
+  const { exportToExcel, exportToPDF } = useSubjectsExports();
 
-    const [editingSubject, setEditingSubject] = useState(null);
-    const [showEditModal, setShowEditModal] = useState(false);
-
-    const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-    const [subjectToDelete, setSubjectToDelete] = useState(null);
-
-    const handleUpdateSubject = (updatedSubject) => {
-        setSubjects(prev =>
-            prev.map(subject =>
-                subject.id === updatedSubject.id ? updatedSubject : subject
-            )
-        );
-        toast.success('Subject updated successfully!', {
-            position: "top-right",
-            autoClose: 3000,
-        });
-    };
-
-    // Available courses and filters
-    const courses = ['All', 'BSIT', 'BSHM', 'BSBA', 'BSTM', 'BTVTeD-AT', 'BTVTeD-HVACR TECH', 'BTVTeD-FSM', 'BTVTeD-ET', 'SHS', 'JHS'];
-    const yearLevels = ['All', '1st Year', '2nd Year', '3rd Year', '4th Year', 'Grade 11', 'Grade 12'];
-    const semesters = ['All', '1st Semester', '2nd Semester', 'Summer'];
-    const statuses = ['All', 'Active', 'Inactive'];
-
-    const [filters, setFilters] = useState({
-        course: 'All',
-        yearLevel: 'All',
-        semester: 'All',
-        status: 'All'
-    });
-
-    // Fetch subjects from Firestore
-    useEffect(() => {
-        const fetchSubjects = async () => {
-            try {
-                setLoading(true);
-                const subjectsCollection = collection(db, 'subjects');
-                const querySnapshot = await getDocs(subjectsCollection);
-
-                const subjectsData = querySnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-
-                setSubjects(subjectsData);
-            } catch (err) {
-                console.error('Error fetching subjects:', err);
-                setError('Failed to load subjects. Please try again.');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchSubjects();
-    }, []);
-
-    // Sort function
-    const requestSort = (key) => {
-        let direction = 'asc';
-        if (sortConfig.key === key && sortConfig.direction === 'asc') {
-            direction = 'desc';
-        }
-        setSortConfig({ key, direction });
-    };
-
-    // Get sorted data
-    const getSortedData = () => {
-        const sortableItems = [...subjects];
-        if (sortConfig.key) {
-            sortableItems.sort((a, b) => {
-                const aValue = a[sortConfig.key] || '';
-                const bValue = b[sortConfig.key] || '';
-
-                if (aValue < bValue) {
-                    return sortConfig.direction === 'asc' ? -1 : 1;
-                }
-                if (aValue > bValue) {
-                    return sortConfig.direction === 'asc' ? 1 : -1;
-                }
-                return 0;
-            });
-        }
-        return sortableItems;
-    };
-
-    // Filter subjects
-    const filteredSubjects = getSortedData().filter(subject => {
-        const matchesSearch =
-            (subject.subjectId && subject.subjectId.toLowerCase().includes(searchTerm.toLowerCase())) ||
-            (subject.subjectName && subject.subjectName.toLowerCase().includes(searchTerm.toLowerCase())) ||
-            (subject.course && subject.course.toLowerCase().includes(searchTerm.toLowerCase()));
-
-        const matchesFilters =
-            (filters.course === 'All' || subject.course === filters.course) &&
-            (filters.yearLevel === 'All' || subject.yearLevel === filters.yearLevel) &&
-            (filters.semester === 'All' || subject.semester === filters.semester) &&
-            (filters.status === 'All' || subject.status === filters.status);
-
-        return matchesSearch && matchesFilters;
-    });
-
-    // Pagination
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const currentItems = filteredSubjects.slice(indexOfFirstItem, indexOfLastItem);
-    const totalPages = Math.ceil(filteredSubjects.length / itemsPerPage);
-
-    const paginate = (pageNumber) => setCurrentPage(pageNumber);
-
-    // Render sort icon
-    const renderSortIcon = (key) => {
-        if (sortConfig.key !== key) return <FaSort />;
-        return sortConfig.direction === 'asc' ? <FaSortUp /> : <FaSortDown />;
-    };
-
-    // Handle filter change
-    const handleFilterChange = (filterName, value) => {
-        setFilters({
-            ...filters,
-            [filterName]: value
-        });
-        setCurrentPage(1);
-    };
-
-    const handleAddSubject = (newSubject) => {
-        setSubjects(prev => [...prev, newSubject]);
-        toast.success('Subject added successfully!', {
-            position: "top-right",
-            autoClose: 3000,
-        });
-    };
-
-    if (loading) {
-        return <div className="loading">Loading subjects...</div>;
+  // Sort function
+  const requestSort = (key) => {
+    let direction = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
     }
+    setSortConfig({ key, direction });
+    setCurrentPage(1);
+  };
 
-    if (error) {
-        return <div className="error">{error}</div>;
-    }
+  // Get sorted data
+  const getSortedData = () => {
+    const sortableItems = [...subjects];
+    if (sortConfig.key) {
+      sortableItems.sort((a, b) => {
+        const aValue = a[sortConfig.key] || '';
+        const bValue = b[sortConfig.key] || '';
 
-    const handleDeleteClick = (subject) => {
-        setSubjectToDelete(subject);
-        setDeleteModalOpen(true);
-    };
-
-    const confirmDelete = async () => {
-        if (!subjectToDelete) return;
-
-        try {
-            await deleteDoc(doc(db, 'subjects', subjectToDelete.id));
-            setSubjects(subjects.filter(subject => subject.id !== subjectToDelete.id));
-            setDeleteModalOpen(false);
-            setSubjectToDelete(null);
-            toast.success('Subject deleted successfully!', {
-                position: "top-right",
-                autoClose: 3000,
-            });
-        } catch (error) {
-            console.error('Error deleting subject:', error);
-            setError('Failed to delete subject. Please try again.');
-            toast.error('Failed to delete subject!', {
-                position: "top-right",
-                autoClose: 3000,
-            });
+        if (aValue < bValue) {
+          return sortConfig.direction === "asc" ? -1 : 1;
         }
-    };
+        if (aValue > bValue) {
+          return sortConfig.direction === "asc" ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  };
 
-    const cancelDelete = () => {
-        setDeleteModalOpen(false);
-        setSubjectToDelete(null);
-    };
+  // Filter subjects
+  const filteredSubjects = getSortedData().filter(subject => {
+    const matchesSearch =
+      (subject.subjectId && subject.subjectId.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (subject.subjectName && subject.subjectName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (subject.course && subject.course.toLowerCase().includes(searchTerm.toLowerCase()));
 
-    const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, subject }) => {
-        if (!isOpen) return null;
+    const matchesFilters =
+      (filters.course === 'All' || subject.course === filters.course) &&
+      (filters.yearLevel === 'All' || subject.yearLevel === filters.yearLevel) &&
+      (filters.semester === 'All' || subject.semester === filters.semester) &&
+      (filters.status === 'All' || subject.status === filters.status);
 
-        return (
-            <div className="modal-overlay">
-                <div className="modal-content">
-                    <h3>Confirm Deletion</h3>
-                    <p>
-                        Are you sure you want to delete {subject?.subjectName}?
-                        <br />
-                        Subject ID: {subject?.subjectId}
-                    </p>
-                    <div className="modal-actions">
-                        <button className="btn-cancel" onClick={onClose}>
-                            Cancel
-                        </button>
-                        <button className="btn-danger" onClick={onConfirm}>
-                            Delete
-                        </button>
-                    </div>
-                </div>
-            </div>
-        );
-    };
+    return matchesSearch && matchesFilters;
+  });
 
-    return (
-        <div className="subjects-container">
-            <div className="subjects-management">
-                <h2 className="management-header">Subjects Management</h2>
+  // Pagination
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredSubjects.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredSubjects.length / itemsPerPage);
 
-                {/* Filters */}
-                <div className="filters-container">
-                    <div className="filter-group">
-                        <label>Course:</label>
-                        <select
-                            value={filters.course}
-                            onChange={(e) => handleFilterChange('course', e.target.value)}
-                        >
-                            {courses.map(course => (
-                                <option key={course} value={course}>{course}</option>
-                            ))}
-                        </select>
-                    </div>
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
-                    <div className="filter-group">
-                        <label>Year Level:</label>
-                        <select
-                            value={filters.yearLevel}
-                            onChange={(e) => handleFilterChange('yearLevel', e.target.value)}
-                        >
-                            {yearLevels.map(level => (
-                                <option key={level} value={level}>{level}</option>
-                            ))}
-                        </select>
-                    </div>
+  // Handle add subject
+  const handleAddSubject = (newSubject) => {
+    setSubjects(prev => [...prev, newSubject]);
+    toast.success('Subject added successfully!');
+  };
 
-                    <div className="filter-group">
-                        <label>Semester:</label>
-                        <select
-                            value={filters.semester}
-                            onChange={(e) => handleFilterChange('semester', e.target.value)}
-                        >
-                            {semesters.map(sem => (
-                                <option key={sem} value={sem}>{sem}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="filter-group">
-                        <label>Status:</label>
-                        <select
-                            value={filters.status}
-                            onChange={(e) => handleFilterChange('status', e.target.value)}
-                        >
-                            {statuses.map(status => (
-                                <option key={status} value={status}>{status}</option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-
-                {/* Table Controls */}
-                <div className="table-controls">
-                    <div className="left-controls">
-                        <div className="search-bar">
-                            <FaSearch className="search-icon" />
-                            <input
-                                type="text"
-                                placeholder="Search subjects..."
-                                value={searchTerm}
-                                onChange={(e) => {
-                                    setSearchTerm(e.target.value);
-                                    setCurrentPage(1);
-                                }}
-                            />
-                        </div>
-                        <button
-                            className="add-btn"
-                            onClick={() => {
-                                setShowAddModal(true);
-                                toast.info('Please fill out the subject details', {
-                                    position: "top-right",
-                                    autoClose: 3000,
-                                });
-                            }}
-                        >
-                            <FaPlus /> Add Subject
-                        </button>
-                    </div>
-
-                    <div className="right-controls">
-                        <div className="items-per-page">
-                            <span>Show:</span>
-                            <select
-                                value={itemsPerPage}
-                                onChange={(e) => {
-                                    setItemsPerPage(Number(e.target.value));
-                                    setCurrentPage(1);
-                                }}
-                            >
-                                {[5, 10, 20, 50].map(num => (
-                                    <option key={num} value={num}>{num}</option>
-                                ))}
-                            </select>
-                            <span>entries</span>
-                        </div>
-
-                        <div className="export-buttons">
-                            <CSVLink
-                                data={filteredSubjects}
-                                filename="subjects-list.csv"
-                                className="export-btn"
-                            >
-                                <FaFileExcel /> Excel
-                            </CSVLink>
-                            <button className="export-btn">
-                                <FaFilePdf /> PDF
-                            </button>
-                            <button className="export-btn">
-                                <FaPrint /> Print
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Subjects Table */}
-                <div className="subjects-table">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th onClick={() => requestSort('subjectId')}>
-                                    Subject ID {renderSortIcon('subjectId')}
-                                </th>
-                                <th onClick={() => requestSort('subjectName')}>
-                                    Subject Name {renderSortIcon('subjectName')}
-                                </th>
-                                <th onClick={() => requestSort('course')}>
-                                    Course {renderSortIcon('course')}
-                                </th>
-                                <th onClick={() => requestSort('yearLevel')}>
-                                    Year Level {renderSortIcon('yearLevel')}
-                                </th>
-                                <th onClick={() => requestSort('semester')}>
-                                    Semester {renderSortIcon('semester')}
-                                </th>
-                                <th onClick={() => requestSort('status')}>
-                                    Status {renderSortIcon('status')}
-                                </th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {currentItems.length > 0 ? (
-                                currentItems.map(subject => (
-                                    <tr key={subject.id}>
-                                        <td>{subject.subjectId}</td>
-                                        <td>{subject.subjectName}</td>
-                                        <td>{subject.course}</td>
-                                        <td>{subject.yearLevel}</td>
-                                        <td>{subject.semester}</td>
-                                        <td>
-                                            <span className={`status-badge ${subject.status.toLowerCase()}`}>
-                                                {subject.status}
-                                            </span>
-                                        </td>
-                                        <td>
-                                            <div className="action-buttons">
-                                                <button
-                                                    className="view-btn"
-                                                    title="View"
-                                                    onClick={() => {
-                                                        setViewingSubject(subject);
-                                                        setShowViewModal(true);
-                                                    }}
-                                                >
-                                                    <FaEye />
-                                                </button>
-                                                <button
-                                                    className="edit-btn"
-                                                    title="Edit"
-                                                    onClick={() => {
-                                                        setEditingSubject(subject);
-                                                        setShowEditModal(true);
-                                                    }}
-                                                >
-                                                    <FaEdit />
-                                                </button>
-                                                <button
-                                                    className="delete-btn"
-                                                    title="Delete"
-                                                    onClick={() => handleDeleteClick(subject)}
-                                                >
-                                                    <FaTrash />
-                                                </button>
-
-                                                {/* Add this near your other modals */}
-                                                <DeleteConfirmationModal
-                                                    isOpen={deleteModalOpen}
-                                                    onClose={cancelDelete}
-                                                    onConfirm={confirmDelete}
-                                                    subject={subjectToDelete}
-                                                />
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
-                            ) : (
-                                <tr>
-                                    <td colSpan="7" className="no-data">
-                                        {subjects.length === 0 ? 'No subjects found in database' : 'No subjects match your criteria'}
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                    <div className="pagination-controls">
-                        <div className="pagination-info">
-                            Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredSubjects.length)} of {filteredSubjects.length} entries
-                        </div>
-                        <div className="pagination-buttons">
-                            <button
-                                onClick={() => paginate(1)}
-                                disabled={currentPage === 1}
-                                className="pagination-btn"
-                            >
-                                First
-                            </button>
-                            <button
-                                onClick={() => paginate(Math.max(1, currentPage - 1))}
-                                disabled={currentPage === 1}
-                                className="pagination-btn"
-                            >
-                                Previous
-                            </button>
-
-                            {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
-                                let pageNum;
-                                if (totalPages <= 5) {
-                                    pageNum = i + 1;
-                                } else if (currentPage <= 3) {
-                                    pageNum = i + 1;
-                                } else if (currentPage >= totalPages - 2) {
-                                    pageNum = totalPages - 4 + i;
-                                } else {
-                                    pageNum = currentPage - 2 + i;
-                                }
-
-                                return (
-                                    <button
-                                        key={pageNum}
-                                        onClick={() => paginate(pageNum)}
-                                        className={`pagination-btn ${currentPage === pageNum ? 'active' : ''}`}
-                                    >
-                                        {pageNum}
-                                    </button>
-                                );
-                            })}
-
-                            <button
-                                onClick={() => paginate(Math.min(totalPages, currentPage + 1))}
-                                disabled={currentPage === totalPages}
-                                className="pagination-btn"
-                            >
-                                Next
-                            </button>
-                            <button
-                                onClick={() => paginate(totalPages)}
-                                disabled={currentPage === totalPages}
-                                className="pagination-btn"
-                            >
-                                Last
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            <AddSubject
-                show={showAddModal}
-                onClose={() => setShowAddModal(false)}
-                onAddSubject={handleAddSubject}
-            />
-
-            <ViewSubject
-                show={showViewModal}
-                onClose={() => setShowViewModal(false)}
-                subject={viewingSubject}
-            />
-
-            <EditSubject
-                show={showEditModal}
-                onClose={() => setShowEditModal(false)}
-                subject={editingSubject}
-                onUpdateSubject={handleUpdateSubject}
-            />
-        </div>
+  // Handle update subject
+  const handleUpdateSubject = (updatedSubject) => {
+    setSubjects(prev =>
+      prev.map(subject =>
+        subject.id === updatedSubject.id ? updatedSubject : subject
+      )
     );
+    toast.success('Subject updated successfully!');
+  };
+
+  // Delete functions
+  const handleDeleteClick = (subject) => {
+    setSubjectToDelete(subject);
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!subjectToDelete) return;
+
+    try {
+      await deleteDoc(doc(db, 'subjects', subjectToDelete.id));
+      setSubjects(subjects.filter(subject => subject.id !== subjectToDelete.id));
+      setDeleteModalOpen(false);
+      setSubjectToDelete(null);
+      toast.success('Subject deleted successfully!');
+    } catch (error) {
+      console.error('Error deleting subject:', error);
+      toast.error('Failed to delete subject!');
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeleteModalOpen(false);
+    setSubjectToDelete(null);
+  };
+
+  // Prepare data for export
+  const prepareExportData = () => {
+    return filteredSubjects.map(subject => ({
+      subjectId: subject.subjectId,
+      subjectName: subject.subjectName,
+      course: subject.course,
+      yearLevel: subject.yearLevel,
+      semester: subject.semester,
+      status: subject.status,
+      description: subject.description || '',
+      units: subject.units || '',
+      prerequisites: subject.prerequisites?.join(', ') || '',
+    }));
+  };
+
+  // Handle exports
+  const handleExportExcel = () => {
+    exportToExcel(prepareExportData());
+  };
+
+  const handleExportPDF = () => {
+    exportToPDF(prepareExportData(), {
+      courseFilter: filters.course,
+      yearLevelFilter: filters.yearLevel,
+      semesterFilter: filters.semester,
+      searchTerm
+    });
+  };
+
+  // Print function
+  const printTable = () => {
+    const printWindow = window.open("", "_blank");
+    const data = prepareExportData();
+
+    const html = `
+      <html>
+        <head>
+          <title>Subjects List</title>
+          <style>
+            body { font-family: Arial, sans-serif; }
+            h1 { color: #333; }
+            .print-info { margin-bottom: 20px; font-size: 14px; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; }
+            .status-active { color: green; }
+            .status-inactive { color: red; }
+          </style>
+        </head>
+        <body>
+          <h1>Subjects List</h1>
+          <div class="print-info">
+            Generated on: ${new Date().toLocaleString()}<br>
+            ${filteredSubjects.length} records found<br>
+            ${filters.course !== 'All' ? `Course: ${filters.course}<br>` : ""}
+            ${filters.yearLevel !== 'All' ? `Year Level: ${filters.yearLevel}<br>` : ""}
+            ${filters.semester !== 'All' ? `Semester: ${filters.semester}<br>` : ""}
+            ${searchTerm ? `Search Term: "${searchTerm}"<br>` : ""}
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Course</th>
+                <th>Year Level</th>
+                <th>Semester</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${data.map(subject => `
+                <tr>
+                  <td>${subject.subjectId}</td>
+                  <td>${subject.subjectName}</td>
+                  <td>${subject.course}</td>
+                  <td>${subject.yearLevel}</td>
+                  <td>${subject.semester}</td>
+                  <td class="status-${subject.status.toLowerCase()}">${subject.status}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 500);
+  };
+
+  return (
+    <div className="subjects-container">
+      <div className="subjects-management">
+        <h2 className="management-header">
+          <FaGraduationCap /> Subjects Management
+        </h2>
+
+        {error && (
+          <div className="error-message">
+            <p>{error}</p>
+          </div>
+        )}
+
+        {/* Table Controls */}
+        <TableControls
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          itemsPerPage={itemsPerPage}
+          setItemsPerPage={setItemsPerPage}
+          filters={filters}
+          handleFilterChange={handleFilterChange}
+          availableCourses={availableCourses}
+          availableYearLevels={availableYearLevels}
+          availableSemesters={availableSemesters}
+          availableStatuses={availableStatuses}
+          resetFilters={resetFilters}
+          onAddSubject={() => setShowAddModal(true)}
+          onExportExcel={handleExportExcel}
+          onExportPDF={handleExportPDF}
+          onPrint={printTable}
+          prepareExportData={prepareExportData}
+          hasFilters={
+            filters.course !== 'All' || 
+            filters.yearLevel !== 'All' || 
+            filters.semester !== 'All' || 
+            filters.status !== 'All' || 
+            searchTerm
+          }
+        />
+
+        {/* Subjects Table */}
+        <SubjectsTable
+          subjects={currentItems}
+          loading={loading}
+          sortConfig={sortConfig}
+          requestSort={requestSort}
+          onViewSubject={(subject) => setViewingSubject(subject)}
+          onEditSubject={(subject) => {
+            setEditingSubject(subject);
+            setShowEditModal(true);
+          }}
+          onDeleteSubject={handleDeleteClick}
+        />
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="pagination-controls">
+            <div className="pagination-info">
+              Showing {indexOfFirstItem + 1} to{" "}
+              {Math.min(indexOfLastItem, filteredSubjects.length)} of{" "}
+              {filteredSubjects.length} entries
+            </div>
+            <div className="pagination-buttons">
+              <button
+                onClick={() => paginate(1)}
+                disabled={currentPage === 1}
+                className="pagination-btn"
+              >
+                First
+              </button>
+              <button
+                onClick={() => paginate(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="pagination-btn"
+              >
+                Previous
+              </button>
+
+              {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => paginate(pageNum)}
+                    className={`pagination-btn ${currentPage === pageNum ? "active" : ""}`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+
+              <button
+                onClick={() => paginate(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                className="pagination-btn"
+              >
+                Next
+              </button>
+              <button
+                onClick={() => paginate(totalPages)}
+                disabled={currentPage === totalPages}
+                className="pagination-btn"
+              >
+                Last
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Modals */}
+        <DeleteConfirmationModal
+          isOpen={deleteModalOpen}
+          onClose={cancelDelete}
+          onConfirm={confirmDelete}
+          subject={subjectToDelete}
+        />
+
+        <AddSubject
+          show={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          onAddSubject={handleAddSubject}
+        />
+
+        <ViewSubject
+          show={viewingSubject !== null}
+          onClose={() => setViewingSubject(null)}
+          subject={viewingSubject}
+        />
+
+        <EditSubject
+          show={editingSubject !== null}
+          onClose={() => setEditingSubject(null)}
+          subject={editingSubject}
+          onUpdateSubject={handleUpdateSubject}
+        />
+      </div>
+    </div>
+  );
 };
 
 export default Subjects;

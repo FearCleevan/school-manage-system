@@ -1,154 +1,48 @@
+// src/components/accountsettings/AccountUserSettings.jsx
 import React, { useState, useEffect } from 'react';
-import { v4 as uuidv4 } from 'uuid';
-import {
-    FaUserPlus, FaUserEdit, FaUserShield, FaSearch, FaEye,
-    FaFileExport, FaFileImport, FaCalendarCheck, FaBook,
-    FaChartLine, FaCog, FaHome, FaQuestionCircle, FaBell,
-    FaMoneyBillWave, FaClipboardList, FaBuilding, FaGraduationCap,
-    FaShieldAlt, FaTrash
-} from 'react-icons/fa';
-import { CSVLink } from 'react-csv';
+import { FaUserShield, FaUserEdit } from 'react-icons/fa';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { auth, db } from '../../lib/firebase/config';
 import { onAuthStateChanged } from 'firebase/auth';
-import { collection, query, where, doc, updateDoc, deleteDoc, onSnapshot } from 'firebase/firestore';
-import { toast, ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { collection, query, where, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { v4 as uuidv4 } from 'uuid';
+
+import './accountUserSettings.css';
+import DeleteConfirmationModal from './components/DeleteConfirmationModal';
+import UsersTable from './components/UsersTable';
+import TableControls from './components/TableControls';
+import { useUsersData } from './hooks/useUsersData';
 import CreateUserModal from '../modals/CreateUserModal';
 import EditUserModal from '../modals/EditUserModal';
 import ViewUserModal from '../modals/ViewUserModal';
-import './accountUserSettings.css';
-
-const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, user }) => {
-    if (!isOpen) return null;
-
-    return (
-        <div className="modal-overlay">
-            <div className="modal-content">
-                <h3>Confirm Deletion</h3>
-                <p>
-                    Are you sure you want to delete {user?.firstName}{" "}
-                    {user?.lastName}?
-                    <br />
-                    Email: {user?.email}
-                </p>
-                <div className="modal-actions">
-                    <button className="btn btn-cancel" onClick={onClose}>
-                        Cancel
-                    </button>
-                    <button className="btn btn-danger" onClick={onConfirm}>
-                        Delete
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
 
 const AccountUserSettings = () => {
     // State management
-    const [users, setUsers] = useState([]);
     const [currentUser, setCurrentUser] = useState(null);
     const [activeTab, setActiveTab] = useState('admin');
-    const [searchTerm, setSearchTerm] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+
+    // Modals state
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showViewModal, setShowViewModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(10);
-    const [file, setFile] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
 
-    // Permission icons mapping
-    const permissionIcons = {
-        dashboard: <FaHome />,
-        manageStudent: <FaGraduationCap />,
-        department: <FaBuilding />,
-        course: <FaBook />,
-        subjects: <FaClipboardList />,
-        payment: <FaMoneyBillWave />,
-        gradingSystem: <FaChartLine />,
-        attendance: <FaCalendarCheck />,
-        announcement: <FaBell />,
-        accountPermission: <FaShieldAlt />,
-        accountSettings: <FaCog />,
-    };
+    // Custom hooks
+    const { users, loading, error, setUsers } = useUsersData(activeTab, currentUser);
 
-    const permissionLabels = {
-        dashboard: "Dashboard",
-        manageStudent: "Student Management",
-        department: "Department",
-        course: "Course",
-        subjects: "Subjects",
-        payment: "Payment Management",
-        gradingSystem: "Grading System",
-        attendance: "Attendance",
-        announcement: "Announcement",
-        accountPermission: "Account Permission",
-        accountSettings: "Account & User Settings"
-    };
-
-    // Fetch users with real-time updates
-    useEffect(() => {
-        const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
-            setCurrentUser(user);
-            if (!user) {
-                setLoading(false);
-                setError('Authentication required');
-                return;
-            }
-
-            try {
-                // Query users based on role if not admin
-                const usersQuery = currentUser?.role === 'admin'
-                    ? query(collection(db, 'users'))
-                    : query(collection(db, 'users'), where('role', '==', activeTab));
-
-                const unsubscribeFirestore = onSnapshot(
-                    usersQuery,
-                    (snapshot) => {
-                        const usersData = snapshot.docs.map(doc => ({
-                            id: doc.id,
-                            ...doc.data()
-                        }));
-                        setUsers(usersData);
-                        setLoading(false);
-                        setError(null);
-                    },
-                    (error) => {
-                        console.error("Firestore error:", error);
-                        setError('Failed to load users');
-                        setLoading(false);
-                        toast.error('Failed to load users');
-                    }
-                );
-
-                return () => unsubscribeFirestore();
-            } catch (err) {
-                console.error("Error setting up listener:", err);
-                setError('Error initializing data');
-                setLoading(false);
-                toast.error('Error initializing data');
-            }
-        });
-
-        return () => unsubscribeAuth();
-    }, [activeTab, currentUser?.role]);
-
-    // Filter users based on active tab and search term
+    // Filter users based on search term
+    const [searchTerm, setSearchTerm] = useState('');
     const filteredUsers = users.filter(user =>
-        user.role === activeTab && (
-            !searchTerm.trim() ||
-            user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            `${user.firstName || ''} ${user.lastName || ''}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            user.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            user.lastName?.toLowerCase().includes(searchTerm.toLowerCase())
-        )
+        !searchTerm.trim() ||
+        user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        `${user.firstName || ''} ${user.lastName || ''}`.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // Pagination logic
+    // Pagination
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentItems = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
@@ -159,20 +53,13 @@ const AccountUserSettings = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const handleDeleteUser = async () => {
-        try {
-            if (!selectedUser?.id) {
-                throw new Error('No user selected for deletion');
-            }
-
-            await deleteDoc(doc(db, 'users', selectedUser.id));
-            setShowDeleteModal(false);
-            toast.success('User deleted successfully!');
-        } catch (error) {
-            console.error("Error deleting user:", error);
-            toast.error(`Failed to delete user: ${error.message}`);
-        }
-    };
+    // Handle current user authentication
+    useEffect(() => {
+        const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+            setCurrentUser(user);
+        });
+        return () => unsubscribeAuth();
+    }, []);
 
     // Handler functions
     const handleCreateUser = () => {
@@ -196,6 +83,7 @@ const AccountUserSettings = () => {
                 lastUpdated: new Date().toISOString()
             };
 
+            // Only process image if there's a new file
             if (updatedUser.profileImageFile) {
                 try {
                     const formData = new FormData();
@@ -227,9 +115,11 @@ const AccountUserSettings = () => {
 
             await updateDoc(userRef, updateData);
             toast.success('User updated successfully!');
+            return true; // Indicate success
         } catch (error) {
             console.error("Detailed error:", error);
             toast.error(`Update failed: ${error.message}`);
+            return false; // Indicate failure
         }
     };
 
@@ -244,40 +134,18 @@ const AccountUserSettings = () => {
         }
     };
 
-
-
-    const handleImport = () => {
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const content = e.target.result;
-                const lines = content.split('\n');
-                const importedUsers = lines.slice(1).map(line => {
-                    const values = line.split(',');
-                    return {
-                        id: values[0] || Math.random().toString(36).substring(2, 9),
-                        firstName: values[1] || '',
-                        lastName: values[2] || '',
-                        email: values[3] || '',
-                        role: values[4] || 'admin',
-                        status: values[5] || 'active',
-                        permissions: values[6] ? values[6].split(',') : [],
-                        lastLogin: values[7] || new Date().toISOString(),
-                        profile: values[8] || '/default-profile.png'
-                    };
-                });
-                setUsers(prev => [...prev, ...importedUsers]);
-                toast.success(`${importedUsers.length} users imported successfully`);
-            } catch (err) {
-                console.error("Error parsing CSV:", err);
-                toast.error('Invalid CSV format');
-            } finally {
-                setFile(null);
+    const handleDeleteUser = async () => {
+        try {
+            if (!selectedUser?.id) {
+                throw new Error('No user selected for deletion');
             }
-        };
-        reader.readAsText(file);
+            await deleteDoc(doc(db, 'users', selectedUser.id));
+            setShowDeleteModal(false);
+            toast.success('User deleted successfully!');
+        } catch (error) {
+            console.error("Error deleting user:", error);
+            toast.error(`Failed to delete user: ${error.message}`);
+        }
     };
 
     // Render loading or error states
@@ -295,12 +163,7 @@ const AccountUserSettings = () => {
 
     return (
         <div className="account-user-settings">
-
-
             <h2 className="settings-header">Account & User Management</h2>
-
-            {/* {successMessage && <div className="success-message">{successMessage}</div>}
-            {error && <div className="error-message">{error}</div>} */}
 
             {/* Tab Navigation */}
             <div className="settings-tabs">
@@ -319,186 +182,33 @@ const AccountUserSettings = () => {
             </div>
 
             {/* Table Controls */}
-            <div className="table-controls">
-                <div className="left-controls">
-                    <div className="search-bar">
-                        <FaSearch className="search-icon" />
-                        <input
-                            type="text"
-                            placeholder="Search users..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                    <button
-                        className="create-btn"
-                        onClick={() => setShowCreateModal(true)}
-                    >
-                        <FaUserPlus /> Create New User
-                    </button>
-                </div>
-
-                <div className="right-controls">
-                    <div className="items-per-page">
-                        <span>Show:</span>
-                        <select
-                            value={itemsPerPage}
-                            onChange={(e) => {
-                                setItemsPerPage(Number(e.target.value));
-                                setCurrentPage(1);
-                            }}
-                        >
-                            {[5, 10, 20, 50, 100].map(num => (
-                                <option key={num} value={num}>{num}</option>
-                            ))}
-                        </select>
-                        <span>entries</span>
-                    </div>
-
-                    <div className="import-export-buttons">
-                        <label className="import-btn">
-                            <FaFileImport />
-                            <span>Import</span>
-                            <input
-                                type="file"
-                                accept=".csv"
-                                onChange={(e) => setFile(e.target.files[0])}
-                                style={{ display: 'none' }}
-                            />
-                        </label>
-                        {file && (
-                            <button className="confirm-import-btn" onClick={handleImport}>
-                                Confirm Import
-                            </button>
-                        )}
-                        <CSVLink
-                            data={users.map(user => ({
-                                ...user,
-                                permissions: user.permissions?.join(', ') || ''
-                            }))}
-                            headers={[
-                                { label: "ID", key: "id" },
-                                { label: "First Name", key: "firstName" },
-                                { label: "Last Name", key: "lastName" },
-                                { label: "Email", key: "email" },
-                                { label: "Role", key: "role" },
-                                { label: "Status", key: "status" },
-                                { label: "Permissions", key: "permissions" }
-                            ]}
-                            filename="users-export.csv"
-                            className="export-btn"
-                        >
-                            <FaFileExport />
-                            <span>Export</span>
-                        </CSVLink>
-                    </div>
-                </div>
-            </div>
+            <TableControls
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                itemsPerPage={itemsPerPage}
+                setItemsPerPage={setItemsPerPage}
+                onAddUser={() => setShowCreateModal(true)}
+                users={users}
+            />
 
             {/* Users Table */}
-            <div className="users-table">
-                <table>
-                    <thead>
-                        <tr>
-                            {/* <th>ID</th> */}
-                            <th>Profile</th>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Role</th>
-                            <th>Status</th>
-                            <th>Permissions</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {currentItems.map(user => (
-                            <tr key={user.id}>
-                                {/* <td>{user.id}</td> */}
-                                <td>
-                                    <img
-                                        src={user.photoURL || '/default-profile.png'}
-                                        alt="Profile"
-                                        className="profile-image"
-                                    />
-                                </td>
-                                <td>{user.firstName} {user.middleName} {user.lastName}</td>
-                                <td>{user.email}</td>
-                                <td>{user.role}</td>
-                                <td>
-                                    <select
-                                        value={user.status || 'active'}
-                                        onChange={(e) => handleStatusChange(user.id, e.target.value)}
-                                        className="status-select"
-                                        disabled={!currentUser || currentUser.role !== 'admin'}
-                                    >
-                                        <option value="active">Active</option>
-                                        <option value="inactive">Inactive</option>
-                                    </select>
-                                </td>
-                                <td>
-                                    <div className="permission-icons-container">
-                                        {/* Split permissions into chunks of 6 */}
-                                        {user.permissions?.reduce((rows, permission, index) => {
-                                            const chunkIndex = Math.floor(index / 6);
-                                            if (!rows[chunkIndex]) {
-                                                rows[chunkIndex] = [];
-                                            }
-                                            rows[chunkIndex].push(permission);
-                                            return rows;
-                                        }, []).map((row, rowIndex) => (
-                                            <div key={rowIndex} className="permission-icons-row">
-                                                {row.map(permission => (
-                                                    <div
-                                                        key={permission}
-                                                        className="permission-icon"
-                                                        title={permissionLabels[permission] || permission}
-                                                    >
-                                                        {permissionIcons[permission] || <FaQuestionCircle />}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </td>
-                                <td>
-                                    <div className="action-buttons">
-                                        <button
-                                            onClick={() => {
-                                                setSelectedUser(user);
-                                                setShowViewModal(true);
-                                            }}
-                                            className="view-btn"
-                                            title="View User"
-                                        >
-                                            <FaEye />
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                setSelectedUser(user);
-                                                setShowEditModal(true);
-                                            }}
-                                            className="edit-btn"
-                                            title="Edit User"
-                                        >
-                                            <FaUserEdit />
-                                        </button>
-                                        <button
-                                            onClick={() => {
-                                                setSelectedUser(user);
-                                                setShowDeleteModal(true);
-                                            }}
-                                            className="delete-btn"
-                                            title="Delete User"
-                                        >
-                                            <FaTrash />
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+            <UsersTable
+                users={currentItems}
+                currentUser={currentUser}
+                onViewUser={(user) => {
+                    setSelectedUser(user);
+                    setShowViewModal(true);
+                }}
+                onEditUser={(user) => {
+                    setSelectedUser(user);
+                    setShowEditModal(true);
+                }}
+                onDeleteUser={(user) => {
+                    setSelectedUser(user);
+                    setShowDeleteModal(true);
+                }}
+                onStatusChange={handleStatusChange}
+            />
 
             {/* Pagination */}
             {totalPages > 1 && (
@@ -511,7 +221,6 @@ const AccountUserSettings = () => {
                             onClick={() => paginate(1)}
                             disabled={currentPage === 1}
                             className="pagination-btn"
-                            aria-label="First page"
                         >
                             First
                         </button>
@@ -519,7 +228,6 @@ const AccountUserSettings = () => {
                             onClick={() => paginate(Math.max(1, currentPage - 1))}
                             disabled={currentPage === 1}
                             className="pagination-btn"
-                            aria-label="Previous page"
                         >
                             Previous
                         </button>
@@ -541,8 +249,6 @@ const AccountUserSettings = () => {
                                     key={pageNum}
                                     onClick={() => paginate(pageNum)}
                                     className={`pagination-btn ${currentPage === pageNum ? 'active' : ''}`}
-                                    aria-label={`Page ${pageNum}`}
-                                    aria-current={currentPage === pageNum ? 'page' : undefined}
                                 >
                                     {pageNum}
                                 </button>
@@ -553,7 +259,6 @@ const AccountUserSettings = () => {
                             onClick={() => paginate(Math.min(totalPages, currentPage + 1))}
                             disabled={currentPage === totalPages}
                             className="pagination-btn"
-                            aria-label="Next page"
                         >
                             Next
                         </button>
@@ -561,7 +266,6 @@ const AccountUserSettings = () => {
                             onClick={() => paginate(totalPages)}
                             disabled={currentPage === totalPages}
                             className="pagination-btn"
-                            aria-label="Last page"
                         >
                             Last
                         </button>
@@ -595,8 +299,6 @@ const AccountUserSettings = () => {
                 onConfirm={handleDeleteUser}
                 user={selectedUser}
             />
-
-            <ToastContainer position="top-right" autoClose={5000} />
         </div>
     );
 };

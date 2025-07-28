@@ -1,4 +1,3 @@
-//src/components/modals/CreateUserModal.jsx
 import React, { useState, useRef } from 'react';
 import {
   FaTimes, FaUserCircle, FaUpload,
@@ -7,7 +6,10 @@ import {
   FaChartLine, FaCalendarCheck, FaBell,
   FaShieldAlt, FaCog
 } from 'react-icons/fa';
-import { createAuthUser, createUserDocument } from '../../lib/firebase/auth';
+import { auth } from '../../lib/firebase/config';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../../lib/firebase/config';
 import { uploadToCloudinary } from '../../lib/firebase/storage';
 import styles from './CreateUserModal.module.css';
 
@@ -44,6 +46,24 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
     { key: 'accountPermission', label: 'Account Permissions', icon: <FaShieldAlt /> },
     { key: 'accountSettings', label: 'Account & User Settings', icon: <FaCog /> }
   ];
+
+  const resetForm = () => {
+    setFormData({
+      profile: null,
+      firstName: '',
+      middleName: '',
+      lastName: '',
+      email: '',
+      role: 'admin',
+      status: 'active',
+      permissions: [],
+      password: '',
+      confirmPassword: ''
+    });
+    setPreviewImage(null);
+    setError('');
+    setPasswordError('');
+  };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -87,11 +107,17 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
     }));
   };
 
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setPasswordError('');
 
+    // Form validation
     if (formData.password !== formData.confirmPassword) {
       setPasswordError("Passwords don't match!");
       return;
@@ -107,9 +133,16 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
       return;
     }
 
+    // Prevent creating a user with the same email as the current user
+    if (auth.currentUser && formData.email === auth.currentUser.email) {
+      setError('Cannot create a user with the same email as the currently logged-in user');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
+      // 1. Upload profile image if exists
       let photoURL = null;
       if (formData.profile) {
         try {
@@ -124,9 +157,17 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
         }
       }
 
-      const authUser = await createAuthUser(formData.email, formData.password);
+      // 2. Create auth user
+      const { user: authUser } = await createUserWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      );
 
-      const userData = {
+      // 3. Create user document in Firestore
+      const userDocRef = doc(db, 'users', authUser.uid);
+      await setDoc(userDocRef, {
+        uid: authUser.uid,
         firstName: formData.firstName,
         middleName: formData.middleName || null,
         lastName: formData.lastName,
@@ -135,16 +176,17 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
         status: formData.status,
         permissions: formData.permissions,
         photoURL,
-        createdAt: new Date().toISOString(),
-        lastUpdated: new Date().toISOString()
-      };
-      
-      await createUserDocument(authUser, userData);
+        createdAt: serverTimestamp(),
+        lastUpdated: serverTimestamp()
+      });
+
+      // Success
       onCreate();
+      resetForm();
       onClose();
     } catch (error) {
       console.error('Error in user creation process:', error);
-      let errorMessage = 'Failed to complete account creation';
+      let errorMessage = 'Failed to create user account';
 
       if (error.code) {
         switch (error.code) {
@@ -161,7 +203,7 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
             errorMessage = 'Account creation is currently disabled';
             break;
           default:
-            errorMessage = `Authentication error: ${error.code}`;
+            errorMessage = `Error: ${error.code}`;
         }
       } else if (error.message.includes('Cloudinary')) {
         errorMessage = error.message;
@@ -182,8 +224,9 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
           <h3>Create New User</h3>
           <button 
             className={styles.closeBtn} 
-            onClick={onClose} 
+            onClick={handleClose} 
             disabled={isSubmitting}
+            aria-label="Close modal"
           >
             <FaTimes />
           </button>
@@ -239,9 +282,10 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
 
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
-              <label>First Name *</label>
+              <label htmlFor="firstName">First Name *</label>
               <input
                 type="text"
+                id="firstName"
                 name="firstName"
                 value={formData.firstName}
                 onChange={handleChange}
@@ -250,9 +294,10 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
               />
             </div>
             <div className={styles.formGroup}>
-              <label>Middle Name</label>
+              <label htmlFor="middleName">Middle Name</label>
               <input
                 type="text"
+                id="middleName"
                 name="middleName"
                 value={formData.middleName}
                 onChange={handleChange}
@@ -263,9 +308,10 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
 
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
-              <label>Last Name *</label>
+              <label htmlFor="lastName">Last Name *</label>
               <input
                 type="text"
+                id="lastName"
                 name="lastName"
                 value={formData.lastName}
                 onChange={handleChange}
@@ -274,9 +320,10 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
               />
             </div>
             <div className={styles.formGroup}>
-              <label>Email *</label>
+              <label htmlFor="email">Email *</label>
               <input
                 type="email"
+                id="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
@@ -288,8 +335,9 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
 
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
-              <label>Role *</label>
+              <label htmlFor="role">Role *</label>
               <select
+                id="role"
                 name="role"
                 value={formData.role}
                 onChange={handleChange}
@@ -302,8 +350,9 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
               </select>
             </div>
             <div className={styles.formGroup}>
-              <label>Status *</label>
+              <label htmlFor="status">Status *</label>
               <select
+                id="status"
                 name="status"
                 value={formData.status}
                 onChange={handleChange}
@@ -318,9 +367,10 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
 
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
-              <label>Password *</label>
+              <label htmlFor="password">Password *</label>
               <input
                 type="password"
+                id="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
@@ -331,9 +381,10 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
               />
             </div>
             <div className={styles.formGroup}>
-              <label>Confirm Password *</label>
+              <label htmlFor="confirmPassword">Confirm Password *</label>
               <input
                 type="password"
+                id="confirmPassword"
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
@@ -356,9 +407,11 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
                   className={`${styles.permissionItem} ${
                     formData.permissions.includes(key) ? styles.selected : ''
                   }`}
+                  htmlFor={`perm-${key}`}
                 >
                   <input
                     type="checkbox"
+                    id={`perm-${key}`}
                     checked={formData.permissions.includes(key)}
                     onChange={() => handlePermissionChange(key)}
                     className={styles.permissionCheckbox}
@@ -375,7 +428,7 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
             <button
               type="button"
               className={styles.cancelBtn}
-              onClick={onClose}
+              onClick={handleClose}
               disabled={isSubmitting}
             >
               Cancel
