@@ -1,3 +1,4 @@
+//src/components/modals/ExistingStudentEnrollment.jsx
 import React, { useState, useEffect } from 'react';
 import { doc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase/config';
@@ -604,7 +605,7 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
                 font-weight: bold;
                 min-width: 100px;
                 white-space: nowrap;
-                font-size: 14px;
+                font-size: 12px;
                 }
                 .subjects-title {
                 text-align: center;
@@ -668,9 +669,7 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
                 font-size: 9px;
                 }
                 .footer-line {
-                border-top: 1px solid #000;
                 padding-top: 3px;
-                margin-top: 20px;
                 }
                 .copy-title {
                 text-align: center;
@@ -710,23 +709,16 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
                 <td>${studentData.status || 'Enrolled'}</td>
                 </tr>
                 <tr>
-                <td class="info-label">Family Name:</td>
-                <td>${studentData.lastName}</td>
-                <td class="info-label">First Name:</td>
-                <td>${studentData.firstName}</td>
-                <td class="info-label">Middle Name:</td>
-                <td>${studentData.middleName || ''}</td>
+                <td class="info-label">Full Name:</td>
+                <td>${studentData.lastName}, ${studentData.firstName}${studentData.middleName ? ` ${studentData.middleName.charAt(0)}.` : ''}</td>
                 </tr>
                 <tr>
                 <td class="info-label">Course:</td>
-                <td colspan="3">${studentData.enrollment?.course || 'Not enrolled'}</td>
+                <td>${studentData.enrollment?.course || 'Not enrolled'}</td>
                 <td class="info-label">Year Level:</td>
                 <td>${studentData.enrollment?.yearLevel || 'Not enrolled'}</td>
-                </tr>
-                <tr>
                 <td class="info-label">Semester:</td>
                 <td>${studentData.enrollment?.semester || 'Not enrolled'}</td>
-                <td colspan="4"></td>
                 </tr>
             </table>
             
@@ -861,22 +853,22 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
                 <div class="footer-section">
                 <div class="footer-label">Confirmed By:</div>
                 <div>Student's Signature / Date:</div>
-                <div class="footer-line"></div>
+                <div class="footer-line">${studentData.lastName}, ${studentData.firstName}${studentData.middleName ? ` ${studentData.middleName.charAt(0)}.` : ''}</div>
                 </div>
                 <div class="footer-section">
                 <div class="footer-label">Approved By:</div>
                 <div>Program Head Dean of College / Date:</div>
-                <div class="footer-line"></div>
+                <div class="footer-line">Sample D. Name</div>
                 </div>
                 <div class="footer-section">
                 <div class="footer-label">Assisted By:</div>
                 <div>Cashier / Date</div>
-                <div class="footer-line"></div>
+                <div class="footer-line">Sample D. Name</div>
                 </div>
                 <div class="footer-section">
                 <div class="footer-label">Copy Received By:</div>
                 <div>Registrar / Date</div>
-                <div class="footer-line"></div>
+                <div class="footer-line">Sample D. Name</div>
                 </div>
             </div>
             
@@ -905,23 +897,16 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
                 <td>${studentData.status || 'Enrolled'}</td>
                 </tr>
                 <tr>
-                <td class="info-label">Family Name:</td>
-                <td>${studentData.lastName}</td>
-                <td class="info-label">First Name:</td>
-                <td>${studentData.firstName}</td>
-                <td class="info-label">Middle Name:</td>
-                <td>${studentData.middleName || ''}</td>
+                <td class="info-label">Full Name:</td>
+                <td>${studentData.lastName}, ${studentData.firstName}${studentData.middleName ? ` ${studentData.middleName.charAt(0)}.` : ''}</td>
                 </tr>
                 <tr>
                 <td class="info-label">Course:</td>
-                <td colspan="3">${studentData.enrollment?.course || 'Not enrolled'}</td>
+                <td>${studentData.enrollment?.course || 'Not enrolled'}</td>
                 <td class="info-label">Year Level:</td>
                 <td>${studentData.enrollment?.yearLevel || 'Not enrolled'}</td>
-                </tr>
-                <tr>
                 <td class="info-label">Semester:</td>
                 <td>${studentData.enrollment?.semester || 'Not enrolled'}</td>
-                <td colspan="4"></td>
                 </tr>
             </table>
             
@@ -1052,31 +1037,31 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
                 `;
         }).join('')}
             
-            <div class="footer">
-                <div class="footer-section">
-                <div class="footer-label">Confirmed By:</div>
-                <div>Student's Signature / Date:</div>
-                <div class="footer-line"></div>
-                </div>
-                <div class="footer-section">
-                <div class="footer-label">Approved By:</div>
-                <div>Program Head Dean of College / Date:</div>
-                <div class="footer-line"></div>
-                </div>
-                <div class="footer-section">
-                <div class="footer-label">Assisted By:</div>
-                <div>Cashier / Date</div>
-                <div class="footer-line"></div>
-                </div>
-                <div class="footer-section">
-                <div class="footer-label">Copy Received By:</div>
-                <div>Registrar / Date</div>
-                <div class="footer-line"></div>
-                </div>
-            </div>
-            </body>
-        </html>
-    `);
+                <div class="footer">
+                                <div class="footer-section">
+                                <div class="footer-label">Confirmed By:</div>
+                                <div>Student's Signature / Date:</div>
+                                <div class="footer-line">${studentData.lastName}, ${studentData.firstName}${studentData.middleName ? ` ${studentData.middleName.charAt(0)}.` : ''}</div>
+                                </div>
+                                <div class="footer-section">
+                                <div class="footer-label">Approved By:</div>
+                                <div>Program Head Dean of College / Date:</div>
+                                <div class="footer-line">Sample D. Name</div>
+                                </div>
+                                <div class="footer-section">
+                                <div class="footer-label">Assisted By:</div>
+                                <div>Cashier / Date</div>
+                                <div class="footer-line">Sample D. Name</div>
+                                </div>
+                                <div class="footer-section">
+                                <div class="footer-label">Copy Received By:</div>
+                                <div>Registrar / Date</div>
+                                <div class="footer-line">Sample D. Name</div>
+                                </div>
+                            </div>
+                            </body>
+                        </html>
+                    `);
 
         printWindow.document.close();
         setTimeout(() => {

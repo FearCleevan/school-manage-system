@@ -56,7 +56,7 @@ const TableControls = ({
               value={courseFilter}
               onChange={(e) => setCourseFilter(e.target.value)}
             >
-              <option value="">All Coursesss</option>
+              <option value="">All Courses</option>
               {availableCourses.map((course) => (
                 <option key={course} value={course}>
                   {course}

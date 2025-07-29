@@ -1,3 +1,4 @@
+//src/components/modals/AddSubject.jsx
 import React, { useState, useEffect } from 'react';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase/config';
