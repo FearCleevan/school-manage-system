@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+// src/components/admin/left/LeftSideDashboard.jsx
+import React, { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import {
     FaBuilding, FaBook, FaClipboardList, FaMoneyBillWave,
     FaChartLine, FaCalendarCheck, FaGraduationCap, FaBell,
@@ -8,10 +9,9 @@ import {
 import { auth } from "../../../lib/firebase/config";
 import { signOut } from 'firebase/auth';
 import { useAuth } from '../../../context/AuthContext';
-import './leftSideDashboard.css';
+import styles from './LeftSideDashboard.module.css';
 
 const LeftSideDashboard = () => {
-    const navigate = useNavigate();
     const location = useLocation();
     const { userData, setUserData } = useAuth();
     const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -21,7 +21,6 @@ const LeftSideDashboard = () => {
         clearCache: true
     });
 
-    // Define menu items with their required permissions
     const menuItems = [
         { path: "/dashboard", icon: <FaHome />, label: "Dashboard", permission: "dashboard" },
         { path: "/dashboard/manage-student", icon: <FaGraduationCap />, label: "Student Management", permission: "manageStudent" },
@@ -39,34 +38,25 @@ const LeftSideDashboard = () => {
     const handleLogout = async () => {
         setLoading(true);
         try {
-            // Clear authentication tokens and user data
             await signOut(auth);
             setUserData(null);
 
-            // Clear cache if selected
             if (logoutOptions.clearCache) {
                 if ('caches' in window) {
                     const cacheNames = await caches.keys();
                     await Promise.all(cacheNames.map(name => caches.delete(name)));
                 }
-                
-                // Clear localStorage and sessionStorage
+
                 localStorage.clear();
                 sessionStorage.clear();
             }
 
-            // Terminate all sessions if selected (would typically call an API endpoint)
             if (logoutOptions.terminateAllSessions) {
-                // In a real app, you would call your backend API here
                 console.log("Terminating all active sessions");
             }
 
-            // Add minimum delay for better UX
             await new Promise(resolve => setTimeout(resolve, 1000));
-
-            // Hard redirect to login with cache busting
             window.location.href = `/login?cache=${Date.now()}`;
-            
         } catch (error) {
             console.error('Logout error:', error);
             setLoading(false);
@@ -74,14 +64,14 @@ const LeftSideDashboard = () => {
         }
     };
 
-    const hasPermission = (permission) => { 
+    const hasPermission = (permission) => {
         if (!userData?.permissions) return false;
         return userData.permissions.includes(permission);
     };
 
     const getActiveMenuItem = () => {
-        const activeItem = menuItems.find(item => 
-            location.pathname === item.path || 
+        const activeItem = menuItems.find(item =>
+            location.pathname === item.path ||
             (item.path !== '/dashboard' && location.pathname.startsWith(item.path))
         );
         return activeItem || menuItems[0];
@@ -91,33 +81,34 @@ const LeftSideDashboard = () => {
 
     if (loading) {
         return (
-            <div className="loading-overlay">
-                <div className="loading-spinner"></div>
+            <div className={styles.loadingOverlay}>
+                <div className={styles.loadingSpinner}></div>
             </div>
         );
     }
 
     return (
-        <div className="left-sidebar">
-            <div className="sidebar-header">
-                <h2 className="sidebar-title">{activeMenuItem.label}</h2>
+        <div className={styles.leftSidebar}>
+            <div className={styles.sidebarHeader}>
+                <h2 className={styles.sidebarTitle}>{activeMenuItem.label}</h2>
             </div>
 
-            <nav className="sidebar-nav">
-                <div className="sidebar-section">
-                    <h3 className="sidebar-section-title">Businesses</h3>
-                    <ul className="nav-menu">
+            <nav className={styles.sidebarNav}>
+                <div className={styles.sidebarSection}>
+                    <h3 className={styles.sidebarSectionTitle}>Navigation</h3>
+                    <ul className={styles.navMenu}>
                         {menuItems.map((item) => (
                             hasPermission(item.permission) && (
-                                <li key={item.path} className="nav-item">
-                                    <Link 
-                                        to={item.path} 
-                                        className={`nav-link ${location.pathname === item.path || 
-                                            (item.path !== '/dashboard' && location.pathname.startsWith(item.path)) ? 
-                                            'active' : ''}`}
+                                <li key={item.path} className={styles.navItem}>
+                                    <Link
+                                        to={item.path}
+                                        className={`${styles.navLink} ${location.pathname === item.path ||
+                                                (item.path !== '/dashboard' && location.pathname.startsWith(item.path)) ?
+                                                styles.active : ''
+                                            }`}
                                     >
-                                        {item.icon}
-                                        <span>{item.label}</span>
+                                        <span className={styles.navIcon}>{item.icon}</span>
+                                        <span className={styles.navLabel}>{item.label}</span>
                                     </Link>
                                 </li>
                             )
@@ -125,15 +116,15 @@ const LeftSideDashboard = () => {
                     </ul>
                 </div>
 
-                <div className="sidebar-section logout-section">
-                    <ul className="nav-menu">
-                        <li className="nav-item">
-                            <button 
-                                onClick={() => setShowLogoutModal(true)} 
-                                className="nav-link logout-btn"
+                <div className={styles.logoutSection}>
+                    <ul className={styles.navMenu}>
+                        <li className={styles.navItem}>
+                            <button
+                                onClick={() => setShowLogoutModal(true)}
+                                className={styles.navLink}
                             >
-                                <FaSignOutAlt className="nav-icon" />
-                                <span>Log Out</span>
+                                <span className={styles.navIcon}><FaSignOutAlt /></span>
+                                <span className={styles.navLabel}>Log Out</span>
                             </button>
                         </li>
                     </ul>
@@ -141,24 +132,24 @@ const LeftSideDashboard = () => {
             </nav>
 
             {showLogoutModal && (
-                <div className="logout-modal-overlay">
-                    <div className="logout-modal">
-                        <div className="modal-header">
+                <div className={styles.logoutModalOverlay}>
+                    <div className={styles.logoutModal}>
+                        <div className={styles.modalHeader}>
                             <h3>Confirm Logout</h3>
-                            <button 
-                                className="close-btn" 
+                            <button
+                                className={styles.closeBtn}
                                 onClick={() => setShowLogoutModal(false)}
                                 aria-label="Close modal"
                             >
                                 <FaTimes />
                             </button>
                         </div>
-                        <div className="modal-body">
+                        <div className={styles.modalBody}>
                             <p>Are you sure you want to log out?</p>
-                            <div className="logout-options">
-                                <label>
-                                    <input 
-                                        type="checkbox" 
+                            <div className={styles.logoutOptions}>
+                                <label className={styles.optionLabel}>
+                                    <input
+                                        type="checkbox"
                                         checked={logoutOptions.terminateAllSessions}
                                         onChange={(e) => setLogoutOptions({
                                             ...logoutOptions,
@@ -167,9 +158,9 @@ const LeftSideDashboard = () => {
                                     />
                                     Terminate all active sessions
                                 </label>
-                                <label>
-                                    <input 
-                                        type="checkbox" 
+                                <label className={styles.optionLabel}>
+                                    <input
+                                        type="checkbox"
                                         checked={logoutOptions.clearCache}
                                         onChange={(e) => setLogoutOptions({
                                             ...logoutOptions,
@@ -180,15 +171,15 @@ const LeftSideDashboard = () => {
                                 </label>
                             </div>
                         </div>
-                        <div className="modal-footer">
-                            <button 
-                                className="cancel-btn"
+                        <div className={styles.modalFooter}>
+                            <button
+                                className={styles.cancelBtn}
                                 onClick={() => setShowLogoutModal(false)}
                             >
                                 Cancel
                             </button>
-                            <button 
-                                className="confirm-btn"
+                            <button
+                                className={styles.confirmBtn}
                                 onClick={handleLogout}
                                 autoFocus
                             >

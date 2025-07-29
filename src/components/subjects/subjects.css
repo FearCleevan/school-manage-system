@@ -1,6 +1,6 @@
 .subjects-container {
-    margin-top: 40px;
-    margin-left: 280px;
+    margin-top: 20px;
+    margin-left: 300px;
     margin-right: 20px;
     margin-bottom: 20px;
     padding: 2rem;
@@ -8,8 +8,8 @@
     border-radius: var(--border-radius);
     box-shadow: var(--box-shadow);
     width: calc(100% - 300px);
-    min-height: calc(100vh - 80px);
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: auto;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
 }
 
 .management-header {

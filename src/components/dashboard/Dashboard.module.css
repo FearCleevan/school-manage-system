@@ -1,0 +1,191 @@
+/* src/components/dashboard/Dashboard.module.css */
+
+.dashboardContainer {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background-color: #f8fafc;
+}
+
+/* Header Styles */
+.dashboardHeader {
+  background: #ffffff;
+  color: #2c3e50;
+  padding: 0 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  position: fixed;
+  width: 100%;
+  z-index: 1000;
+  top: 0;
+  height: 70px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logoContainer {
+  display: flex;
+  align-items: center;
+}
+
+.schoolLogo {
+  height: 40px;
+  width: auto;
+  object-fit: contain;
+}
+
+.headerTitle {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.menuToggle {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 1rem;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.userProfile {
+  display: flex;
+  align-items: center;
+}
+
+.profileImage {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e2e8f0;
+}
+
+.nameAccess {
+  display: flex;
+  flex-direction: column;
+}
+
+.userName {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.userRole {
+  font-size: 0.8rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Main Content Area */
+.dashboardContent {
+  display: flex;
+  margin-top: 70px;
+  flex: 1;
+}
+
+/* Loading Styles */
+.loadingOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.8);
+  z-index: 1000;
+}
+
+.loadingSpinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive Styles */
+@media (max-width: 1200px) {
+  .dashboardContent {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 992px) {
+  .headerTitle {
+    font-size: 1rem;
+  }
+  
+  .userName {
+    font-size: 0.85rem;
+  }
+  
+  .userRole {
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboardHeader {
+    padding: 0 1rem;
+  }
+  
+  .schoolLogo {
+    height: 35px;
+  }
+  
+  .profileImage {
+    width: 35px;
+    height: 35px;
+  }
+  
+  .menuToggle {
+    font-size: 1.1rem;
+    margin-left: 0.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .headerTitle {
+    display: none;
+  }
+  
+  .nameAccess {
+    display: none;
+  }
+  
+  .dashboardHeader {
+    justify-content: space-between;
+    padding: 0 0.75rem;
+  }
+}

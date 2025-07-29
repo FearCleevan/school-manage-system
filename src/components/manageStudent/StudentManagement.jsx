@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { FaGraduationCap } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { CSVLink } from 'react-csv';
@@ -193,7 +192,7 @@ const StudentManagement = () => {
       const batch = writeBatch(db);
       const studentsRef = collection(db, "students");
 
-      Object.entries(studentsByDepartment).forEach(([dept, deptStudents]) => {
+      Object.entries(studentsByDepartment).forEach(([deptStudents]) => {
         deptStudents.forEach((student) => {
           const docRef = doc(studentsRef);
           batch.set(docRef, student);

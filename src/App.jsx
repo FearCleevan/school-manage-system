@@ -17,7 +17,7 @@ import Subjects from './components/subjects/Subjects';
 // import Permission from './components/permission/Permission';
 
 const ProtectedRoute = ({ children, requiredPermissions = [] }) => {
-  const { currentUser, userData, loading, hasPermission } = useAuth();
+  const { currentUser, loading, hasPermission } = useAuth();
 
   if (loading) {
     return (

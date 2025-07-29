@@ -1,15 +1,16 @@
 /* AccountUserSettings.css */
 
 .account-user-settings {
-  margin-top: 40px;
-  margin-left: 280px;
-  margin-right: 20px;
-  margin-bottom: 20px;
-  padding: 2rem;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  width: 100%;
+    margin-top: 20px;
+    margin-left: 300px;
+    margin-right: 20px;
+    margin-bottom: 20px;
+    padding: 2rem;
+    background: #fff;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    width: calc(100% - 300px);
+    min-height: auto;
 }
 
 .settings-header {

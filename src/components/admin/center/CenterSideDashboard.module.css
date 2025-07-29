@@ -1,0 +1,341 @@
+/* src/components/admin/center/CenterSideDashboard.module.css */
+
+.centerContent {
+  flex: 1;
+  padding: 2rem;
+  margin-left: 280px;
+  margin-right: 320px;
+  transition: all 0.3s ease;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.centerHeaderContainer {
+  margin-bottom: 2rem;
+}
+
+.dashboardTitle {
+  margin: 0 0 0.5rem 0;
+  color: #1e293b;
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+.dashboardSubtitle {
+  margin: 0 0 1.5rem 0;
+  color: #64748b;
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+/* Stats Grid */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.statCard {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  border: 1px solid #e2e8f0;
+}
+
+.statCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.statIconContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.statIcon {
+  font-size: 1.5rem;
+  color: #3b82f6;
+  padding: 0.75rem;
+  background-color: #eff6ff;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+}
+
+.trendIndicator {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.trendIndicator.positive {
+  color: #10b981;
+  background-color: #ecfdf5;
+}
+
+.trendIndicator.negative {
+  color: #ef4444;
+  background-color: #fef2f2;
+}
+
+.statTitle {
+  margin: 0 0 0.5rem 0;
+  color: #64748b;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.statValue {
+  margin: 0;
+  color: #1e293b;
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+/* Content Grid */
+.contentGrid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+}
+
+.sectionHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.sectionHeader h2 {
+  margin: 0;
+  color: #1e293b;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.viewAllButton {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.viewAllButton:hover {
+  color: #2563eb;
+}
+
+/* Table Styles */
+.tableContainer {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+}
+
+.studentsTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.studentsTable th,
+.studentsTable td {
+  padding: 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.studentsTable th {
+  background-color: #f8fafc;
+  color: #64748b;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.studentsTable tr:hover {
+  background-color: #f8fafc;
+}
+
+.studentInfo {
+  display: flex;
+  align-items: center;
+}
+
+.studentName {
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.departmentBadge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: white;
+}
+
+.departmentBadge.college {
+  background-color: #3b82f6;
+}
+
+.departmentBadge.tvet {
+  background-color: #10b981;
+}
+
+.departmentBadge.shs {
+  background-color: #f59e0b;
+}
+
+.departmentBadge.jhs {
+  background-color: #8b5cf6;
+}
+
+/* Activities List */
+.recentActivities {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  height: fit-content;
+}
+
+.activitiesList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.activityItem {
+  display: flex;
+  padding: 1rem 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.activityItem:last-child {
+  border-bottom: none;
+}
+
+.activityIcon {
+  font-size: 1rem;
+  color: #3b82f6;
+  padding: 0.5rem;
+  background-color: #eff6ff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin-right: 1rem;
+  flex-shrink: 0;
+}
+
+.activityContent {
+  flex: 1;
+}
+
+.activityAction {
+  margin: 0 0 0.25rem 0;
+  color: #1e293b;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.activityMeta {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.activityUser {
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.activityTime {
+  color: #94a3b8;
+  font-size: 0.8rem;
+}
+
+/* Loading Styles */
+.loadingContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  min-height: 300px;
+}
+
+.loadingSpinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive Styles */
+@media (max-width: 1200px) {
+  .centerContent {
+    margin-left: 240px;
+    margin-right: 280px;
+  }
+}
+
+@media (max-width: 992px) {
+  .centerContent {
+    margin-left: 0;
+    margin-right: 0;
+    padding: 1.5rem;
+  }
+
+  .contentGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .centerContent {
+    padding: 1rem;
+  }
+
+  .dashboardTitle {
+    font-size: 1.5rem;
+  }
+
+  .statsGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 576px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .studentsTable {
+    display: block;
+    overflow-x: auto;
+  }
+}
