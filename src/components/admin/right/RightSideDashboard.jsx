@@ -1,6 +1,6 @@
 // src/components/admin/right/RightSideDashboard.jsx
 import React, { useState, useEffect } from 'react';
-import { FaCalendarAlt, FaBullhorn, FaChartBar } from 'react-icons/fa';
+import { FaCalendarAlt, FaBullhorn, FaChartBar, FaUsers } from 'react-icons/fa';
 import styles from './RightSideDashboard.module.css';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
@@ -14,6 +14,8 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import { collection, getCountFromServer, query, where } from 'firebase/firestore';
+import { db } from '../../../lib/firebase/config';
 
 ChartJS.register(
   CategoryScale,
@@ -28,12 +30,17 @@ const RightSideDashboard = () => {
   const [date, setDate] = useState(new Date());
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [departmentStats, setDepartmentStats] = useState([
+    { department: 'COLLEGE', count: 0, icon: <FaUsers /> },
+    { department: 'TVET', count: 0, icon: <FaUsers /> },
+    { department: 'SHS', count: 0, icon: <FaUsers /> },
+    { department: 'JHS', count: 0, icon: <FaUsers /> }
+  ]);
 
   useEffect(() => {
-    // Simulate API fetch
     const fetchData = async () => {
       try {
-        // In a real app, you would fetch this from your backend
+        // Fetch announcements (mock data)
         const mockAnnouncements = [
           {
             id: 1,
@@ -58,7 +65,21 @@ const RightSideDashboard = () => {
           }
         ];
 
+        // Fetch student counts by department
+        const departments = ['college', 'tvet', 'shs', 'jhs'];
+        const counts = await Promise.all(
+          departments.map(async (dept) => {
+            const q = query(collection(db, 'students'), where('department', '==', dept));
+            const snapshot = await getCountFromServer(q);
+            return { department: dept.toUpperCase(), count: snapshot.data().count };
+          })
+        );
+
         setAnnouncements(mockAnnouncements);
+        setDepartmentStats(prev => prev.map(stat => {
+          const found = counts.find(c => c.department === stat.department);
+          return found ? { ...stat, count: found.count } : stat;
+        }));
         setLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -70,11 +91,11 @@ const RightSideDashboard = () => {
   }, []);
 
   const departmentData = {
-    labels: ['COLLEGE', 'TVET', 'SHS', 'JHS'],
+    labels: departmentStats.map(stat => stat.department),
     datasets: [
       {
         label: 'Number of Students',
-        data: [450, 320, 280, 200],
+        data: departmentStats.map(stat => stat.count),
         backgroundColor: [
           'rgba(59, 130, 246, 0.7)',
           'rgba(16, 185, 129, 0.7)',
@@ -155,6 +176,8 @@ const RightSideDashboard = () => {
           <FaChartBar className={styles.sectionIcon} />
           <h2>Department Statistics</h2>
         </div>
+        
+        {/* Bar Chart */}
         <div className={styles.chartContainer}>
           <Bar data={departmentData} options={chartOptions} />
         </div>

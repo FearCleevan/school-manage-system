@@ -11,7 +11,7 @@ import {
   FaMoneyBillWave,
   FaHome
 } from 'react-icons/fa';
-import { collection, getCountFromServer } from 'firebase/firestore';
+import { collection, getCountFromServer, query, orderBy, limit, getDocs, onSnapshot } from 'firebase/firestore';
 import { db } from '../../../lib/firebase/config';
 import styles from './CenterSideDashboard.module.css';
 
@@ -30,30 +30,39 @@ const CenterSideDashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch total students count from Firestore
+        // Fetch total students count
         const studentsCol = collection(db, 'students');
         const studentsSnapshot = await getCountFromServer(studentsCol);
         const totalStudents = studentsSnapshot.data().count;
+
+        // Fetch recent students (5 most recently added)
+        const recentStudentsQuery = query(
+          collection(db, 'students'),
+          orderBy('createdAt', 'desc'),
+          limit(5)
+        );
+        const recentStudentsSnapshot = await getDocs(recentStudentsQuery);
+        const recentStudentsData = recentStudentsSnapshot.docs.map(doc => ({
+          id: doc.id,
+          studentId: doc.data().studentId,
+          firstName: doc.data().firstName,
+          lastName: doc.data().lastName,
+          email: doc.data().email,
+          department: doc.data().department.toUpperCase(),
+          createdAt: doc.data().createdAt?.toDate().toLocaleDateString() || 'N/A',
+        }));
 
         // Update stats with real student count
         const updatedStats = [...stats];
         updatedStats[0].value = totalStudents.toLocaleString();
         setStats(updatedStats);
 
-        // Mock data for other sections (you can replace these with real data later)
+        // Mock data for other sections
         const mockStats = [
           { title: 'Total Students', value: totalStudents.toLocaleString(), icon: <FaUsers />, trend: 12.5 },
           { title: 'Total Teachers', value: '85', icon: <FaChalkboardTeacher />, trend: 5.2 },
           { title: 'Total Courses', value: '32', icon: <FaBook />, trend: 3.7 },
           { title: 'Total Departments', value: '6', icon: <FaBuilding />, trend: 0 }
-        ];
-
-        const mockStudents = [
-          { id: 1, name: 'John Doe', email: 'john@example.com', department: 'COLLEGE', date: '2023-06-15' },
-          { id: 2, name: 'Jane Smith', email: 'jane@example.com', department: 'SHS', date: '2023-06-14' },
-          { id: 3, name: 'Mike Johnson', email: 'mike@example.com', department: 'TVET', date: '2023-06-14' },
-          { id: 4, name: 'Sarah Williams', email: 'sarah@example.com', department: 'JHS', date: '2023-06-13' },
-          { id: 5, name: 'David Brown', email: 'david@example.com', department: 'COLLEGE', date: '2023-06-12' }
         ];
 
         const mockActivities = [
@@ -64,7 +73,7 @@ const CenterSideDashboard = () => {
         ];
 
         setStats(mockStats);
-        setRecentStudents(mockStudents);
+        setRecentStudents(recentStudentsData);
         setActivities(mockActivities);
         setLoading(false);
       } catch (error) {
@@ -74,6 +83,28 @@ const CenterSideDashboard = () => {
     };
 
     fetchData();
+
+    // Set up real-time listener for new students
+    const recentStudentsQuery = query(
+      collection(db, 'students'),
+      orderBy('createdAt', 'desc'),
+      limit(5)
+    );
+    
+    const unsubscribe = onSnapshot(recentStudentsQuery, (snapshot) => {
+      const updatedRecentStudents = snapshot.docs.map(doc => ({
+        id: doc.id,
+        studentId: doc.data().studentId,
+        firstName: doc.data().firstName,
+        lastName: doc.data().lastName,
+        email: doc.data().email,
+        department: doc.data().department.toUpperCase(),
+        createdAt: doc.data().createdAt?.toDate().toLocaleDateString() || 'N/A',
+      }));
+      setRecentStudents(updatedRecentStudents);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   if (loading) {
@@ -115,6 +146,7 @@ const CenterSideDashboard = () => {
             <table className={styles.studentsTable}>
               <thead>
                 <tr>
+                  <th>Student ID</th>
                   <th>Name</th>
                   <th>Email</th>
                   <th>Department</th>
@@ -124,9 +156,12 @@ const CenterSideDashboard = () => {
               <tbody>
                 {recentStudents.map(student => (
                   <tr key={student.id}>
+                    <td>{student.studentId}</td>
                     <td>
                       <div className={styles.studentInfo}>
-                        <span className={styles.studentName}>{student.name}</span>
+                        <span className={styles.studentName}>
+                          {student.firstName} {student.lastName}
+                        </span>
                       </div>
                     </td>
                     <td>{student.email}</td>
@@ -135,7 +170,7 @@ const CenterSideDashboard = () => {
                         {student.department}
                       </span>
                     </td>
-                    <td>{student.date}</td>
+                    <td>{student.createdAt}</td>
                   </tr>
                 ))}
               </tbody>

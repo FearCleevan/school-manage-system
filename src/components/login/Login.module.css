@@ -74,8 +74,8 @@
 .loginForm .inputIcon {
   position: absolute;
   left: 15px;
-  color: #7f8c8d;
-  font-size: 1rem;
+  color: #666c6d;
+  font-size: 12px;
 }
 
 .loginForm input {
@@ -83,7 +83,8 @@
   padding: 12px 15px 12px 40px;
   border: 1px solid #ddd;
   border-radius: 5px;
-  font-size: 1rem;
+  font-size: 12px;
+  font-weight: 500;
   transition: all 0.3s;
 }
 
@@ -104,7 +105,7 @@
   align-items: center;
   cursor: pointer;
   color: #34495e;
-  font-size: 0.9rem;
+  font-size: 12px;
 }
 
 .rememberMe input {
@@ -121,7 +122,7 @@
   justify-content: center;
   margin-right: 8px;
   color: #7f8c8d;
-  font-size: 1.1rem;
+  font-size: 1.3rem;
 }
 
 .rememberMe input:checked~.checkmark {
