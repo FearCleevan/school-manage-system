@@ -8,8 +8,11 @@ import {
   FaUserPlus,
   FaCalendarAlt,
   FaChartBar,
-  FaMoneyBillWave
+  FaMoneyBillWave,
+  FaHome
 } from 'react-icons/fa';
+import { collection, getCountFromServer } from 'firebase/firestore';
+import { db } from '../../../lib/firebase/config';
 import styles from './CenterSideDashboard.module.css';
 
 const CenterSideDashboard = () => {
@@ -25,12 +28,21 @@ const CenterSideDashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate API fetch
     const fetchData = async () => {
       try {
-        // In a real app, you would fetch this from your backend
+        // Fetch total students count from Firestore
+        const studentsCol = collection(db, 'students');
+        const studentsSnapshot = await getCountFromServer(studentsCol);
+        const totalStudents = studentsSnapshot.data().count;
+
+        // Update stats with real student count
+        const updatedStats = [...stats];
+        updatedStats[0].value = totalStudents.toLocaleString();
+        setStats(updatedStats);
+
+        // Mock data for other sections (you can replace these with real data later)
         const mockStats = [
-          { title: 'Total Students', value: '1,250', icon: <FaUsers />, trend: 12.5 },
+          { title: 'Total Students', value: totalStudents.toLocaleString(), icon: <FaUsers />, trend: 12.5 },
           { title: 'Total Teachers', value: '85', icon: <FaChalkboardTeacher />, trend: 5.2 },
           { title: 'Total Courses', value: '32', icon: <FaBook />, trend: 3.7 },
           { title: 'Total Departments', value: '6', icon: <FaBuilding />, trend: 0 }
@@ -75,8 +87,7 @@ const CenterSideDashboard = () => {
   return (
     <div className={styles.centerContent}>
       <div className={styles.centerHeaderContainer}>
-        <h1 className={styles.dashboardTitle}>Student Management System</h1>
-        <p className={styles.dashboardSubtitle}>Welcome back! Here's what's happening today.</p>
+        <h2 className={styles.dashboardTitle}><FaHome /> Admin Dashboard</h2>
         
         <div className={styles.statsGrid}>
           {stats.map((stat, index) => (

@@ -1,10 +1,9 @@
 /* src/components/admin/right/RightSideDashboard.module.css */
 
 .rightSidebar {
-  width: 300px;
+  width: 450px;
   padding: 1.5rem;
   background: #ffffff;
-  border-left: 1px solid #e2e8f0;
   height: calc(100vh - 70px);
   overflow-y: auto;
   position: fixed;
@@ -12,7 +11,8 @@
   top: 70px;
   transition: all 0.3s;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  box-shadow: -2px 0 4px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
 }
 
 .sectionHeader {
@@ -141,13 +141,19 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Responsive Styles */
 @media (max-width: 1200px) {
   .rightSidebar {
+    margin-left: 300px; 
     position: relative;
     width: 100%;
     height: auto;
@@ -158,8 +164,20 @@
   }
 }
 
+@media (max-width: 992px) {
+    .rightSidebar {
+        margin-left: 240px;
+        margin-right: 0;
+        padding: 1.5rem;
+    }
+
+}
+
 @media (max-width: 768px) {
   .rightSidebar {
+    margin-left: 80px;
+    margin-right: 20px;
+    max-width: auto;
     padding: 1rem;
   }
 }

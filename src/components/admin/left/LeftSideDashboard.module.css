@@ -73,6 +73,7 @@
 .navLink:hover {
   background-color: rgba(255, 255, 255, 0.1);
   color: #ffffff;
+  text-decoration: none;
 }
 
 .navLink.active {
@@ -165,6 +166,7 @@
   display: block;
   margin: 0.5rem 0;
   cursor: pointer;
+  -webkit-user-select: none;
   user-select: none;
   font-size: 0.9rem;
   color: #475569;
@@ -238,8 +240,13 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Responsive Styles */
@@ -255,7 +262,7 @@
     overflow: hidden;
   }
 
-  .sidebarHeader, 
+  .sidebarHeader,
   .sidebarSectionTitle,
   .navLabel {
     display: none;
