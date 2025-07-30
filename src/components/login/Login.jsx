@@ -7,7 +7,7 @@ import {
     FaExclamationCircle, FaUserGraduate, FaClipboardCheck,
     FaChartBar, FaMoneyBillWave
 } from 'react-icons/fa';
-import './login.css';
+import styles from './Login.module.css';
 
 const Login = () => {
     const [isRecoveryMode, setIsRecoveryMode] = useState(false);
@@ -119,25 +119,25 @@ const Login = () => {
     };
 
     return (
-        <div className="spcd-login-container">
-            <div className="login-page-header">
-                <img src="school-logo.png" alt="School Logo" className="spcd-school-logo" />
+        <div className={styles.loginContainer}>
+            <div className={styles.loginPageHeader}>
+                <img src="school-logo.png" alt="School Logo" className={styles.schoolLogo} />
                 <h1>Samson Polytechnic College of Davao - Admin Login</h1>
             </div>
 
-            <div className="spcd-login-card">
+            <div className={styles.loginCard}>
                 {!isRecoveryMode ? (
-                    <div className="spcd-login-form-section">
-                        <form className="spcd-login-form" onSubmit={handleLogin}>
+                    <div className={styles.loginFormSection}>
+                        <form className={styles.loginForm} onSubmit={handleLogin}>
                             {error && (
-                                <div className="spcd-error-message">
+                                <div className={styles.errorMessage}>
                                     <FaExclamationCircle /> {error}
                                 </div>
                             )}
 
-                            <div className="spcd-form-group">
-                                <div className="spcd-input-with-icon">
-                                    <FaUser className="input-icon" />
+                            <div className={styles.formGroup}>
+                                <div className={styles.inputWithIcon}>
+                                    <FaUser className={styles.inputIcon} />
                                     <input
                                         type="email"
                                         name="email"
@@ -150,9 +150,9 @@ const Login = () => {
                                 </div>
                             </div>
 
-                            <div className="spcd-form-group">
-                                <div className="spcd-input-with-icon">
-                                    <FaLock className="input-icon" />
+                            <div className={styles.formGroup}>
+                                <div className={styles.inputWithIcon}>
+                                    <FaLock className={styles.inputIcon} />
                                     <input
                                         type="password"
                                         name="password"
@@ -165,7 +165,7 @@ const Login = () => {
                                 </div>
                             </div>
 
-                            <div className="spcd-remember-me">
+                            <div className={styles.rememberMe}>
                                 <label>
                                     <input
                                         type="checkbox"
@@ -173,49 +173,49 @@ const Login = () => {
                                         checked={formData.rememberMe}
                                         onChange={handleChange}
                                     />
-                                    <span className="checkmark"><FaCheckSquare /></span>
+                                    <span className={styles.checkmark}><FaCheckSquare /></span>
                                     Remember me
                                 </label>
                             </div>
 
                             <button
                                 type="submit"
-                                className="spcd-login-button"
+                                className={styles.loginButton}
                                 disabled={loading}
                             >
                                 {loading ? (
                                     <>
-                                        <FaSpinner className="spinner" /> Logging in...
+                                        <FaSpinner className={styles.spinner} /> Logging in...
                                     </>
                                 ) : 'Log in'}
                             </button>
 
-                            <p className="spcd-forgot-password" onClick={handleForgotPassword}>
+                            <p className={styles.forgotPassword} onClick={handleForgotPassword}>
                                 Forgot Password?
                             </p>
                         </form>
                     </div>
                 ) : (
-                    <div className="spcd-login-form-section">
-                        <form className="spcd-recovery-form" onSubmit={handlePasswordRecovery}>
+                    <div className={styles.loginFormSection}>
+                        <form className={styles.recoveryForm} onSubmit={handlePasswordRecovery}>
                             <h2>Account Recovery</h2>
                             <p>Enter your email address to recover your account.</p>
 
                             {error && (
-                                <div className="spcd-error-message">
+                                <div className={styles.errorMessage}>
                                     <FaExclamationCircle /> {error}
                                 </div>
                             )}
 
                             {successMessage && (
-                                <div className="spcd-success-message">
+                                <div className={styles.successMessage}>
                                     {successMessage}
                                 </div>
                             )}
 
-                            <div className="spcd-form-group">
-                                <div className="spcd-input-with-icon">
-                                    <FaUser className="input-icon" />
+                            <div className={styles.formGroup}>
+                                <div className={styles.inputWithIcon}>
+                                    <FaUser className={styles.inputIcon} />
                                     <input
                                         type="email"
                                         name="email"
@@ -229,17 +229,17 @@ const Login = () => {
 
                             <button
                                 type="submit"
-                                className="spcd-login-button"
+                                className={styles.loginButton}
                                 disabled={loading}
                             >
                                 {loading ? (
                                     <>
-                                        <FaSpinner className="spinner" /> Sending...
+                                        <FaSpinner className={styles.spinner} /> Sending...
                                     </>
                                 ) : 'Submit'}
                             </button>
 
-                            <p className="spcd-back-to-login" onClick={handleBackToLogin}>
+                            <p className={styles.backToLogin} onClick={handleBackToLogin}>
                                 Back to Login
                             </p>
                         </form>
@@ -247,32 +247,32 @@ const Login = () => {
                 )}
 
                 {!isRecoveryMode && (
-                    <div className="spcd-features-section">
-                        <div className="spcd-features-header">
+                    <div className={styles.featuresSection}>
+                        <div className={styles.featuresHeader}>
                             <h2>School Management System</h2>
                         </div>
 
-                        <ul className="spcd-features-list">
+                        <ul className={styles.featuresList}>
                             <li>
-                                <FaUserGraduate className="feature-icon" />
+                                <FaUserGraduate className={styles.featureIcon} />
                                 <div>
                                     <strong>Student Enrollment</strong>
                                 </div>
                             </li>
                             <li>
-                                <FaClipboardCheck className="feature-icon" />
+                                <FaClipboardCheck className={styles.featureIcon} />
                                 <div>
                                     <strong>Attendance Management</strong>
                                 </div>
                             </li>
                             <li>
-                                <FaChartBar className="feature-icon" />
+                                <FaChartBar className={styles.featureIcon} />
                                 <div>
                                     <strong>Grading System</strong>
                                 </div>
                             </li>
                             <li>
-                                <FaMoneyBillWave className="feature-icon" />
+                                <FaMoneyBillWave className={styles.featureIcon} />
                                 <div>
                                     <strong>Payment Management</strong>
                                 </div>

@@ -7,6 +7,7 @@ import { auth, db } from '../../lib/firebase/config';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, query, where, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
+import { logUserActivity } from '../../lib/activityLogger';
 
 import './accountUserSettings.css';
 import DeleteConfirmationModal from './components/DeleteConfirmationModal';
@@ -62,9 +63,15 @@ const AccountUserSettings = () => {
     }, []);
 
     // Handler functions
-    const handleCreateUser = () => {
-        setShowCreateModal(false);
-        toast.success('User created successfully!');
+    const handleCreateUser = async (newUser) => {
+        try {
+            await logUserActivity('user_created', newUser);
+            setShowCreateModal(false);
+            toast.success('User created successfully!');
+        } catch (error) {
+            console.error("Error logging user creation:", error);
+            toast.error('User created but activity log failed');
+        }
     };
 
     const handleSaveUser = async (updatedUser) => {
@@ -114,12 +121,13 @@ const AccountUserSettings = () => {
             }
 
             await updateDoc(userRef, updateData);
+            await logUserActivity('user_updated', updatedUser);
             toast.success('User updated successfully!');
-            return true; // Indicate success
+            return true;
         } catch (error) {
             console.error("Detailed error:", error);
             toast.error(`Update failed: ${error.message}`);
-            return false; // Indicate failure
+            return false;
         }
     };
 
@@ -127,6 +135,16 @@ const AccountUserSettings = () => {
         try {
             const userRef = doc(db, 'users', userId);
             await updateDoc(userRef, { status: newStatus });
+            
+            // Find the user to log the activity
+            const user = users.find(u => u.id === userId);
+            if (user) {
+                await logUserActivity('user_updated', { 
+                    ...user, 
+                    status: newStatus 
+                });
+            }
+            
             toast.success(`User status changed to ${newStatus}`);
         } catch (error) {
             console.error("Error updating status:", error);
@@ -139,8 +157,10 @@ const AccountUserSettings = () => {
             if (!selectedUser?.id) {
                 throw new Error('No user selected for deletion');
             }
+            await logUserActivity('user_deleted', selectedUser);
             await deleteDoc(doc(db, 'users', selectedUser.id));
             setShowDeleteModal(false);
+            setSelectedUser(null);
             toast.success('User deleted successfully!');
         } catch (error) {
             console.error("Error deleting user:", error);

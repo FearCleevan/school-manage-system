@@ -1,0 +1,329 @@
+.loginContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Header styling */
+.loginPageHeader {
+  margin-top: 100px;
+  width: 100%;
+  max-width: 700px;
+  text-align: center;
+  background-color: #ffffff;
+  color: #2c3e50;
+  padding: 20px;
+  border-radius: 10px 10px 0 0;
+  border: 1px solid #ddd;
+}
+
+.loginPageHeader img {
+  width: 170px;
+  height: auto;
+  margin-bottom: 10px;
+}
+
+.loginPageHeader h1 {
+  font-size: 2rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.schoolLogo {
+  display: block;
+  margin: 0 auto;
+  width: 60px;
+  height: 60px;
+  margin-bottom: 10px;
+}
+
+.loginCard {
+  display: flex;
+  width: 100%;
+  max-width: 700px;
+  background: white;
+  border-radius: 0 0 10px 10px;
+  border-left: 1px solid #ddd;
+  border-right: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
+  overflow: hidden;
+  height: auto;
+}
+
+/* Left Side - Login Form */
+.loginFormSection {
+  flex: 1;
+  padding: 40px;
+  background: white;
+}
+
+.loginForm .formGroup {
+  margin-bottom: 20px;
+}
+
+.loginForm .inputWithIcon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.loginForm .inputIcon {
+  position: absolute;
+  left: 15px;
+  color: #7f8c8d;
+  font-size: 1rem;
+}
+
+.loginForm input {
+  width: 100%;
+  padding: 12px 15px 12px 40px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1rem;
+  transition: all 0.3s;
+}
+
+.loginForm input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+}
+
+.rememberMe {
+  display: flex;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.rememberMe label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: #34495e;
+  font-size: 0.9rem;
+}
+
+.rememberMe input {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.rememberMe .checkmark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 8px;
+  color: #7f8c8d;
+  font-size: 1.1rem;
+}
+
+.rememberMe input:checked~.checkmark {
+  color: #3498db;
+}
+
+.loginButton {
+  width: 100%;
+  padding: 12px;
+  background: #2c3e50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.loginButton:hover {
+  background: #2c3e50d5;
+}
+
+/* Right Side - Features */
+.featuresSection {
+  flex: 1;
+  padding: 40px;
+  background: linear-gradient(135deg, #2c3e50 0%, #19242e 100%);
+  color: white;
+  display: flex;
+  flex-direction: column;
+}
+
+.featuresHeader {
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.featuresHeader h2 {
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+.featuresList {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 auto 0;
+}
+
+.featuresList li {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  margin-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.featureIcon {
+  font-size: 1.3rem;
+  margin-right: 15px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .loginCard {
+    flex-direction: column;
+  }
+
+  .loginFormSection,
+  .featuresSection {
+    padding: 30px;
+  }
+
+  .featuresSection {
+    background: #2c3e50;
+  }
+}
+
+@media (max-width: 480px) {
+  .loginContainer {
+    padding: 10px;
+  }
+
+  .loginFormSection,
+  .featuresSection {
+    padding: 20px;
+  }
+}
+
+/* Forgot Password Link */
+.forgotPassword {
+  margin-top: 10px;
+  text-align: center;
+  color: #3498db;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.forgotPassword:hover {
+  color: #21618c;
+}
+
+/* Back to Login Link */
+.backToLogin {
+  margin-top: 10px;
+  text-align: center;
+  color: #3498db;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.backToLogin:hover {
+  color: #21618c;
+}
+
+/* Account Recovery Form Styles */
+.recoveryForm h2 {
+  font-size: 1.5rem;
+  color: #2c3e50;
+  margin-bottom: 10px;
+}
+
+.recoveryForm p {
+  font-size: 0.9rem;
+  color: #34495e;
+  margin-bottom: 20px;
+}
+
+/* Account Recovery Section */
+.recoveryForm {
+  text-align: center;
+}
+
+.recoveryForm .formGroup {
+  margin-bottom: 20px;
+}
+
+.recoveryForm .inputWithIcon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.recoveryForm .inputIcon {
+  position: absolute;
+  left: 15px;
+  color: #7f8c8d;
+  font-size: 1rem;
+}
+
+.recoveryForm input {
+  width: 100%;
+  padding: 12px 15px 12px 40px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1rem;
+  transition: all 0.3s;
+}
+
+.recoveryForm input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+}
+
+/* Animation styles */
+.spinner {
+  animation: spin 1s linear infinite;
+  margin-right: 0;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loginButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.errorMessage {
+  color: #e74c3c;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.successMessage {
+  color: #27ae60;
+  margin-bottom: 15px;
+}
