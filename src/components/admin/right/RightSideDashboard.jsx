@@ -1,9 +1,6 @@
-// src/components/admin/right/RightSideDashboard.jsx
 import React, { useState, useEffect } from 'react';
 import { FaCalendarAlt, FaBullhorn, FaChartBar, FaUsers } from 'react-icons/fa';
 import styles from './RightSideDashboard.module.css';
-import Calendar from 'react-calendar';
-import 'react-calendar/dist/Calendar.css';
 import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -16,6 +13,7 @@ import {
 } from 'chart.js';
 import { collection, getCountFromServer, query, where } from 'firebase/firestore';
 import { db } from '../../../lib/firebase/config';
+import Calendar from './Calendar';
 
 ChartJS.register(
   CategoryScale,
@@ -27,7 +25,6 @@ ChartJS.register(
 );
 
 const RightSideDashboard = () => {
-  const [date, setDate] = useState(new Date());
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [departmentStats, setDepartmentStats] = useState([
@@ -42,14 +39,12 @@ const RightSideDashboard = () => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
-
     return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch announcements (mock data)
         const mockAnnouncements = [
           {
             id: 1,
@@ -74,7 +69,6 @@ const RightSideDashboard = () => {
           }
         ];
 
-        // Fetch student counts by department
         const departments = ['college', 'tvet', 'shs', 'jhs'];
         const counts = await Promise.all(
           departments.map(async (dept) => {
@@ -164,19 +158,7 @@ const RightSideDashboard = () => {
           })}
         </div>
         <div className={styles.calendarContainer}>
-          <Calendar
-            onChange={setDate}
-            value={date}
-            className={styles.calendar}
-            style={{ width: '100%' }} // Inline style as last resort
-            tileClassName={styles.calendarTile}
-            view="month"
-            prev2Label={null}
-            next2Label={null}
-            formatShortWeekday={(locale, date) =>
-              ['S', 'M', 'T', 'W', 'T', 'F', 'S'][date.getDay()]
-            }
-          />
+          <Calendar announcements={announcements} />
         </div>
       </div>
 
@@ -201,8 +183,6 @@ const RightSideDashboard = () => {
           <FaChartBar className={styles.sectionIcon} />
           <h2>Department Statistics</h2>
         </div>
-
-        {/* Bar Chart */}
         <div className={styles.chartContainer}>
           <Bar data={departmentData} options={chartOptions} />
         </div>

@@ -297,11 +297,19 @@
 
 /* Loading Styles */
 .loadingContainer {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-    min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  min-height: 300px;
+  gap: 1rem;
+}
+
+.loadingContainer p {
+  color: #64748b;
+  font-size: 1rem;
+  margin-top: 1rem;
 }
 
 .loadingSpinner {

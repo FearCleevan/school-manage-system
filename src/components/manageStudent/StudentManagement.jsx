@@ -7,6 +7,8 @@ import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { CSVLink } from 'react-csv';
 import { db } from '../../lib/firebase/config';
+import { auth } from '../../lib/firebase/config';  // Adjust path as needed
+import { logActivity } from '../../lib/firebase/activityLogger';
 import { collection, doc, deleteDoc, writeBatch, query, where, getDocs } from 'firebase/firestore';
 
 import './StudentManagement.css';
@@ -247,6 +249,10 @@ const StudentManagement = () => {
       console.error("Error deleting student:", error);
       toast.error("Failed to delete student!");
     }
+      logActivity('deleted a student', {
+    studentId: studentToDelete.studentId,
+    studentName: `${studentToDelete.firstName} ${studentToDelete.lastName}`
+  }, auth.currentUser.displayName);
   };
 
   const cancelDelete = () => {
@@ -262,6 +268,10 @@ const StudentManagement = () => {
       )
     );
     toast.success("Student updated successfully!");
+      logActivity('edited a student', {
+    studentId: updatedStudent.studentId,
+    changes: updatedStudent
+  }, auth.currentUser.displayName);
   };
 
   // Prepare data for export

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styles from './EnrollModal.module.css';
 import { db, auth } from '../../lib/firebase/config';
+import { logActivity } from '../../lib/firebase/activityLogger';
 import { doc, runTransaction, collection, addDoc } from 'firebase/firestore';
 import { uploadToCloudinary } from '../../lib/firebase/storage';
 import { toast } from 'react-toastify';
@@ -203,6 +204,11 @@ const EnrollModal = ({ show, onClose }) => {
             };
 
             await addDoc(collection(db, 'students'), studentData);
+
+            logActivity('added a new student', {
+                studentId: generatedId,
+                studentName: `${formData.firstName} ${formData.lastName}`
+            }, auth.currentUser.displayName);
 
             toast.success(`Student ${generatedId} enrolled successfully!`, {
                 position: "top-right",

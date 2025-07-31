@@ -1,4 +1,3 @@
-// src/components/dashboard/Dashboard.jsx
 import React, { useEffect } from "react";
 import { FaBars } from "react-icons/fa";
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
@@ -24,7 +23,7 @@ const Dashboard = () => {
     'attendance',
     'announcement',
     'permission'
-  ].map(path => location.pathname.includes(path));
+  ].some(path => location.pathname.includes(path));
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -37,6 +36,7 @@ const Dashboard = () => {
     return (
       <div className={styles.loadingOverlay}>
         <div className={styles.loadingSpinner}></div>
+        <p className={styles.loadingText}>Loading dashboard...</p>
       </div>
     );
   }
@@ -46,7 +46,7 @@ const Dashboard = () => {
   }
 
   const userName = userData
-    ? `${userData.firstName} ${userData.middleName} ${userData.lastName}`
+    ? `${userData.firstName} ${userData.middleName || ''} ${userData.lastName}`.replace(/\s+/g, ' ').trim()
     : currentUser.displayName || "User";
 
   const userRole = userData?.role || "admin";
@@ -85,9 +85,9 @@ const Dashboard = () => {
 
       <div className={styles.dashboardContent}>
         <LeftSideDashboard />
-        {!pathChecks.some(check => check) && <CenterSideDashboard />}
+        {!pathChecks && <CenterSideDashboard />}
         <Outlet />
-        {!pathChecks.some(check => check) && <RightSideDashboard />}
+        {!pathChecks && <RightSideDashboard />}
       </div>
     </div>
   );

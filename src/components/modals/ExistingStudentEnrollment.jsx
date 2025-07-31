@@ -2,6 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { doc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase/config';
+import { logActivity } from '../../lib/firebase/activityLogger';
+import { auth } from '../../lib/firebase/config';  // Adjust path as needed
 import styles from './ExistingStudentEnroll.module.css';
 import { FaPrint, FaPlus, FaTrash, FaEdit, FaSave } from 'react-icons/fa';
 import { toast } from "react-toastify";
@@ -300,6 +302,15 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
             }
 
             await updateDoc(docRef, updateData);
+
+            const action = editingMode ? 'customized subjects for student' : 'enrolled existing student';
+            logActivity(action, {
+                studentId: studentData.studentId,
+                studentName: `${studentData.firstName} ${studentData.lastName}`,
+                course: enrollmentData.course,
+                yearLevel: enrollmentData.yearLevel,
+                semester: enrollmentData.semester
+            }, auth.currentUser.displayName);
 
             // Refresh student data
             const updatedDoc = await getDoc(docRef);

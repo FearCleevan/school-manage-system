@@ -1,11 +1,10 @@
-/* src/components/dashboard/Dashboard.module.css */
-
 .dashboardContainer {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   background-color: #f8fafc;
+  position: relative;
 }
 
 /* Header Styles */
@@ -104,6 +103,7 @@
   display: flex;
   margin-top: 70px;
   flex: 1;
+  min-height: calc(100vh - 70px);
 }
 
 /* Loading Styles */
@@ -114,10 +114,12 @@
   right: 0;
   bottom: 0;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  background-color: rgba(255, 255, 255, 0.8);
-  z-index: 1000;
+  background-color: rgba(255, 255, 255, 0.9);
+  z-index: 9999;
+  gap: 1rem;
 }
 
 .loadingSpinner {
@@ -127,6 +129,12 @@
   border-top: 5px solid #3b82f6;
   border-radius: 50%;
   animation: spin 1s linear infinite;
+}
+
+.loadingText {
+  color: #334155;
+  font-size: 1.1rem;
+  font-weight: 500;
 }
 
 @keyframes spin {
