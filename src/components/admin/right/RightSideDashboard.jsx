@@ -36,6 +36,15 @@ const RightSideDashboard = () => {
     { department: 'SHS', count: 0, icon: <FaUsers /> },
     { department: 'JHS', count: 0, icon: <FaUsers /> }
   ]);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -146,11 +155,27 @@ const RightSideDashboard = () => {
           <FaCalendarAlt className={styles.sectionIcon} />
           <h2>School Calendar</h2>
         </div>
+        <div className={styles.digitalClock}>
+          {currentTime.toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+          })}
+        </div>
         <div className={styles.calendarContainer}>
           <Calendar
             onChange={setDate}
             value={date}
             className={styles.calendar}
+            style={{ width: '100%' }} // Inline style as last resort
+            tileClassName={styles.calendarTile}
+            view="month"
+            prev2Label={null}
+            next2Label={null}
+            formatShortWeekday={(locale, date) =>
+              ['S', 'M', 'T', 'W', 'T', 'F', 'S'][date.getDay()]
+            }
           />
         </div>
       </div>
@@ -176,7 +201,7 @@ const RightSideDashboard = () => {
           <FaChartBar className={styles.sectionIcon} />
           <h2>Department Statistics</h2>
         </div>
-        
+
         {/* Bar Chart */}
         <div className={styles.chartContainer}>
           <Bar data={departmentData} options={chartOptions} />

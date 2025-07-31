@@ -17,10 +17,20 @@ export const AuthProvider = ({ children }) => {
         try {
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           if (userDoc.exists()) {
-            setUserData({
+            const userData = {
               ...userDoc.data(),
-              id: userDoc.id
-            });
+              id: userDoc.id,
+              // Ensure admin status is properly set
+              isAdmin: userDoc.data().role === 'admin' || 
+                      (userDoc.data().permissions && 
+                       userDoc.data().permissions.includes('admin'))
+            };
+            setUserData(userData);
+            
+            // Update the user's auth token claims if needed
+            if (userData.isAdmin && !user.token?.admin) {
+              await auth.currentUser.getIdToken(true); // Force token refresh
+            }
           }
         } catch (error) {
           console.error("Error fetching user data:", error);
@@ -39,15 +49,23 @@ export const AuthProvider = ({ children }) => {
     currentUser,
     userData,
     loading,
+    // Enhanced permission checking
     hasPermission: (permission) => {
-      if (!userData?.permissions) return false;
-      return userData.permissions.includes(permission);
+      if (!userData) return false;
+      // Admin has all permissions
+      if (userData.isAdmin) return true;
+      // Check specific permissions
+      return userData.permissions?.includes(permission) || false;
+    },
+    // Direct admin check
+    isAdmin: () => {
+      return userData?.isAdmin || false;
     }
   };
 
   return (
     <AuthContext.Provider value={value}>
-      {children}
+      {!loading && children}
     </AuthContext.Provider>
   );
 };

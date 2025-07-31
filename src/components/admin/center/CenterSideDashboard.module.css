@@ -371,3 +371,97 @@
         overflow-x: auto;
     }
 }
+
+/* Add these to your existing styles */
+/* Add these to your existing styles */
+
+/* Activity List Styles */
+.activitiesList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 400px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #c1c1c1 #f1f1f1;
+}
+
+.activitiesList::-webkit-scrollbar {
+  width: 6px;
+}
+
+.activitiesList::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.activitiesList::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 10px;
+}
+
+.activityItem {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.activityItem:last-child {
+  border-bottom: none;
+}
+
+.activityIcon {
+  color: #3b82f6;
+  font-size: 1rem;
+  margin-top: 2px;
+}
+
+.activityContent {
+  flex: 1;
+}
+
+.activityAction {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.activityDetails {
+  color: #64748b;
+  font-size: 0.9em;
+}
+
+.activityTime {
+  color: #94a3b8;
+  font-size: 0.8rem;
+  display: block;
+  margin-top: 4px;
+}
+
+.errorMessage {
+  color: #ef4444;
+  background: #fee2e2;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 12px;
+}
+
+.emptyState {
+  color: #64748b;
+  text-align: center;
+  padding: 24px;
+  font-style: italic;
+}
+
+.refreshButton {
+  background: #e2e8f0;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.refreshButton:hover {
+  background: #cbd5e1;
+}

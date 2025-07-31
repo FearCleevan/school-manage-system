@@ -1,19 +1,15 @@
-// src/components/admin/center/CenterSideDashboard.jsx
 import React, { useState, useEffect } from 'react';
-import { 
-  FaUsers, 
-  FaChalkboardTeacher, 
-  FaBook, 
-  FaBuilding,
-  FaUserPlus,
-  FaCalendarAlt,
-  FaChartBar,
-  FaMoneyBillWave,
-  FaHome
+import {
+  FaUsers, FaChalkboardTeacher, FaBook, FaBuilding,
+  FaUserPlus, FaCalendarAlt, FaChartBar, FaMoneyBillWave, FaHome
 } from 'react-icons/fa';
-import { collection, getCountFromServer, query, orderBy, limit, getDocs, onSnapshot } from 'firebase/firestore';
+import { collection, getCountFromServer, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '../../../lib/firebase/config';
+import { useNavigate } from 'react-router-dom';
 import styles from './CenterSideDashboard.module.css';
+import { formatDistanceToNow } from 'date-fns';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const CenterSideDashboard = () => {
   const [stats, setStats] = useState([
@@ -26,86 +22,115 @@ const CenterSideDashboard = () => {
   const [recentStudents, setRecentStudents] = useState([]);
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activityError, setActivityError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch total students count
-        const studentsCol = collection(db, 'students');
-        const studentsSnapshot = await getCountFromServer(studentsCol);
-        const totalStudents = studentsSnapshot.data().count;
+        // Fetch counts
+        const [studentsCount, teachersCount] = await Promise.all([
+          getCountFromServer(collection(db, 'students')),
+          getCountFromServer(collection(db, 'users'))
+        ]);
 
-        // Fetch recent students (5 most recently added)
-        const recentStudentsQuery = query(
-          collection(db, 'students'),
-          orderBy('createdAt', 'desc'),
-          limit(5)
-        );
-        const recentStudentsSnapshot = await getDocs(recentStudentsQuery);
-        const recentStudentsData = recentStudentsSnapshot.docs.map(doc => ({
-          id: doc.id,
-          studentId: doc.data().studentId,
-          firstName: doc.data().firstName,
-          lastName: doc.data().lastName,
-          email: doc.data().email,
-          department: doc.data().department.toUpperCase(),
-          createdAt: doc.data().createdAt?.toDate().toLocaleDateString() || 'N/A',
-        }));
-
-        // Update stats with real student count
-        const updatedStats = [...stats];
-        updatedStats[0].value = totalStudents.toLocaleString();
-        setStats(updatedStats);
-
-        // Mock data for other sections
-        const mockStats = [
-          { title: 'Total Students', value: totalStudents.toLocaleString(), icon: <FaUsers />, trend: 12.5 },
-          { title: 'Total Teachers', value: '85', icon: <FaChalkboardTeacher />, trend: 5.2 },
+        setStats([
+          { title: 'Total Students', value: studentsCount.data().count.toLocaleString(), icon: <FaUsers />, trend: 12.5 },
+          { title: 'Total Teachers', value: teachersCount.data().count.toLocaleString(), icon: <FaChalkboardTeacher />, trend: 5.2 },
           { title: 'Total Courses', value: '32', icon: <FaBook />, trend: 3.7 },
           { title: 'Total Departments', value: '6', icon: <FaBuilding />, trend: 0 }
-        ];
+        ]);
 
-        const mockActivities = [
-          { id: 1, action: 'New student registered', user: 'John Doe', time: '2 hours ago' },
-          { id: 2, action: 'Course updated', user: 'Admin', time: '5 hours ago' },
-          { id: 3, action: 'Payment received', user: 'Jane Smith', time: '1 day ago' },
-          { id: 4, action: 'Attendance marked', user: 'Teacher', time: '2 days ago' }
-        ];
-
-        setStats(mockStats);
-        setRecentStudents(recentStudentsData);
-        setActivities(mockActivities);
         setLoading(false);
       } catch (error) {
         console.error('Error fetching data:', error);
+        toast.error('Failed to load dashboard data');
         setLoading(false);
       }
     };
 
     fetchData();
 
-    // Set up real-time listener for new students
-    const recentStudentsQuery = query(
-      collection(db, 'students'),
-      orderBy('createdAt', 'desc'),
-      limit(5)
-    );
-    
-    const unsubscribe = onSnapshot(recentStudentsQuery, (snapshot) => {
-      const updatedRecentStudents = snapshot.docs.map(doc => ({
-        id: doc.id,
-        studentId: doc.data().studentId,
-        firstName: doc.data().firstName,
-        lastName: doc.data().lastName,
-        email: doc.data().email,
-        department: doc.data().department.toUpperCase(),
-        createdAt: doc.data().createdAt?.toDate().toLocaleDateString() || 'N/A',
-      }));
-      setRecentStudents(updatedRecentStudents);
-    });
+    // Real-time listeners
+    const setupListeners = () => {
+      try {
+        // Students listener
+        const studentsQuery = query(
+          collection(db, 'students'),
+          orderBy('createdAt', 'desc'),
+          limit(5)
+        );
+        const unsubscribeStudents = onSnapshot(studentsQuery, 
+          (snapshot) => {
+            const students = snapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data(),
+              createdAt: doc.data().createdAt?.toDate().toLocaleDateString()
+            }));
+            setRecentStudents(students);
+          },
+          (error) => {
+            console.error("Students listener error:", error);
+            toast.error("Failed to load recent students");
+          }
+        );
 
-    return () => unsubscribe();
+        // Activities listener
+        const activitiesQuery = query(
+          collection(db, 'activities'),
+          orderBy('timestamp', 'desc'),
+          limit(10)
+        );
+        const unsubscribeActivities = onSnapshot(activitiesQuery, 
+          (snapshot) => {
+            const activitiesData = snapshot.docs.map(doc => {
+              const data = doc.data();
+              return {
+                id: doc.id,
+                action: data.action,
+                user: data.userName || data.userEmail || 'System',
+                timestamp: formatDistanceToNow(data.timestamp?.toDate() || new Date(), { addSuffix: true }),
+                details: data.details,
+                icon: getActivityIcon(data.action)
+              };
+            });
+            setActivities(activitiesData);
+            setActivityError(null);
+          },
+          (error) => {
+            console.error("Activities listener error:", error);
+            setActivityError("Failed to load activities. Please refresh or check permissions.");
+          }
+        );
+
+        return () => {
+          unsubscribeStudents();
+          unsubscribeActivities();
+        };
+      } catch (error) {
+        console.error("Listener setup error:", error);
+        toast.error("Failed to initialize real-time updates");
+      }
+    };
+
+    return setupListeners();
   }, []);
+
+  const getActivityIcon = (action) => {
+    const actionIcons = {
+      student: <FaUsers />,
+      user: <FaUserPlus />,
+      subject: <FaBook />,
+      payment: <FaMoneyBillWave />,
+      course: <FaBook />,
+      default: <FaCalendarAlt />
+    };
+
+    for (const [key, icon] of Object.entries(actionIcons)) {
+      if (action.includes(key)) return icon;
+    }
+    return actionIcons.default;
+  };
 
   if (loading) {
     return (
@@ -140,13 +165,18 @@ const CenterSideDashboard = () => {
         <div className={styles.recentStudents}>
           <div className={styles.sectionHeader}>
             <h2>Recently Added Students</h2>
-            <button className={styles.viewAllButton}>View All</button>
+            <button 
+              className={styles.viewAllButton}
+              onClick={() => navigate('/dashboard/manage-student')}
+            >
+              View All
+            </button>
           </div>
           <div className={styles.tableContainer}>
             <table className={styles.studentsTable}>
               <thead>
                 <tr>
-                  <th>Student ID</th>
+                  <th>ID</th>
                   <th>Name</th>
                   <th>Email</th>
                   <th>Department</th>
@@ -157,16 +187,10 @@ const CenterSideDashboard = () => {
                 {recentStudents.map(student => (
                   <tr key={student.id}>
                     <td>{student.studentId}</td>
-                    <td>
-                      <div className={styles.studentInfo}>
-                        <span className={styles.studentName}>
-                          {student.firstName} {student.lastName}
-                        </span>
-                      </div>
-                    </td>
+                    <td>{student.firstName} {student.lastName}</td>
                     <td>{student.email}</td>
                     <td>
-                      <span className={`${styles.departmentBadge} ${styles[student.department.toLowerCase()]}`}>
+                      <span className={`${styles.departmentBadge} ${styles[student.department?.toLowerCase()]}`}>
                         {student.department}
                       </span>
                     </td>
@@ -181,25 +205,40 @@ const CenterSideDashboard = () => {
         <div className={styles.recentActivities}>
           <div className={styles.sectionHeader}>
             <h2>Recent Activities</h2>
+            <button 
+              className={styles.refreshButton}
+              onClick={() => window.location.reload()}
+            >
+              Refresh
+            </button>
           </div>
-          <ul className={styles.activitiesList}>
-            {activities.map(activity => (
-              <li key={activity.id} className={styles.activityItem}>
-                <div className={styles.activityIcon}>
-                  {activity.action.includes('student') ? <FaUserPlus /> : 
-                   activity.action.includes('Course') ? <FaBook /> : 
-                   activity.action.includes('Payment') ? <FaMoneyBillWave /> : <FaCalendarAlt />}
-                </div>
-                <div className={styles.activityContent}>
-                  <p className={styles.activityAction}>{activity.action}</p>
-                  <div className={styles.activityMeta}>
-                    <span className={styles.activityUser}>{activity.user}</span>
-                    <span className={styles.activityTime}>{activity.time}</span>
+          
+          {activityError ? (
+            <div className={styles.errorMessage}>
+              {activityError}
+            </div>
+          ) : activities.length === 0 ? (
+            <div className={styles.emptyState}>
+              No activities found. Activities will appear here when changes are made.
+            </div>
+          ) : (
+            <ul className={styles.activitiesList}>
+              {activities.map(activity => (
+                <li key={activity.id} className={styles.activityItem}>
+                  <div className={styles.activityIcon}>{activity.icon}</div>
+                  <div className={styles.activityContent}>
+                    <p className={styles.activityAction}>
+                      <strong>{activity.user}</strong> {activity.action}
+                      {activity.details && (
+                        <span className={styles.activityDetails}> - {activity.details}</span>
+                      )}
+                    </p>
+                    <span className={styles.activityTime}>{activity.timestamp}</span>
                   </div>
-                </div>
-              </li>
-            ))}
-          </ul>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </div>
