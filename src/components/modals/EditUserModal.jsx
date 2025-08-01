@@ -9,6 +9,7 @@ import {
     FaShieldAlt, FaCog, FaEye, FaEyeSlash
 } from 'react-icons/fa';
 import styles from './EditUserModal.module.css';
+import { logUserActivity } from '../../lib/firebase/userActivityLogger';
 
 const EditUserModal = ({ isOpen, onClose, user, onSave }) => {
     const [formData, setFormData] = useState({
@@ -181,6 +182,10 @@ const EditUserModal = ({ isOpen, onClose, user, onSave }) => {
                 if (!validatePasswords()) {
                     return;
                 }
+
+                await logUserActivity('user_password_changed', {
+                    userId: formData.id
+                });
             }
 
             const userToSave = {

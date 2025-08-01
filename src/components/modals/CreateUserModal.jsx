@@ -13,6 +13,7 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../lib/firebase/config';
 import { uploadToCloudinary } from '../../lib/firebase/storage';
 import styles from './CreateUserModal.module.css';
+import { logUserActivity } from '../../lib/firebase/userActivityLogger';
 
 const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
   const [formData, setFormData] = useState({
@@ -181,6 +182,17 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
         lastUpdated: serverTimestamp()
       });
 
+      try {
+        await logUserActivity('user_created', {
+          targetUserId: authUser.uid,
+          targetUserEmail: formData.email,
+          targetUserName: `${formData.firstName} ${formData.lastName}`,
+          role: formData.role,
+          status: formData.status
+        });
+      } catch (logError) {
+        console.error("Activity logging failed:", logError);
+      }
       // Success
       onCreate();
       resetForm();
@@ -223,9 +235,9 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
       <div className={styles.modalContainer}>
         <div className={styles.modalHeader}>
           <h3>Create New User</h3>
-          <button 
-            className={styles.closeBtn} 
-            onClick={handleClose} 
+          <button
+            className={styles.closeBtn}
+            onClick={handleClose}
             disabled={isSubmitting}
             aria-label="Close modal"
           >
@@ -405,9 +417,8 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
               {permissionOptions.map(({ key, label, icon }) => (
                 <label
                   key={key}
-                  className={`${styles.permissionItem} ${
-                    formData.permissions.includes(key) ? styles.selected : ''
-                  }`}
+                  className={`${styles.permissionItem} ${formData.permissions.includes(key) ? styles.selected : ''
+                    }`}
                   htmlFor={`perm-${key}`}
                 >
                   <input

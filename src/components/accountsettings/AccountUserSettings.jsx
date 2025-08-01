@@ -1,11 +1,10 @@
-// src/components/accountsettings/AccountUserSettings.jsx
 import React, { useState, useEffect } from 'react';
 import { FaUserShield, FaUserEdit } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { auth, db } from '../../lib/firebase/config';
 import { onAuthStateChanged } from 'firebase/auth';
-import { collection, query, where, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { logUserActivity } from '../../lib/activityLogger';
 
@@ -33,7 +32,7 @@ const AccountUserSettings = () => {
     const [selectedUser, setSelectedUser] = useState(null);
 
     // Custom hooks
-    const { users, loading, error, setUsers } = useUsersData(activeTab, currentUser);
+    const { users, loading, error } = useUsersData(activeTab, currentUser);
 
     // Filter users based on search term
     const [searchTerm, setSearchTerm] = useState('');
@@ -65,7 +64,12 @@ const AccountUserSettings = () => {
     // Handler functions
     const handleCreateUser = async (newUser) => {
         try {
-            await logUserActivity('user_created', newUser);
+            await logUserActivity('user_created', {
+                userId: newUser.uid,
+                email: newUser.email,
+                role: newUser.role,
+                status: newUser.status
+            });
             setShowCreateModal(false);
             toast.success('User created successfully!');
         } catch (error) {
@@ -121,7 +125,19 @@ const AccountUserSettings = () => {
             }
 
             await updateDoc(userRef, updateData);
-            await logUserActivity('user_updated', updatedUser);
+
+            await logUserActivity('user_updated', {
+                userId: updatedUser.id,
+                email: updatedUser.email,
+                changes: {
+                    firstName: updatedUser.firstName,
+                    lastName: updatedUser.lastName,
+                    status: updatedUser.status,
+                    permissions: updatedUser.permissions,
+                    ...(updatedUser.photoURL && { profileImageUpdated: true })
+                }
+            });
+
             toast.success('User updated successfully!');
             return true;
         } catch (error) {
@@ -135,16 +151,18 @@ const AccountUserSettings = () => {
         try {
             const userRef = doc(db, 'users', userId);
             await updateDoc(userRef, { status: newStatus });
-            
+
             // Find the user to log the activity
             const user = users.find(u => u.id === userId);
             if (user) {
-                await logUserActivity('user_updated', { 
-                    ...user, 
-                    status: newStatus 
+                await logUserActivity('user_status_changed', {
+                    userId: user.id,
+                    email: user.email,
+                    previousStatus: user.status,
+                    newStatus: newStatus
                 });
             }
-            
+
             toast.success(`User status changed to ${newStatus}`);
         } catch (error) {
             console.error("Error updating status:", error);
@@ -157,7 +175,14 @@ const AccountUserSettings = () => {
             if (!selectedUser?.id) {
                 throw new Error('No user selected for deletion');
             }
-            await logUserActivity('user_deleted', selectedUser);
+
+            await logUserActivity('user_deleted', {
+                userId: selectedUser.id,
+                email: selectedUser.email,
+                role: selectedUser.role,
+                status: selectedUser.status
+            });
+
             await deleteDoc(doc(db, 'users', selectedUser.id));
             setShowDeleteModal(false);
             setSelectedUser(null);

@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import {
   FaUsers, FaChalkboardTeacher, FaBook, FaBuilding,
   FaUserPlus, FaCalendarAlt, FaChartBar, FaMoneyBillWave, FaHome,
-  FaEdit, FaTrash, FaUserCheck, FaBookOpen
+  FaEdit, FaTrash, FaUserCheck, FaBookOpen,
+  FaShieldAlt
 } from 'react-icons/fa';
 import { collection, getCountFromServer, query, orderBy, limit, onSnapshot } from 'firebase/firestore';
 import { db } from '../../../lib/firebase/config';
@@ -30,6 +31,20 @@ const CenterSideDashboard = () => {
   const [activityError, setActivityError] = useState(null);
   const navigate = useNavigate();
 
+  // Helper function to format activity action text
+  const formatActivityAction = (action) => {
+    if (!action) return '';
+    
+    // Replace underscores with spaces
+    let formatted = action.replace(/_/g, ' ');
+    
+    // Capitalize first letter of each word
+    formatted = formatted.split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+    
+    return formatted;
+  };
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -87,24 +102,78 @@ const CenterSideDashboard = () => {
         const activitiesQuery = query(
           collection(db, 'activities'),
           orderBy('timestamp', 'desc'),
-          limit(5) // Only fetch the 5 most recent activities
+          limit(5)
         );
-        const unsubscribeActivities = onSnapshot(activitiesQuery,
+
+        const unsubscribeActivities = onSnapshot(
+          activitiesQuery,
           (snapshot) => {
-            const activitiesData = snapshot.docs.map(doc => {
-              const data = doc.data();
-              return {
-                id: doc.id,
-                action: data.action,
-                user: data.userName || data.userEmail || 'System',
-                timestamp: formatDistanceToNow(data.timestamp?.toDate() || new Date(), { addSuffix: true }),
-                details: data.details,
-                icon: getActivityIcon(data.action)
-              };
-            });
-            setActivities(activitiesData);
-            setActivityError(null);
-            setLoading(prev => ({ ...prev, activities: false }));
+            try {
+              const activitiesData = snapshot.docs.map(doc => {
+                const data = doc.data();
+                const actorName = data.user?.name || 'System';
+                let targetInfo = '';
+                let actionDetails = '';
+
+                // Determine target information
+                if (data.details) {
+                  targetInfo = data.details.targetUserName ||
+                    data.details.targetUserEmail ||
+                    (data.details.targetUserId ? `User ${data.details.targetUserId}` : '');
+
+                  // Handle specific action details
+                  switch (data.action) {
+                    case 'user_created':
+                      actionDetails = targetInfo;
+                      if (data.details.role) {
+                        actionDetails += ` (${data.details.role})`;
+                      }
+                      break;
+                    case 'user_updated':
+                      actionDetails = targetInfo;
+                      if (data.details.changes) {
+                        const changes = Object.keys(data.details.changes)
+                          .filter(key => data.details.changes[key])
+                          .join(', ');
+                        if (changes) {
+                          actionDetails += ` (Changed: ${changes})`;
+                        }
+                      }
+                      break;
+                    case 'user_status_changed':
+                      actionDetails = `${targetInfo} from ${data.details.previousStatus} to ${data.details.newStatus}`;
+                      break;
+                    case 'student_created':
+                    case 'student_updated':
+                      actionDetails = data.details.studentName || `Student ${data.details.studentId}`;
+                      break;
+                    default:
+                      actionDetails = targetInfo;
+                  }
+                }
+
+                // Format action text
+                const actionText = formatActivityAction(data.action);
+
+                return {
+                  id: doc.id,
+                  displayText: `${actorName} ${actionText}${actionDetails ? ` - ${actionDetails}` : ''}`,
+                  timestamp: formatDistanceToNow(data.timestamp?.toDate() || new Date(), { addSuffix: true }),
+                  icon: getActivityIcon(data.action),
+                  user: data.user,
+                  action: data.action,
+                  details: data.details
+                };
+              });
+
+              setActivities(activitiesData);
+              setActivityError(null);
+              setLoading(prev => ({ ...prev, activities: false }));
+            } catch (error) {
+              console.error("Error processing activities:", error);
+              setActivityError("Failed to process activities");
+              setLoading(prev => ({ ...prev, activities: false }));
+            }
           },
           (error) => {
             console.error("Activities listener error:", error);
@@ -134,12 +203,24 @@ const CenterSideDashboard = () => {
       'deleted a student': <FaTrash />,
       'enrolled existing student': <FaUserCheck />,
       'customized subjects for student': <FaBookOpen />,
+      'user_created': <FaUserPlus />,
+      'user_updated': <FaEdit />,
+      'user_deleted': <FaTrash />,
+      'user_status_changed': <FaUserCheck />,
+      'user_password_changed': <FaShieldAlt />,
       default: <FaCalendarAlt />
     };
 
+    // Check for exact matches first
+    if (actionIcons[action]) {
+      return actionIcons[action];
+    }
+
+    // Check for partial matches
     for (const [key, icon] of Object.entries(actionIcons)) {
       if (action.includes(key)) return icon;
     }
+
     return actionIcons.default;
   };
 
@@ -237,15 +318,25 @@ const CenterSideDashboard = () => {
             <ul className={styles.activitiesList}>
               {activities.map(activity => (
                 <li key={activity.id} className={styles.activityItem}>
-                  <div className={styles.activityIcon}>{getActivityIcon(activity.action)}</div>
+                  <div className={styles.activityIcon}>{activity.icon || getActivityIcon(activity.action)}</div>
                   <div className={styles.activityContent}>
                     <p className={styles.activityAction}>
-                      <strong>{activity.userName || 'System'}</strong> {activity.action}
+                      <strong>{activity.user?.name || activity.user || 'System'}</strong> {formatActivityAction(activity.action)}
                       {activity.details && (
                         <>
-                          <span className={styles.activityDetails}> - {activity.details.studentId}</span>
-                          {activity.details.studentName && (
-                            <span className={styles.activityDetails}> ({activity.details.studentName})</span>
+                          {activity.details.userId && (
+                            <span className={styles.activityDetails}> - User ID: {activity.details.userId}</span>
+                          )}
+                          {activity.details.studentId && (
+                            <span className={styles.activityDetails}> - Student ID: {activity.details.studentId}</span>
+                          )}
+                          {activity.details.email && (
+                            <span className={styles.activityDetails}> ({activity.details.email})</span>
+                          )}
+                          {activity.details.previousStatus && activity.details.newStatus && (
+                            <span className={styles.activityDetails}>
+                              {' '}from {activity.details.previousStatus} to {activity.details.newStatus}
+                            </span>
                           )}
                         </>
                       )}
