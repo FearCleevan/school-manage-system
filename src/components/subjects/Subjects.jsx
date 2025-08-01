@@ -1,14 +1,11 @@
-// src/components/subjects/Subjects.jsx
 import React, { useState } from 'react';
 import { FaGraduationCap } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { CSVLink } from 'react-csv';
 import { db } from '../../lib/firebase/config';
-import { collection, doc, deleteDoc, getDocs } from 'firebase/firestore';
+import { doc, deleteDoc } from 'firebase/firestore';
 
 import './subjects.css';
 import DeleteConfirmationModal from './components/DeleteConfirmationModal';
@@ -32,6 +29,7 @@ const Subjects = () => {
   
   // Modals state
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false); // Added missing state
   const [viewingSubject, setViewingSubject] = useState(null);
   const [editingSubject, setEditingSubject] = useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -121,6 +119,7 @@ const Subjects = () => {
       )
     );
     toast.success('Subject updated successfully!');
+    setShowEditModal(false);
   };
 
   // Delete functions
@@ -386,7 +385,10 @@ const Subjects = () => {
 
         <EditSubject
           show={editingSubject !== null}
-          onClose={() => setEditingSubject(null)}
+          onClose={() => {
+            setEditingSubject(null);
+            setShowEditModal(false);
+          }}
           subject={editingSubject}
           onUpdateSubject={handleUpdateSubject}
         />
