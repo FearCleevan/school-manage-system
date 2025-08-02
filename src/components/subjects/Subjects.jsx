@@ -17,6 +17,8 @@ import { useSubjectsExports } from './hooks/useSubjectsExports';
 import AddSubject from '../modals/AddSubject';
 import ViewSubject from '../modals/ViewSubject';
 import EditSubject from '../modals/EditSubject';
+import { logActivity } from '../../lib/firebase/activityLogger';
+import { auth } from '../../lib/firebase/config';
 
 const Subjects = () => {
   // State management
@@ -26,7 +28,7 @@ const Subjects = () => {
     key: "subjectId",
     direction: "asc",
   });
-  
+
   // Modals state
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false); // Added missing state
@@ -48,7 +50,7 @@ const Subjects = () => {
     availableStatuses,
     resetFilters
   } = useSubjectsFilters();
-  
+
   const { exportToExcel, exportToPDF } = useSubjectsExports();
 
   // Sort function
@@ -108,6 +110,16 @@ const Subjects = () => {
   // Handle add subject
   const handleAddSubject = (newSubject) => {
     setSubjects(prev => [...prev, newSubject]);
+
+    // Log the activity with consistent naming
+    logActivity('subject_added', {
+      subjectId: newSubject.subjectId,
+      subjectName: newSubject.subjectName,
+      course: newSubject.course,
+      yearLevel: newSubject.yearLevel,
+      semester: newSubject.semester
+    }, auth.currentUser?.displayName);
+
     toast.success('Subject added successfully!');
   };
 
@@ -118,10 +130,17 @@ const Subjects = () => {
         subject.id === updatedSubject.id ? updatedSubject : subject
       )
     );
+
+    // Log the activity with consistent naming
+    logActivity('subject_edited', {
+      subjectId: updatedSubject.subjectId,
+      subjectName: updatedSubject.subjectName,
+      changes: updatedSubject
+    }, auth.currentUser?.displayName);
+
     toast.success('Subject updated successfully!');
     setShowEditModal(false);
   };
-
   // Delete functions
   const handleDeleteClick = (subject) => {
     setSubjectToDelete(subject);
@@ -134,6 +153,13 @@ const Subjects = () => {
     try {
       await deleteDoc(doc(db, 'subjects', subjectToDelete.id));
       setSubjects(subjects.filter(subject => subject.id !== subjectToDelete.id));
+
+      // Log the activity with consistent naming
+      logActivity('subject_deleted', {
+        subjectId: subjectToDelete.subjectId,
+        subjectName: subjectToDelete.subjectName
+      }, auth.currentUser?.displayName);
+
       setDeleteModalOpen(false);
       setSubjectToDelete(null);
       toast.success('Subject deleted successfully!');
@@ -276,10 +302,10 @@ const Subjects = () => {
           onPrint={printTable}
           prepareExportData={prepareExportData}
           hasFilters={
-            filters.course !== 'All' || 
-            filters.yearLevel !== 'All' || 
-            filters.semester !== 'All' || 
-            filters.status !== 'All' || 
+            filters.course !== 'All' ||
+            filters.yearLevel !== 'All' ||
+            filters.semester !== 'All' ||
+            filters.status !== 'All' ||
             searchTerm
           }
         />

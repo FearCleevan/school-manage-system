@@ -34,15 +34,15 @@ const CenterSideDashboard = () => {
   // Helper function to format activity action text
   const formatActivityAction = (action) => {
     if (!action) return '';
-    
+
     // Replace underscores with spaces
     let formatted = action.replace(/_/g, ' ');
-    
+
     // Capitalize first letter of each word
     formatted = formatted.split(' ')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
-    
+
     return formatted;
   };
 
@@ -105,6 +105,7 @@ const CenterSideDashboard = () => {
           limit(5)
         );
 
+        // Update the activities listener in the useEffect hook
         const unsubscribeActivities = onSnapshot(
           activitiesQuery,
           (snapshot) => {
@@ -112,57 +113,35 @@ const CenterSideDashboard = () => {
               const activitiesData = snapshot.docs.map(doc => {
                 const data = doc.data();
                 const actorName = data.user?.name || 'System';
-                let targetInfo = '';
-                let actionDetails = '';
+                let actionText = formatActivityAction(data.action);
+                let details = data.details || {};
 
-                // Determine target information
-                if (data.details) {
-                  targetInfo = data.details.targetUserName ||
-                    data.details.targetUserEmail ||
-                    (data.details.targetUserId ? `User ${data.details.targetUserId}` : '');
-
-                  // Handle specific action details
-                  switch (data.action) {
-                    case 'user_created':
-                      actionDetails = targetInfo;
-                      if (data.details.role) {
-                        actionDetails += ` (${data.details.role})`;
-                      }
-                      break;
-                    case 'user_updated':
-                      actionDetails = targetInfo;
-                      if (data.details.changes) {
-                        const changes = Object.keys(data.details.changes)
-                          .filter(key => data.details.changes[key])
-                          .join(', ');
-                        if (changes) {
-                          actionDetails += ` (Changed: ${changes})`;
-                        }
-                      }
-                      break;
-                    case 'user_status_changed':
-                      actionDetails = `${targetInfo} from ${data.details.previousStatus} to ${data.details.newStatus}`;
-                      break;
-                    case 'student_created':
-                    case 'student_updated':
-                      actionDetails = data.details.studentName || `Student ${data.details.studentId}`;
-                      break;
-                    default:
-                      actionDetails = targetInfo;
-                  }
+                // Customize display for specific action types
+                if (data.action.includes('student') && !data.action.includes('subject')) {
+                  actionText = data.action.includes('added') ? 'Added a new Student' :
+                    data.action.includes('edited') ? 'Edited a Student' :
+                      data.action.includes('deleted') ? 'Deleted a Student' :
+                        data.action.includes('enrolled') ? 'Enrolled a Student' : actionText;
                 }
-
-                // Format action text
-                const actionText = formatActivityAction(data.action);
+                else if (data.action.includes('subject')) {
+                  actionText = data.action.includes('added') ? 'Added a new Subject' :
+                    data.action.includes('edited') ? 'Edited a Subject' :
+                      data.action.includes('deleted') ? 'Deleted a Subject' : actionText;
+                }
+                else if (data.action.includes('user')) {
+                  actionText = data.action.includes('created') ? 'Added a new User' :
+                    data.action.includes('updated') ? 'Updated a User' :
+                      data.action.includes('deleted') ? 'Deleted a User' :
+                        data.action.includes('status_changed') ? 'Changed User Status' : actionText;
+                }
 
                 return {
                   id: doc.id,
-                  displayText: `${actorName} ${actionText}${actionDetails ? ` - ${actionDetails}` : ''}`,
-                  timestamp: formatDistanceToNow(data.timestamp?.toDate() || new Date(), { addSuffix: true }),
-                  icon: getActivityIcon(data.action),
-                  user: data.user,
                   action: data.action,
-                  details: data.details
+                  user: data.user,
+                  details: details,
+                  timestamp: formatDistanceToNow(data.timestamp?.toDate() || new Date(), { addSuffix: true }),
+                  displayText: actionText
                 };
               });
 
@@ -203,6 +182,12 @@ const CenterSideDashboard = () => {
       'deleted a student': <FaTrash />,
       'enrolled existing student': <FaUserCheck />,
       'customized subjects for student': <FaBookOpen />,
+      'added a new subject': <FaBookOpen />,
+      'edited a subject': <FaEdit />,
+      'deleted a subject': <FaTrash />,
+      'subject_added': <FaBookOpen />,
+      'subject_edited': <FaEdit />,
+      'subject_deleted': <FaTrash />,
       'user_created': <FaUserPlus />,
       'user_updated': <FaEdit />,
       'user_deleted': <FaTrash />,
@@ -211,17 +196,17 @@ const CenterSideDashboard = () => {
       default: <FaCalendarAlt />
     };
 
-    // Check for exact matches first
+    // First check exact matches
     if (actionIcons[action]) {
       return actionIcons[action];
     }
 
-    // Check for partial matches
-    for (const [key, icon] of Object.entries(actionIcons)) {
-      if (action.includes(key)) return icon;
-    }
+    // Then check partial matches
+    const matchedKey = Object.keys(actionIcons).find(key =>
+      action.toLowerCase().includes(key.toLowerCase())
+    );
 
-    return actionIcons.default;
+    return matchedKey ? actionIcons[matchedKey] : actionIcons.default;
   };
 
   if (loading.stats || loading.students || loading.activities) {
@@ -316,35 +301,93 @@ const CenterSideDashboard = () => {
             </div>
           ) : (
             <ul className={styles.activitiesList}>
-              {activities.map(activity => (
-                <li key={activity.id} className={styles.activityItem}>
-                  <div className={styles.activityIcon}>{activity.icon || getActivityIcon(activity.action)}</div>
-                  <div className={styles.activityContent}>
-                    <p className={styles.activityAction}>
-                      <strong>{activity.user?.name || activity.user || 'System'}</strong> {formatActivityAction(activity.action)}
-                      {activity.details && (
-                        <>
-                          {activity.details.userId && (
-                            <span className={styles.activityDetails}> - User ID: {activity.details.userId}</span>
-                          )}
-                          {activity.details.studentId && (
-                            <span className={styles.activityDetails}> - Student ID: {activity.details.studentId}</span>
-                          )}
-                          {activity.details.email && (
-                            <span className={styles.activityDetails}> ({activity.details.email})</span>
-                          )}
-                          {activity.details.previousStatus && activity.details.newStatus && (
-                            <span className={styles.activityDetails}>
-                              {' '}from {activity.details.previousStatus} to {activity.details.newStatus}
-                            </span>
-                          )}
-                        </>
-                      )}
-                    </p>
-                    <span className={styles.activityTime}>{activity.timestamp}</span>
-                  </div>
-                </li>
-              ))}
+              {activities.map(activity => {
+                // Determine the display text based on action type
+                let displayText = formatActivityAction(activity.action);
+                let details = null;
+
+                if (activity.details) {
+                  // Handle student actions
+                  if (activity.action.includes('student') && !activity.action.includes('subject')) {
+                    details = (
+                      <>
+                        {activity.details.studentId && (
+                          <span className={styles.activityDetails}>
+                            - Student ID: {activity.details.studentId}
+                            {activity.details.studentName && ` (${activity.details.studentName})`}
+                          </span>
+                        )}
+                      </>
+                    );
+                  }
+                  // Handle subject actions
+                  else if (activity.action.includes('subject')) {
+                    details = (
+                      <>
+                        {activity.details.subjectId && (
+                          <span className={styles.activityDetails}>
+                            - Subject ID: {activity.details.subjectId}
+                          </span>
+                        )}
+                      </>
+                    );
+                  }
+                  // Handle user actions
+                  else if (activity.action.includes('user')) {
+                    details = (
+                      <>
+                        {activity.details.userId && (
+                          <span className={styles.activityDetails}>
+                            - User ID: {activity.details.userId}
+                          </span>
+                        )}
+                        {activity.details.email && (
+                          <span className={styles.activityDetails}>
+                            ({activity.details.email})
+                          </span>
+                        )}
+                        {activity.details.previousStatus && activity.details.newStatus && (
+                          <span className={styles.activityDetails}>
+                            {' '}from {activity.details.previousStatus} to {activity.details.newStatus}
+                          </span>
+                        )}
+                      </>
+                    );
+                  }
+                  // Handle enrollment actions
+                  else if (activity.action.includes('enroll')) {
+                    details = (
+                      <>
+                        {activity.details.studentId && (
+                          <span className={styles.activityDetails}>
+                            - Student ID: {activity.details.studentId}
+                          </span>
+                        )}
+                        {activity.details.course && (
+                          <span className={styles.activityDetails}>
+                            {' '}(Course: {activity.details.course})
+                          </span>
+                        )}
+                      </>
+                    );
+                  }
+                }
+
+                return (
+                  <li key={activity.id} className={styles.activityItem}>
+                    <div className={styles.activityIcon}>
+                      {getActivityIcon(activity.action)}
+                    </div>
+                    <div className={styles.activityContent}>
+                      <p className={styles.activityAction}>
+                        <strong>{activity.user?.name || activity.user || 'System'}</strong> {displayText}
+                        {details}
+                      </p>
+                      <span className={styles.activityTime}>{activity.timestamp}</span>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </div>
