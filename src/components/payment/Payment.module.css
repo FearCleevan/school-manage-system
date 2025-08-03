@@ -1,0 +1,88 @@
+/* src/components/payment/Payment.module.css */
+
+/* Main Container */
+.paymentManagementContainer {
+    margin-top: 20px;
+    margin-left: 300px;
+    margin-right: 20px;
+    margin-bottom: 20px;
+    padding: 2rem;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: calc(100% - 300px);
+    min-height: fit-content;
+}
+
+.paymentManagement {
+    width: 100%;
+}
+
+/* Header */
+.managementHeader {
+    color: #212529;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    font-size: 18px;
+    border-bottom: 1px solid #eee;
+}
+
+.managementHeader svg {
+    color: #2c3e50;
+}
+
+/* Payment Tabs */
+.paymentTabs {
+    display: flex;
+    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 20px;
+}
+
+.paymentTab {
+    padding: 10px 20px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    color: #6c757d;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.paymentTab.active {
+    color: #2c3e50;
+    border-bottom-color: #2c3e50;
+}
+
+.paymentTab:hover:not(.active) {
+    color: #2c3e50;
+    border-bottom-color: #2c3e5093;
+}
+
+/* Tab Content */
+.tabContent {
+    padding: 15px 0;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .paymentManagementContainer {
+        margin-left: 20px;
+        width: calc(100% - 40px);
+    }
+}
+
+@media (max-width: 768px) {
+    .paymentTabs {
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    .paymentTab {
+        padding: 8px 15px;
+        font-size: 14px;
+    }
+}

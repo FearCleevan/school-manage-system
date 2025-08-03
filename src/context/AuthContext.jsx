@@ -15,21 +15,27 @@ export const AuthProvider = ({ children }) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         try {
+          // First get the user document
           const userDoc = await getDoc(doc(db, 'users', user.uid));
+          
           if (userDoc.exists()) {
             const userData = {
               ...userDoc.data(),
               id: userDoc.id,
-              // Ensure admin status is properly set
               isAdmin: userDoc.data().role === 'admin' || 
                       (userDoc.data().permissions && 
                        userDoc.data().permissions.includes('admin'))
             };
             setUserData(userData);
             
-            // Update the user's auth token claims if needed
-            if (userData.isAdmin && !user.token?.admin) {
-              await auth.currentUser.getIdToken(true); // Force token refresh
+            // Force token refresh if admin status changed
+            try {
+              const tokenResult = await user.getIdTokenResult();
+              if (userData.isAdmin !== !!tokenResult.claims.admin) {
+                await user.getIdToken(true); // Force refresh
+              }
+            } catch (tokenError) {
+              console.warn("Token refresh error:", tokenError);
             }
           }
         } catch (error) {
@@ -49,15 +55,11 @@ export const AuthProvider = ({ children }) => {
     currentUser,
     userData,
     loading,
-    // Enhanced permission checking
     hasPermission: (permission) => {
       if (!userData) return false;
-      // Admin has all permissions
       if (userData.isAdmin) return true;
-      // Check specific permissions
       return userData.permissions?.includes(permission) || false;
     },
-    // Direct admin check
     isAdmin: () => {
       return userData?.isAdmin || false;
     }

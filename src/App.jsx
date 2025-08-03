@@ -10,7 +10,7 @@ import StudentManagement from './components/manageStudent/StudentManagement';
 // import Department from './components/department/Department';
 // import Course from './components/course/Course';
 import Subjects from './components/subjects/Subjects';
-// import Payment from './components/payment/Payment';
+import Payment from './components/payment/Payment';
 // import GradingSystem from './components/gradingsystem/GradingSystem';
 // import Attendance from './components/attendance/Attendance';
 // import Announcement from './components/announcement/Announcement';
@@ -133,7 +133,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            {/* <Route
+            <Route
               path="payment"
               element={
                 <ProtectedRoute requiredPermissions={['payment']}>
@@ -141,7 +141,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
+            {/* <Route
               path="grading-system"
               element={
                 <ProtectedRoute requiredPermissions={['gradingSystem']}>

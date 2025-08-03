@@ -1,4 +1,5 @@
-import React, { useEffect } from "react";
+//src/components/dashboard/Dashboard.jsx
+import React, { useEffect, useState } from "react";
 import { FaBars } from "react-icons/fa";
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import LeftSideDashboard from "../admin/left/LeftSideDashboard";
@@ -11,6 +12,7 @@ const Dashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { currentUser, userData, loading } = useAuth();
+  const [showLoading, setShowLoading] = useState(true);
   
   const pathChecks = [
     'account-user-settings',
@@ -32,11 +34,22 @@ const Dashboard = () => {
     }
   }, [currentUser, loading, navigate]);
 
-  if (loading) {
+  // Hide loading after a minimum time to ensure it's visible
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowLoading(false);
+    }, 500); // Minimum 500ms loading time
+    
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading || showLoading) {
     return (
       <div className={styles.loadingOverlay}>
-        <div className={styles.loadingSpinner}></div>
-        <p className={styles.loadingText}>Loading dashboard...</p>
+        <div className={styles.loadingContent}>
+          <div className={styles.loadingSpinner}></div>
+          <p className={styles.loadingText}>Loading dashboard...</p>
+        </div>
       </div>
     );
   }
