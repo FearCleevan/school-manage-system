@@ -1,4 +1,4 @@
-//src/components/manageStudent/components/TableControls.jsx
+// src/components/manageStudent/components/TableControls.jsx
 import React from 'react';
 import {
   FaSearch,
@@ -34,8 +34,29 @@ const TableControls = ({
   onPrint,
   prepareExportData,
   onImportClick,
-  hasFilters
+  hasFilters,
+  selectedRows = []
 }) => {
+  const handleExportExcelClick = () => {
+    if (selectedRows.length > 0) {
+      if (window.confirm(`Export ${selectedRows.length} selected students to Excel?`)) {
+        onExportExcel(selectedRows);
+      }
+    } else {
+      onExportExcel(); // Export current view (filtered and paginated)
+    }
+  };
+
+  const handleCSVExport = () => {
+    if (selectedRows.length > 0) {
+      const selectedData = prepareExportData().filter(item => 
+        selectedRows.includes(item['Student ID'])
+      );
+      return selectedData;
+    }
+    return prepareExportData(); // Return current view data
+  };
+
   return (
     <div className="table-controls">
       <div className="left-controls">
@@ -137,25 +158,55 @@ const TableControls = ({
         </div>
 
         <div className="export-buttons">
-          <button className="export-btn" onClick={onExportExcel}>
+          <button 
+            className="export-btn" 
+            onClick={handleExportExcelClick}
+            title={selectedRows.length > 0 ? `Export ${selectedRows.length} selected` : 'Export current view'}
+          >
             <FaFileExcel /> Excel
+            {selectedRows.length > 0 && (
+              <span className="selection-count">{selectedRows.length}</span>
+            )}
           </button>
-          <button className="export-btn" onClick={onExportPDF}>
+          
+          <button 
+            className="export-btn" 
+            onClick={() => selectedRows.length > 0 ? 
+              onExportPDF(selectedRows) : 
+              onExportPDF()
+            }
+            title={selectedRows.length > 0 ? `Export ${selectedRows.length} selected` : 'Export current view'}
+          >
             <FaFilePdf /> PDF
+            {selectedRows.length > 0 && (
+              <span className="selection-count">{selectedRows.length}</span>
+            )}
           </button>
+          
           <CSVLink
-            data={prepareExportData()}
+            data={handleCSVExport()}
             filename={`students_${departmentTab}_${new Date().toISOString().slice(0, 10)}.csv`}
             className="export-btn"
+            title={selectedRows.length > 0 ? `Export ${selectedRows.length} selected` : 'Export current view'}
           >
             <FaFileExcel /> CSV
+            {selectedRows.length > 0 && (
+              <span className="selection-count">{selectedRows.length}</span>
+            )}
           </CSVLink>
-          <button className="export-btn" onClick={onPrint}>
+          
+          <button 
+            className="export-btn" 
+            onClick={onPrint}
+            title="Print current view"
+          >
             <FaPrint /> Print
           </button>
+          
           <button
             className="export-btn"
             onClick={onImportClick}
+            title="Import students"
           >
             <FaFileExcel /> Import
           </button>

@@ -5,8 +5,13 @@ import 'jspdf-autotable';
 import '../studentManagement.css';
 
 export const useStudentExports = () => {
-  const exportToExcel = (data, departmentTab) => {
-    const worksheet = XLSX.utils.json_to_sheet(data);
+  const exportToExcel = (data, departmentTab, selectedIds = null) => {
+    // If specific rows are selected, filter the data
+    const exportData = selectedIds 
+      ? data.filter(item => selectedIds.includes(item['Student ID']))
+      : data;
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
     XLSX.writeFile(
