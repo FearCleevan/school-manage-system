@@ -1,1 +1,391 @@
-/* //src/components/modals/PaymentDetails.module.css */
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.modalContainer {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    width: 90%;
+    max-width: 1200px;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.modalHeader {
+    padding: 16px 24px;
+    background-color: #2c3e50;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modalHeader h2 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.closeButton {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+}
+
+.modalContent {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.studentDetails {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    border-right: 1px solid #e0e0e0;
+    max-width: 300px;
+}
+
+.paymentContent {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.profileSection {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.profileImage {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #3498db;
+}
+
+.profilePlaceholder {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background-color: #3498db;
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2.5rem;
+    font-weight: bold;
+    border: 3px solid #2980b9;
+}
+
+.studentName {
+    margin-top: 12px;
+    color: #2c3e50;
+    text-align: center;
+}
+
+.detailsList {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.detailItem {
+    display: flex;
+    flex-direction: column;
+}
+
+.detailLabel {
+    font-weight: 600;
+    color: #7f8c8d;
+    font-size: 0.9rem;
+}
+
+.detailValue {
+    color: #2c3e50;
+    font-size: 1rem;
+    padding: 4px 0;
+}
+
+.statusBadge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.statusBadge.enrolled,
+.statusBadge.completed {
+    background-color: #2ecc71;
+    color: white;
+}
+
+.statusBadge.not-enrolled {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.statusBadge.pending {
+    background-color: #f39c12;
+    color: white;
+}
+
+.paymentTabs {
+    display: flex;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 0 24px;
+}
+
+.tabButton {
+    padding: 12px 24px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    color: #7f8c8d;
+    border-bottom: 3px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.tabButton.active {
+    color: #2c3e50;
+    border-bottom-color: #2c3e50;
+}
+
+.balanceSection,
+.historySection {
+    flex: 1;
+    padding: 24px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.sectionTitle {
+    margin: 0 0 16px 0;
+    color: #2c3e50;
+}
+
+.balanceGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.balanceItem {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px;
+    background-color: #f9f9f9;
+    border-radius: 6px;
+}
+
+.balanceLabel {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.balanceValue {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.totalBalance {
+    grid-column: span 2;
+    background-color: #e8f4fd;
+    border: 1px solid #3498db;
+}
+
+.paymentActions {
+    display: flex;
+    gap: 12px;
+    margin-top: auto;
+}
+
+.payButton {
+    padding: 10px 20px;
+    background-color: #2ecc71;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.payButton:hover {
+    background-color: #27ae60;
+}
+
+.printButton {
+    padding: 10px 20px;
+    background: none;
+    border: 1px solid #bdc3c7;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.printButton:hover {
+    background-color: #f5f5f5;
+}
+
+.historyHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.exportButtons {
+    display: flex;
+    gap: 8px;
+}
+
+.exportButton {
+    background: none;
+    border: 1px solid #bdc3c7;
+    border-radius: 4px;
+    padding: 6px 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9rem;
+}
+
+.exportButton:hover {
+    background-color: #f5f5f5;
+}
+
+.historyTableContainer {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+}
+
+.historyTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+}
+
+.historyTable thead {
+    position: sticky;
+    top: 0;
+    background-color: #f5f5f5;
+    z-index: 1;
+}
+
+.historyTable th,
+.historyTable td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.historyTable th {
+    font-weight: 600;
+}
+
+.historyTable tr:hover {
+    background-color: #f9f9f9;
+}
+
+.viewButton,
+.printButton {
+    padding: 6px 10px;
+    background: none;
+    border: 1px solid #bdc3c7;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    margin-right: 6px;
+}
+
+.viewButton {
+    background-color: #3498db;
+    color: white;
+    border: none;
+}
+
+.viewButton:hover {
+    background-color: #2980b9;
+}
+
+.printButton:hover {
+    background-color: #f5f5f5;
+}
+
+/* Responsive styles */
+@media (max-width: 900px) {
+    .modalContent {
+        flex-direction: column;
+    }
+
+    .studentDetails {
+        border-right: none;
+        border-bottom: 1px solid #e0e0e0;
+        max-width: none;
+    }
+
+    .balanceGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .totalBalance {
+        grid-column: span 1;
+    }
+}
+
+@media (max-width: 600px) {
+    .paymentTabs {
+        justify-content: center;
+    }
+
+    .historyHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .exportButtons {
+        align-self: flex-end;
+    }
+
+    .historyTable th,
+    .historyTable td {
+        padding: 8px;
+        font-size: 0.9rem;
+    }
+}

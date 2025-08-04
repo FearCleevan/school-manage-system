@@ -1,9 +1,9 @@
-// src/components/payment/AllStudents.jsx
 import React, { useState, useEffect } from 'react';
 import styles from './AllStudents.module.css';
 import { FaSearch, FaPlus } from 'react-icons/fa';
 import { db } from '../../lib/firebase/config';
 import { collection, getDocs } from 'firebase/firestore';
+import PaymentDetails from '../modals/PaymentDetails';
 
 // Department mapping (Firestore value -> Display value)
 const departmentMapping = {
@@ -38,6 +38,8 @@ const AllStudents = () => {
   const [departmentFilter, setDepartmentFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   // Fetch students from Firestore
   useEffect(() => {
@@ -216,7 +218,15 @@ const AllStudents = () => {
                   <td>{student.enrollment?.semester || 'Not enrolled'}</td>
                   <td>{student.formattedDepartment}</td>
                   <td>
-                    <button className={styles.detailsBtn}>...</button>
+                    <button 
+                      className={styles.detailsBtn}
+                      onClick={() => {
+                        setSelectedStudent(student);
+                        setShowPaymentModal(true);
+                      }}
+                    >
+                      ...
+                    </button>
                   </td>
                 </tr>
               ))
@@ -231,8 +241,6 @@ const AllStudents = () => {
 
       {/* Pagination */}
       <div className={styles.paginationContainer}>
-        
-
         <div className={styles.paginationInfo}>
           Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredStudents.length)} of {filteredStudents.length} entries
         </div>
@@ -288,6 +296,14 @@ const AllStudents = () => {
           </button>
         </div>
       </div>
+
+      {/* Payment Details Modal */}
+      {showPaymentModal && (
+        <PaymentDetails 
+          student={selectedStudent} 
+          onClose={() => setShowPaymentModal(false)} 
+        />
+      )}
     </div>
   );
 };
