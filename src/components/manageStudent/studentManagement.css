@@ -622,3 +622,97 @@ td:nth-child(8) {
 .btn-danger:hover {
   background-color: #b71c1c !important;
 }
+
+/* Add these to src/components/manageStudent/StudentManagement.css */
+
+/* Checkbox styles */
+.row-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* Selected row style */
+.selected-row {
+  background-color: rgba(67, 97, 238, 0.1) !important;
+}
+
+/* Bulk Actions Menu */
+.bulk-actions-menu {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  padding: 10px 20px;
+  border-radius: 50px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 100;
+  animation: slideUp 0.3s ease;
+}
+
+.selected-count {
+  font-weight: bold;
+  margin-right: 10px;
+  color: var(--primary-color);
+}
+
+.bulk-action-btn {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 20px;
+  background: var(--light-color);
+  color: var(--dark-color);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: var(--transition);
+}
+
+.bulk-action-btn:hover {
+  background: #e0e0e0;
+}
+
+.bulk-action-btn.danger {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.bulk-action-btn.danger:hover {
+  background: #f5c6cb;
+}
+
+.bulk-action-btn.cancel {
+  background: transparent;
+  color: var(--gray-color);
+  border: 1px solid #ddd;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+/* Adjust table header for checkbox */
+th:first-child {
+  width: auto;
+  text-align: center;
+}
+
+td:first-child {
+  width: auto;
+}
+
+td:first-child {
+  text-align: center;
+}

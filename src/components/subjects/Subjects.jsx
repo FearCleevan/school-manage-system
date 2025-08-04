@@ -31,7 +31,6 @@ const Subjects = () => {
 
   // Modals state
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false); // Added missing state
   const [viewingSubject, setViewingSubject] = useState(null);
   const [editingSubject, setEditingSubject] = useState(null);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -131,7 +130,6 @@ const Subjects = () => {
       )
     );
 
-    // Log the activity with consistent naming
     logActivity('subject_edited', {
       subjectId: updatedSubject.subjectId,
       subjectName: updatedSubject.subjectName,
@@ -139,7 +137,7 @@ const Subjects = () => {
     }, auth.currentUser?.displayName);
 
     toast.success('Subject updated successfully!');
-    setShowEditModal(false);
+    setEditingSubject(null); // Just reset the editingSubject instead
   };
   // Delete functions
   const handleDeleteClick = (subject) => {
@@ -319,7 +317,6 @@ const Subjects = () => {
           onViewSubject={(subject) => setViewingSubject(subject)}
           onEditSubject={(subject) => {
             setEditingSubject(subject);
-            setShowEditModal(true);
           }}
           onDeleteSubject={handleDeleteClick}
         />
@@ -413,7 +410,6 @@ const Subjects = () => {
           show={editingSubject !== null}
           onClose={() => {
             setEditingSubject(null);
-            setShowEditModal(false);
           }}
           subject={editingSubject}
           onUpdateSubject={handleUpdateSubject}

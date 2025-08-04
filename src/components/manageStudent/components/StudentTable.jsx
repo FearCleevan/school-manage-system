@@ -1,12 +1,15 @@
-//src/components/manageStudent/components/StudentTable.jsx
-import React from 'react';
+// src/components/manageStudent/components/StudentTable.jsx
+import React, { useState, useEffect } from 'react';
 import {
   FaEye,
   FaEdit,
   FaTrash,
   FaSort,
   FaSortUp,
-  FaSortDown
+  FaSortDown,
+  FaPrint,
+  FaFileExcel,
+  FaFilePdf
 } from 'react-icons/fa';
 import '../studentManagement.css';
 
@@ -20,11 +23,66 @@ const StudentTable = ({
   getDepartmentLabel,
   onViewStudent,
   onEditStudent,
-  onDeleteStudent
+  onDeleteStudent,
+  onPrintSelected,
+  onExportExcelSelected,
+  onExportPDFSelected,
+  onDeleteSelected
 }) => {
+  const [selectedRows, setSelectedRows] = useState([]);
+  const [selectAll, setSelectAll] = useState(false);
+  const [showBulkActions, setShowBulkActions] = useState(false);
+
   const renderSortIcon = (key) => {
     if (sortConfig.key !== key) return <FaSort />;
     return sortConfig.direction === "asc" ? <FaSortUp /> : <FaSortDown />;
+  };
+
+  useEffect(() => {
+    // Hide bulk actions when no rows are selected
+    if (selectedRows.length === 0) {
+      setShowBulkActions(false);
+      setSelectAll(false);
+    }
+  }, [selectedRows]);
+
+  const toggleRowSelection = (studentId) => {
+    setSelectedRows(prev => 
+      prev.includes(studentId) 
+        ? prev.filter(id => id !== studentId)
+        : [...prev, studentId]
+    );
+    if (!showBulkActions) setShowBulkActions(true);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectAll) {
+      setSelectedRows([]);
+    } else {
+      const allIds = students.map(student => student.id);
+      setSelectedRows(allIds);
+    }
+    setSelectAll(!selectAll);
+    if (!showBulkActions) setShowBulkActions(true);
+  };
+
+  const handleBulkAction = (action) => {
+    switch(action) {
+      case 'print':
+        onPrintSelected(selectedRows);
+        break;
+      case 'excel':
+        onExportExcelSelected(selectedRows);
+        break;
+      case 'pdf':
+        onExportPDFSelected(selectedRows);
+        break;
+      case 'delete':
+        onDeleteSelected(selectedRows);
+        break;
+      default:
+        break;
+    }
   };
 
   if (loading) {
@@ -36,6 +94,14 @@ const StudentTable = ({
       <table>
         <thead>
           <tr>
+            <th>
+              <input
+                type="checkbox"
+                checked={selectAll}
+                onChange={toggleSelectAll}
+                className="row-checkbox"
+              />
+            </th>
             <th onClick={() => requestSort("studentId")}>
               Student ID {renderSortIcon("studentId")}
             </th>
@@ -68,7 +134,15 @@ const StudentTable = ({
         <tbody>
           {students.length > 0 ? (
             students.map((student) => (
-              <tr key={student.id}>
+              <tr key={student.id} className={selectedRows.includes(student.id) ? "selected-row" : ""}>
+                <td>
+                  <input
+                    type="checkbox"
+                    checked={selectedRows.includes(student.id)}
+                    onChange={() => toggleRowSelection(student.id)}
+                    className="row-checkbox"
+                  />
+                </td>
                 <td>{student.studentId}</td>
                 <td>
                   {student.profilePhoto ? (
@@ -128,13 +202,38 @@ const StudentTable = ({
             ))
           ) : (
             <tr>
-              <td colSpan="11" className="no-data">
+              <td colSpan="12" className="no-data">
                 No students found
               </td>
             </tr>
           )}
         </tbody>
       </table>
+
+      {/* Bulk Actions Menu */}
+      {showBulkActions && (
+        <div className="bulk-actions-menu">
+          <span className="selected-count">{selectedRows.length} selected</span>
+          <button onClick={() => handleBulkAction('print')} className="bulk-action-btn">
+            <FaPrint /> Print Selected
+          </button>
+          <button onClick={() => handleBulkAction('excel')} className="bulk-action-btn">
+            <FaFileExcel /> Export to Excel
+          </button>
+          <button onClick={() => handleBulkAction('pdf')} className="bulk-action-btn">
+            <FaFilePdf /> Export to PDF
+          </button>
+          <button onClick={() => handleBulkAction('delete')} className="bulk-action-btn danger">
+            <FaTrash /> Delete Selected
+          </button>
+          <button onClick={() => {
+            setSelectedRows([]);
+            setSelectAll(false);
+          }} className="bulk-action-btn cancel">
+            Clear Selection
+          </button>
+        </div>
+      )}
     </div>
   );
 };

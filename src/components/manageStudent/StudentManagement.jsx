@@ -9,7 +9,7 @@ import { CSVLink } from 'react-csv';
 import { db } from '../../lib/firebase/config';
 import { auth } from '../../lib/firebase/config';  // Adjust path as needed
 import { logActivity } from '../../lib/firebase/activityLogger';
-import { collection, doc, deleteDoc, writeBatch, query, where, getDocs } from 'firebase/firestore';
+import { collection, doc, writeBatch, query, where, getDocs } from 'firebase/firestore';
 
 import './StudentManagement.css';
 import DeleteConfirmationModal from './components/DeleteConfirmationModal';
@@ -35,7 +35,7 @@ const StudentManagement = () => {
     direction: "desc",
     firestoreField: "createdAt",
   });
-  
+
   // Modals state
   const [showNewEnrollModal, setShowNewEnrollModal] = useState(false);
   const [showExistingEnrollModal, setShowExistingEnrollModal] = useState(false);
@@ -44,7 +44,7 @@ const StudentManagement = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [studentToDelete, setStudentToDelete] = useState(null);
-  
+
   // Import state
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [importFile, setImportFile] = useState(null);
@@ -67,7 +67,7 @@ const StudentManagement = () => {
     availableSemesters,
     resetFilters
   } = useStudentFilters(departmentTab, departmentOptions);
-  
+
   const { exportToExcel, exportToPDF } = useStudentExports();
 
   // Filter students
@@ -230,6 +230,39 @@ const StudentManagement = () => {
     }
   };
 
+  // Bulk action handlers
+  const handlePrintSelected = (selectedIds) => {
+    const selectedStudents = students.filter(student => selectedIds.includes(student.id));
+    const printData = prepareExportData(selectedStudents);
+    exportToPDF(printData, departmentTab, {
+      courseFilter,
+      yearLevelFilter,
+      semesterFilter,
+      searchTerm
+    }, true);
+  };
+
+  const handleExportExcelSelected = (selectedIds) => {
+    const selectedStudents = students.filter(student => selectedIds.includes(student.id));
+    const exportData = prepareExportData(selectedStudents);
+    exportToExcel(exportData, departmentTab, true);
+  };
+
+  const handleExportPDFSelected = (selectedIds) => {
+    const selectedStudents = students.filter(student => selectedIds.includes(student.id));
+    const exportData = prepareExportData(selectedStudents);
+    exportToPDF(exportData, departmentTab, {
+      courseFilter,
+      yearLevelFilter,
+      semesterFilter,
+      searchTerm
+    }, true);
+  };
+
+  const handleDeleteSelected = (selectedIds) => {
+    setStudentToDelete(selectedIds);
+    setDeleteModalOpen(true);
+  };
   // Delete functions
   const handleDeleteClick = (student) => {
     setStudentToDelete(student);
@@ -240,20 +273,49 @@ const StudentManagement = () => {
     if (!studentToDelete) return;
 
     try {
-      await deleteDoc(doc(db, "students", studentToDelete.id));
-      setStudents(students.filter((student) => student.id !== studentToDelete.id));
+      const batch = writeBatch(db);
+      const idsToDelete = Array.isArray(studentToDelete) ? studentToDelete : [studentToDelete.id];
+      const studentsToDelete = students.filter(student => idsToDelete.includes(student.id));
+
+      // Delete all selected students in batch
+      idsToDelete.forEach(id => {
+        const docRef = doc(db, "students", id);
+        batch.delete(docRef);
+      });
+
+      await batch.commit();
+
+      // Log activity for each deleted student
+      studentsToDelete.forEach(student => {
+        logActivity('deleted a student', {
+          studentId: student.studentId,
+          studentName: `${student.firstName} ${student.lastName}`
+        }, auth.currentUser.displayName);
+      });
+
+      // If bulk delete, also log a summary activity
+      if (idsToDelete.length > 1) {
+        logActivity('deleted multiple students', {
+          count: idsToDelete.length,
+          studentIds: studentsToDelete.map(s => s.studentId),
+          department: departmentTab
+        }, auth.currentUser.displayName);
+      }
+
+      setStudents(students.filter(student => !idsToDelete.includes(student.id)));
       setDeleteModalOpen(false);
       setStudentToDelete(null);
-      toast.success("Student deleted successfully!");
+
+      const message = idsToDelete.length > 1
+        ? `${idsToDelete.length} students deleted successfully!`
+        : "Student deleted successfully!";
+      toast.success(message);
     } catch (error) {
-      console.error("Error deleting student:", error);
-      toast.error("Failed to delete student!");
+      console.error("Error deleting student(s):", error);
+      toast.error("Failed to delete student(s)!");
     }
-      logActivity('deleted a student', {
-    studentId: studentToDelete.studentId,
-    studentName: `${studentToDelete.firstName} ${studentToDelete.lastName}`
-  }, auth.currentUser.displayName);
   };
+
 
   const cancelDelete = () => {
     setDeleteModalOpen(false);
@@ -268,10 +330,10 @@ const StudentManagement = () => {
       )
     );
     toast.success("Student updated successfully!");
-      logActivity('edited a student', {
-    studentId: updatedStudent.studentId,
-    changes: updatedStudent
-  }, auth.currentUser.displayName);
+    logActivity('edited a student', {
+      studentId: updatedStudent.studentId,
+      changes: updatedStudent
+    }, auth.currentUser.displayName);
   };
 
   // Prepare data for export
@@ -474,6 +536,10 @@ const StudentManagement = () => {
             setShowEditModal(true);
           }}
           onDeleteStudent={handleDeleteClick}
+          onPrintSelected={handlePrintSelected}
+          onExportExcelSelected={handleExportExcelSelected}
+          onExportPDFSelected={handleExportPDFSelected}
+          onDeleteSelected={handleDeleteSelected}
         />
 
         {/* Pagination */}
@@ -547,6 +613,7 @@ const StudentManagement = () => {
           onClose={cancelDelete}
           onConfirm={confirmDelete}
           student={studentToDelete}
+          isBulkDelete={Array.isArray(studentToDelete)}
         />
 
         <ImportModal
