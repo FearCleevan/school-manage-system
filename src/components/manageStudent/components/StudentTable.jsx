@@ -214,14 +214,8 @@ const StudentTable = ({
       {showBulkActions && (
         <div className="bulk-actions-menu">
           <span className="selected-count">{selectedRows.length} selected</span>
-          <button onClick={() => handleBulkAction('print')} className="bulk-action-btn">
-            <FaPrint /> Print Selected
-          </button>
           <button onClick={() => handleBulkAction('excel')} className="bulk-action-btn">
             <FaFileExcel /> Export to Excel
-          </button>
-          <button onClick={() => handleBulkAction('pdf')} className="bulk-action-btn">
-            <FaFilePdf /> Export to PDF
           </button>
           <button onClick={() => handleBulkAction('delete')} className="bulk-action-btn danger">
             <FaTrash /> Delete Selected

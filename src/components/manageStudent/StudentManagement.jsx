@@ -243,7 +243,9 @@ const StudentManagement = () => {
   };
 
   const handleExportExcelSelected = (selectedIds) => {
-    handleExportExcel(selectedIds);
+    const selectedStudents = students.filter(student => selectedIds.includes(student.id));
+    const exportData = prepareExportData(selectedStudents);
+    exportToExcel(exportData, departmentTab);
   };
 
   const handleExportPDFSelected = (selectedIds) => {
@@ -334,44 +336,51 @@ const StudentManagement = () => {
     }, auth.currentUser.displayName);
   };
 
-// Prepare data for export (matching import structure)
-const prepareExportData = (studentsToExport = null) => {
-  // Use provided students array, filtered students, or current page items
-  const dataToExport = studentsToExport 
-    ? studentsToExport.map(id => students.find(s => s.id === id))
-    : filteredStudents.slice(indexOfFirstItem, indexOfLastItem);
+  // Prepare data for export (matching import structure)
+  const prepareExportData = (studentsToExport = null) => {
+    // Use provided students array, filtered students, or current page items
+    const dataToExport = studentsToExport || filteredStudents;
 
-  return dataToExport.map((student) => ({
-    "Student ID": student.studentId,
-    "Department": getDepartmentLabel(student.department),
-    "LRN": student.lrn || "",
-    "First Name": student.firstName,
-    "Middle Name": student.middleName || "",
-    "Last Name": student.lastName,
-    "Email": student.email,
-    "Phone": student.phone,
-    "Username": student.username || "",
-    "Password": student.password || "Fear@123",
-    "Address": student.address?.street || "",
-    "Province": student.address?.province || "",
-    "City": student.address?.city || "",
-    "ZIP Code": student.address?.zipCode || "",
-    "Emergency Name": student.emergencyContact?.name || "",
-    "Emergency Contact": student.emergencyContact?.phone || "",
-    "Emergency Relation": student.emergencyContact?.relation || "guardian",
-    "Status": student.status,
-    "Course": student.enrollment?.course || "Not Enrolled",
-    "Year Level": student.enrollment?.yearLevel || "Not Enrolled",
-    "Semester": student.enrollment?.semester || "Not Enrolled",
-    "School Year": student.enrollment?.schoolYear || "Not Enrolled",
-    "Created At": student.createdAt?.toDate?.()?.toLocaleString() || "",
-    "Updated At": student.updatedAt?.toDate?.()?.toLocaleString() || ""
-  }));
-};
+    return dataToExport.map((student) => ({
+      "Student ID": student.studentId,
+      "Department": getDepartmentLabel(student.department),
+      "LRN": student.lrn || "",
+      "First Name": student.firstName,
+      "Middle Name": student.middleName || "",
+      "Last Name": student.lastName,
+      "Email": student.email,
+      "Phone": student.phone,
+      "Username": student.username || "",
+      "Password": student.password || "Fear@123",
+      "Address": student.address?.street || "",
+      "Province": student.address?.province || "",
+      "City": student.address?.city || "",
+      "ZIP Code": student.address?.zipCode || "",
+      "Emergency Name": student.emergencyContact?.name || "",
+      "Emergency Contact": student.emergencyContact?.phone || "",
+      "Emergency Relation": student.emergencyContact?.relation || "guardian",
+      "Status": student.status,
+      "Course": student.enrollment?.course || "Not Enrolled",
+      "Year Level": student.enrollment?.yearLevel || "Not Enrolled",
+      "Semester": student.enrollment?.semester || "Not Enrolled",
+      "School Year": student.enrollment?.schoolYear || "Not Enrolled",
+      "Created At": student.createdAt?.toDate?.()?.toLocaleString() || "",
+      "Updated At": student.updatedAt?.toDate?.()?.toLocaleString() || ""
+    }));
+  };
 
   // Handle exports
   const handleExportExcel = (selectedIds = null) => {
-    exportToExcel(prepareExportData(), departmentTab, selectedIds);
+    if (selectedIds) {
+      // Export selected rows
+      const selectedStudents = students.filter(student => selectedIds.includes(student.id));
+      const exportData = prepareExportData(selectedStudents);
+      exportToExcel(exportData, departmentTab);
+    } else {
+      // Export current page
+      const exportData = prepareExportData(currentItems);
+      exportToExcel(exportData, departmentTab);
+    }
   };
 
   const handleExportPDF = () => {

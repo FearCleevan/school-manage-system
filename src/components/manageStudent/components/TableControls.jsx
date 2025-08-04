@@ -30,22 +30,20 @@ const TableControls = ({
   onNewEnroll,
   onExistingEnroll,
   onExportExcel,
-  onExportPDF,
-  onPrint,
   prepareExportData,
   onImportClick,
   hasFilters,
   selectedRows = []
 }) => {
-  const handleExportExcelClick = () => {
-    if (selectedRows.length > 0) {
-      if (window.confirm(`Export ${selectedRows.length} selected students to Excel?`)) {
-        onExportExcel(selectedRows);
-      }
-    } else {
-      onExportExcel(); // Export current view (filtered and paginated)
+const handleExportExcelClick = () => {
+  if (selectedRows.length > 0) {
+    if (window.confirm(`Export ${selectedRows.length} selected students to Excel?`)) {
+      onExportExcel(selectedRows);
     }
-  };
+  } else {
+    onExportExcel(); // This will now export just the current page
+  }
+};
 
   const handleCSVExport = () => {
     if (selectedRows.length > 0) {
@@ -169,20 +167,6 @@ const TableControls = ({
             )}
           </button>
           
-          <button 
-            className="export-btn" 
-            onClick={() => selectedRows.length > 0 ? 
-              onExportPDF(selectedRows) : 
-              onExportPDF()
-            }
-            title={selectedRows.length > 0 ? `Export ${selectedRows.length} selected` : 'Export current view'}
-          >
-            <FaFilePdf /> PDF
-            {selectedRows.length > 0 && (
-              <span className="selection-count">{selectedRows.length}</span>
-            )}
-          </button>
-          
           <CSVLink
             data={handleCSVExport()}
             filename={`students_${departmentTab}_${new Date().toISOString().slice(0, 10)}.csv`}
@@ -194,14 +178,7 @@ const TableControls = ({
               <span className="selection-count">{selectedRows.length}</span>
             )}
           </CSVLink>
-          
-          <button 
-            className="export-btn" 
-            onClick={onPrint}
-            title="Print current view"
-          >
-            <FaPrint /> Print
-          </button>
+        
           
           <button
             className="export-btn"

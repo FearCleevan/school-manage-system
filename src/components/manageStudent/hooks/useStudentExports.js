@@ -1,17 +1,12 @@
 //src/components/manageStudent/hooks/useStudentExports.js
-import * as XLSX from 'xlsx';
-import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
-import '../studentManagement.css';
+import * as XLSX from "xlsx";
+import { jsPDF } from "jspdf";
+import "jspdf-autotable";
+import "../studentManagement.css";
 
 export const useStudentExports = () => {
-  const exportToExcel = (data, departmentTab, selectedIds = null) => {
-    // If specific rows are selected, filter the data
-    const exportData = selectedIds 
-      ? data.filter(item => selectedIds.includes(item['Student ID']))
-      : data;
-
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
+  const exportToExcel = (data, departmentTab) => {
+    const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
     XLSX.writeFile(
@@ -22,13 +17,16 @@ export const useStudentExports = () => {
 
   const exportToPDF = (data, departmentTab, filters) => {
     const doc = new jsPDF();
-    
+
     doc.text(`Student List - ${getDepartmentLabel(departmentTab)}`, 14, 15);
-    
+
     let filtersInfo = [];
-    if (filters.courseFilter) filtersInfo.push(`Course: ${filters.courseFilter}`);
-    if (filters.yearLevelFilter) filtersInfo.push(`Year Level: ${filters.yearLevelFilter}`);
-    if (filters.semesterFilter) filtersInfo.push(`Semester: ${filters.semesterFilter}`);
+    if (filters.courseFilter)
+      filtersInfo.push(`Course: ${filters.courseFilter}`);
+    if (filters.yearLevelFilter)
+      filtersInfo.push(`Year Level: ${filters.yearLevelFilter}`);
+    if (filters.semesterFilter)
+      filtersInfo.push(`Semester: ${filters.semesterFilter}`);
     if (filters.searchTerm) filtersInfo.push(`Search: "${filters.searchTerm}"`);
 
     if (filtersInfo.length > 0) {
@@ -52,7 +50,9 @@ export const useStudentExports = () => {
       margin: { top: 20 },
     });
 
-    doc.save(`students_${departmentTab}_${new Date().toISOString().slice(0, 10)}.pdf`);
+    doc.save(
+      `students_${departmentTab}_${new Date().toISOString().slice(0, 10)}.pdf`
+    );
   };
 
   const getDepartmentLabel = (dept) => {
