@@ -201,7 +201,7 @@
 
 .students-table th,
 .students-table td {
-    padding: 12px 15px;
+    padding: 8px 15px;
     text-align: left;
     border-bottom: 1px solid #e0e0e0;
 }
@@ -717,3 +717,19 @@ td:first-child {
   text-align: center;
 }
 
+/* Add to studentManagement.css */
+.no-columns-message {
+  text-align: center;
+  padding: 40px;
+  font-size: 1.2rem;
+  color: #666;
+  background-color: #f9f9f9;
+  border: 1px dashed #ddd;
+}
+
+.no-columns-message:before {
+  content: "⚠️";
+  display: block;
+  font-size: 2rem;
+  margin-bottom: 10px;
+}

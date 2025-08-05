@@ -70,6 +70,27 @@ const StudentManagement = () => {
 
   const { exportToExcel, exportToPDF } = useStudentExports();
 
+  // Define all columns and their visibility
+  const [visibleColumns, setVisibleColumns] = useState([
+    'selection', 'studentId', 'profile', 'name', 'address', 'phone',
+    'course', 'year', 'semester', 'department', 'status', 'actions'
+  ]);
+
+  const allColumns = [
+    { key: 'selection', label: 'Selection Checkbox' },
+    { key: 'studentId', label: 'Student ID' },
+    { key: 'profile', label: 'Profile' },
+    { key: 'name', label: 'Full Name' },
+    { key: 'address', label: 'Address' },
+    { key: 'phone', label: 'Phone' },
+    { key: 'course', label: 'Course' },
+    { key: 'year', label: 'Year' },
+    { key: 'semester', label: 'Semester' },
+    { key: 'department', label: 'Department' },
+    { key: 'status', label: 'Status' },
+    { key: 'actions', label: 'Actions' },
+  ];
+
   // Filter students
   const filteredStudents = students.filter((student) => {
     const searchLower = searchTerm.toLowerCase();
@@ -528,6 +549,9 @@ const StudentManagement = () => {
           prepareExportData={prepareExportData}
           onImportClick={() => document.getElementById("import-file").click()}
           hasFilters={!!(courseFilter || yearLevelFilter || semesterFilter || searchTerm)}
+          columns={allColumns}
+          visibleColumns={visibleColumns}
+          setVisibleColumns={setVisibleColumns}
         />
 
         <input
@@ -557,6 +581,7 @@ const StudentManagement = () => {
           onExportExcelSelected={handleExportExcelSelected}
           onExportPDFSelected={handleExportPDFSelected}
           onDeleteSelected={handleDeleteSelected}
+          visibleColumns={visibleColumns}
         />
 
         {/* Pagination */}

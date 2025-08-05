@@ -1,5 +1,6 @@
 // src/components/manageStudent/components/TableControls.jsx
-import React from 'react';
+import React, { useState } from 'react';
+import { FaEye, FaColumns } from 'react-icons/fa';
 import {
   FaSearch,
   FaFileExcel,
@@ -10,6 +11,7 @@ import {
 } from 'react-icons/fa';
 import { CSVLink } from 'react-csv';
 import '../studentManagement.css';
+import ManageColumnsModal from './ManageColumnsModal';
 
 const TableControls = ({
   departmentTab,
@@ -33,21 +35,27 @@ const TableControls = ({
   prepareExportData,
   onImportClick,
   hasFilters,
-  selectedRows = []
+  selectedRows = [],
+  columns,
+  visibleColumns,
+  setVisibleColumns,
 }) => {
-const handleExportExcelClick = () => {
-  if (selectedRows.length > 0) {
-    if (window.confirm(`Export ${selectedRows.length} selected students to Excel?`)) {
-      onExportExcel(selectedRows);
+
+  const [showManageColumns, setShowManageColumns] = useState(false);
+
+  const handleExportExcelClick = () => {
+    if (selectedRows.length > 0) {
+      if (window.confirm(`Export ${selectedRows.length} selected students to Excel?`)) {
+        onExportExcel(selectedRows);
+      }
+    } else {
+      onExportExcel(); // This will now export just the current page
     }
-  } else {
-    onExportExcel(); // This will now export just the current page
-  }
-};
+  };
 
   const handleCSVExport = () => {
     if (selectedRows.length > 0) {
-      const selectedData = prepareExportData().filter(item => 
+      const selectedData = prepareExportData().filter(item =>
         selectedRows.includes(item['Student ID'])
       );
       return selectedData;
@@ -156,8 +164,8 @@ const handleExportExcelClick = () => {
         </div>
 
         <div className="export-buttons">
-          <button 
-            className="export-btn" 
+          <button
+            className="export-btn"
             onClick={handleExportExcelClick}
             title={selectedRows.length > 0 ? `Export ${selectedRows.length} selected` : 'Export current view'}
           >
@@ -166,7 +174,7 @@ const handleExportExcelClick = () => {
               <span className="selection-count">{selectedRows.length}</span>
             )}
           </button>
-          
+
           <CSVLink
             data={handleCSVExport()}
             filename={`students_${departmentTab}_${new Date().toISOString().slice(0, 10)}.csv`}
@@ -178,8 +186,8 @@ const handleExportExcelClick = () => {
               <span className="selection-count">{selectedRows.length}</span>
             )}
           </CSVLink>
-        
-          
+
+
           <button
             className="export-btn"
             onClick={onImportClick}
@@ -187,6 +195,21 @@ const handleExportExcelClick = () => {
           >
             <FaFileExcel /> Import
           </button>
+          <button
+            className="export-btn"
+            onClick={() => setShowManageColumns(true)}
+            title="Manage columns"
+          >
+            <FaColumns /> Columns
+          </button>
+
+          <ManageColumnsModal
+            isOpen={showManageColumns}
+            onClose={() => setShowManageColumns(false)}
+            columns={columns}
+            visibleColumns={visibleColumns}
+            setVisibleColumns={setVisibleColumns}
+          />
         </div>
       </div>
     </div>
