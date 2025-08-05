@@ -60,8 +60,8 @@ const StudentTable = ({
   }, [selectedRows]);
 
   const toggleRowSelection = (studentId) => {
-    setSelectedRows(prev => 
-      prev.includes(studentId) 
+    setSelectedRows(prev =>
+      prev.includes(studentId)
         ? prev.filter(id => id !== studentId)
         : [...prev, studentId]
     );
@@ -80,7 +80,7 @@ const StudentTable = ({
   };
 
   const handleBulkAction = (action) => {
-    switch(action) {
+    switch (action) {
       case 'print':
         onPrintSelected(selectedRows);
         break;
@@ -104,8 +104,8 @@ const StudentTable = ({
   const allColumnsHidden = visibleColumns.length === 0;
 
   // Check if only selection column is visible
-  const onlySelectionVisible = visibleColumns.length === 1 && 
-                              visibleColumns[0] === 'selection';
+  const onlySelectionVisible = visibleColumns.length === 1 &&
+    visibleColumns[0] === 'selection';
 
   if (loading) {
     return <div className="loading-indicator">Loading students...</div>;
@@ -128,59 +128,75 @@ const StudentTable = ({
                     />
                   </th>
                 )}
-                
+
                 {isColumnVisible('studentId') && (
                   <th onClick={() => requestSort("studentId")}>
-                    Student ID {renderSortIcon("studentId")}
+                    <span className="sortable-header">
+                      Student ID {renderSortIcon("studentId")}
+                    </span>
                   </th>
                 )}
-                
+
                 {isColumnVisible('profile') && <th>Profile</th>}
-                
+
                 {isColumnVisible('name') && (
                   <th onClick={() => requestSort("lastName")}>
-                    Full Name {renderSortIcon("lastName")}
+                    <span className="sortable-header">
+                      Full Name {renderSortIcon("lastName")}
+                    </span>
                   </th>
                 )}
-                
+
                 {isColumnVisible('address') && <th>Address</th>}
-                
+
                 {isColumnVisible('phone') && (
                   <th onClick={() => requestSort("phone")}>
-                    Phone {renderSortIcon("phone")}
+                    <span className="sortable-header">
+                      Phone {renderSortIcon("phone")}
+                    </span>
                   </th>
                 )}
-                
+
                 {isColumnVisible('course') && (
                   <th onClick={() => requestSort("enrollment.course")}>
-                    Course {renderSortIcon("enrollment.course")}
+                    <span className="sortable-header">
+                      Course {renderSortIcon("enrollment.course")}
+                    </span>
                   </th>
                 )}
-                
+
                 {isColumnVisible('year') && (
                   <th onClick={() => requestSort("enrollment.yearLevel")}>
-                    Year {renderSortIcon("enrollment.yearLevel")}
+                    <span className="sortable-header">
+                      Year {renderSortIcon("enrollment.yearLevel")}
+                    </span>
                   </th>
                 )}
-                
+
                 {isColumnVisible('semester') && (
                   <th onClick={() => requestSort("enrollment.semester")}>
-                    Semester {renderSortIcon("enrollment.semester")}
+                    <span className="sortable-header">
+                      Semester {renderSortIcon("enrollment.semester")}
+                    </span>
                   </th>
                 )}
-                
+
                 {isColumnVisible('department') && (
                   <th onClick={() => requestSort("department")}>
-                    Department {renderSortIcon("department")}
+                    <span className="sortable-header">
+                      Department {renderSortIcon("department")}
+                    </span>
                   </th>
                 )}
-                
+
                 {isColumnVisible('status') && (
                   <th onClick={() => requestSort("status")}>
-                    Status {renderSortIcon("status")}
+                    <span className="sortable-header">
+                      Status {renderSortIcon("status")}
+                    </span>
                   </th>
                 )}
-                
+
                 {isColumnVisible('actions') && <th>Actions</th>}
               </tr>
             </thead>
@@ -198,9 +214,9 @@ const StudentTable = ({
                         />
                       </td>
                     )}
-                    
+
                     {isColumnVisible('studentId') && <td>{student.studentId}</td>}
-                    
+
                     {isColumnVisible('profile') && (
                       <td>
                         {student.profilePhoto ? (
@@ -216,9 +232,9 @@ const StudentTable = ({
                         )}
                       </td>
                     )}
-                    
+
                     {isColumnVisible('name') && <td>{formatFullName(student)}</td>}
-                    
+
                     {isColumnVisible('address') && (
                       <td>
                         {formatAddress(student).length > 12
@@ -226,25 +242,25 @@ const StudentTable = ({
                           : formatAddress(student)}
                       </td>
                     )}
-                    
+
                     {isColumnVisible('phone') && <td>{student.phone}</td>}
-                    
+
                     {isColumnVisible('course') && (
                       <td>{student.enrollment?.course || "Not enrolled"}</td>
                     )}
-                    
+
                     {isColumnVisible('year') && (
                       <td>{student.enrollment?.yearLevel || "Not enrolled"}</td>
                     )}
-                    
+
                     {isColumnVisible('semester') && (
                       <td>{student.enrollment?.semester || "Not enrolled"}</td>
                     )}
-                    
+
                     {isColumnVisible('department') && (
                       <td>{getDepartmentLabel(student.department)}</td>
                     )}
-                    
+
                     {isColumnVisible('status') && (
                       <td>
                         <span className={`status-badge ${student.status.toLowerCase()}`}>
@@ -252,7 +268,7 @@ const StudentTable = ({
                         </span>
                       </td>
                     )}
-                    
+
                     {isColumnVisible('actions') && (
                       <td>
                         <div className="action-buttons">
@@ -313,35 +329,35 @@ const StudentTable = ({
       {showBulkActions && isColumnVisible('selection') && (
         <div className="bulk-actions-menu">
           <span className="selected-count">{selectedRows.length} selected</span>
-          <button 
-            onClick={() => handleBulkAction('print')} 
+          <button
+            onClick={() => handleBulkAction('print')}
             className="bulk-action-btn"
           >
             <FaPrint /> Print Selected
           </button>
-          <button 
-            onClick={() => handleBulkAction('excel')} 
+          <button
+            onClick={() => handleBulkAction('excel')}
             className="bulk-action-btn"
           >
             <FaFileExcel /> Export to Excel
           </button>
-          <button 
-            onClick={() => handleBulkAction('pdf')} 
+          <button
+            onClick={() => handleBulkAction('pdf')}
             className="bulk-action-btn"
           >
             <FaFilePdf /> Export to PDF
           </button>
-          <button 
-            onClick={() => handleBulkAction('delete')} 
+          <button
+            onClick={() => handleBulkAction('delete')}
             className="bulk-action-btn danger"
           >
             <FaTrash /> Delete Selected
           </button>
-          <button 
+          <button
             onClick={() => {
               setSelectedRows([]);
               setSelectAll(false);
-            }} 
+            }}
             className="bulk-action-btn cancel"
           >
             Clear Selection

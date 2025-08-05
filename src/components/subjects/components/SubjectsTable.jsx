@@ -26,22 +26,34 @@ const SubjectsTable = ({
         <thead>
           <tr>
             <th onClick={() => requestSort("subjectId")}>
-              Subject ID {renderSortIcon("subjectId")}
+              <span className="sortable-header">
+                Subject ID {renderSortIcon("subjectId")}
+              </span>
             </th>
             <th onClick={() => requestSort("subjectName")}>
-              Subject Name {renderSortIcon("subjectName")}
+              <span className="sortable-header">
+                Subject Name {renderSortIcon("subjectName")}
+              </span>
             </th>
             <th onClick={() => requestSort("course")}>
-              Course {renderSortIcon("course")}
+              <span className="sortable-header">
+                Course {renderSortIcon("course")}
+              </span>
             </th>
             <th onClick={() => requestSort("yearLevel")}>
-              Year Level {renderSortIcon("yearLevel")}
+              <span className="sortable-header">
+                Year Level {renderSortIcon("yearLevel")}
+              </span>
             </th>
             <th onClick={() => requestSort("semester")}>
-              Semester {renderSortIcon("semester")}
+              <span className="sortable-header">
+                Semester {renderSortIcon("semester")}
+              </span>
             </th>
             <th onClick={() => requestSort("status")}>
-              Status {renderSortIcon("status")}
+              <span className="sortable-header">
+                Status {renderSortIcon("status")}
+              </span>
             </th>
             <th>Actions</th>
           </tr>

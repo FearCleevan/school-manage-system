@@ -186,7 +186,7 @@
     background-color: #e9ecef;
 }
 
-/* Students Table */
+/* Students Table - Updated Styles */
 .students-table {
     overflow-x: auto;
     margin-bottom: 20px;
@@ -201,9 +201,10 @@
 
 .students-table th,
 .students-table td {
-    padding: 8px 15px;
+    padding: 12px 15px;
     text-align: left;
     border-bottom: 1px solid #e0e0e0;
+    vertical-align: middle;
 }
 
 .students-table th {
@@ -211,17 +212,25 @@
     font-weight: 600;
     color: var(--dark-color);
     cursor: pointer;
-    -webkit-user-select: none;
     user-select: none;
     position: relative;
+    white-space: nowrap;
 }
 
 .students-table th:hover {
     background-color: #f1f3f5;
 }
 
+.students-table th .sortable-header {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
 .students-table th svg {
-    margin-left: 5px;
+    flex-shrink: 0;
+    position: relative;
+    top: -1px;
 }
 
 /* Status Badges */
@@ -361,7 +370,7 @@
     .students-table th,
     .students-table td {
         padding: 8px 10px;
-        font-size: 14px;
+        font-size: 12px;
     }
 
     .department-tabs {
@@ -371,7 +380,7 @@
 
     .dept-tab {
         padding: 8px 15px;
-        font-size: 14px;
+        font-size: 12px;
     }
 }
 
@@ -555,181 +564,176 @@ td:nth-child(8) {
     background-color: #f8f9fa;
     border-radius: 4px;
     font-size: 14px;
-  }
-  
-  .import-info p {
-    margin: 5px 0;
-  }
+}
 
-  /* Delete Confirmation Modal Styles */
+.import-info p {
+    margin: 5px 0;
+}
+
 /* Delete Confirmation Modal Styles */
 .modal-overlay {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  background-color: rgba(0, 0, 0, 0) !important;
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  z-index: 1000 !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background-color: rgba(0, 0, 0, 0) !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    z-index: 1000 !important;
 }
 
 .modal-content {
-  background-color: white !important;
-  padding: 20px !important;
-  border-radius: 8px !important;
-  width: 400px !important;
-  max-width: 90% !important;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
+    background-color: white !important;
+    padding: 20px !important;
+    border-radius: 8px !important;
+    width: 400px !important;
+    max-width: 90% !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
 }
 
 .modal-content h3 {
-  margin-top: 0 !important;
-  color: #d32f2f !important;
+    margin-top: 0 !important;
+    color: #d32f2f !important;
 }
 
 .modal-actions {
-  display: flex !important;
-  justify-content: flex-end !important;
-  gap: 10px !important;
-  margin-top: 20px !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+    gap: 10px !important;
+    margin-top: 20px !important;
 }
 
 .btn-cancel {
-  background-color: #f5f5f5 !important;
-  color: #333 !important;
-  border: 1px solid #ddd !important;
-  padding: 8px 16px !important;
-  border-radius: 4px !important;
-  cursor: pointer !important;
+    background-color: #f5f5f5 !important;
+    color: #333 !important;
+    border: 1px solid #ddd !important;
+    padding: 8px 16px !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
 }
 
 .btn-danger {
-  background-color: #d32f2f !important;
-  color: white !important;
-  border: none !important;
-  padding: 8px 16px !important;
-  border-radius: 4px !important;
-  cursor: pointer !important;
+    background-color: #d32f2f !important;
+    color: white !important;
+    border: none !important;
+    padding: 8px 16px !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
 }
 
 .btn-cancel:hover {
-  background-color: #e0e0e0 !important;
+    background-color: #e0e0e0 !important;
 }
 
 .btn-danger:hover {
-  background-color: #b71c1c !important;
+    background-color: #b71c1c !important;
 }
-
-/* Add these to src/components/manageStudent/StudentManagement.css */
 
 /* Checkbox styles */
 .row-checkbox {
-  width: 16px;
-  height: 16px;
-  cursor: pointer;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
 }
 
 /* Selected row style */
 .selected-row {
-  background-color: rgba(67, 97, 238, 0.1) !important;
+    background-color: rgba(67, 97, 238, 0.1) !important;
 }
 
 /* Bulk Actions Menu */
 .bulk-actions-menu {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: white;
-  padding: 10px 20px;
-  border-radius: 50px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  z-index: 100;
-  animation: slideUp 0.3s ease;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    padding: 10px 20px;
+    border-radius: 50px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    z-index: 100;
+    animation: slideUp 0.3s ease;
 }
 
 .selected-count {
-  font-weight: bold;
-  margin-right: 10px;
-  color: var(--primary-color);
+    font-weight: bold;
+    margin-right: 10px;
+    color: var(--primary-color);
 }
 
 .bulk-action-btn {
-  padding: 8px 15px;
-  border: none;
-  border-radius: 20px;
-  background: var(--light-color);
-  color: var(--dark-color);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  transition: var(--transition);
+    padding: 8px 15px;
+    border: none;
+    border-radius: 20px;
+    background: var(--light-color);
+    color: var(--dark-color);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: var(--transition);
 }
 
 .bulk-action-btn:hover {
-  background: #e0e0e0;
+    background: #e0e0e0;
 }
 
 .bulk-action-btn.danger {
-  background: #f8d7da;
-  color: #721c24;
+    background: #f8d7da;
+    color: #721c24;
 }
 
 .bulk-action-btn.danger:hover {
-  background: #f5c6cb;
+    background: #f5c6cb;
 }
 
 .bulk-action-btn.cancel {
-  background: transparent;
-  color: var(--gray-color);
-  border: 1px solid #ddd;
+    background: transparent;
+    color: var(--gray-color);
+    border: 1px solid #ddd;
 }
 
 @keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
 }
 
 /* Adjust table header for checkbox */
 th:first-child {
-  width: auto;
-  text-align: center;
+    width: auto;
+    text-align: center;
 }
 
 td:first-child {
-  width: auto;
+    width: auto;
+    text-align: center;
 }
 
-td:first-child {
-  text-align: center;
-}
-
-/* Add to studentManagement.css */
+/* No columns message */
 .no-columns-message {
-  text-align: center;
-  padding: 40px;
-  font-size: 1.2rem;
-  color: #666;
-  background-color: #f9f9f9;
-  border: 1px dashed #ddd;
+    text-align: center;
+    padding: 40px;
+    font-size: 1.2rem;
+    color: #666;
+    background-color: #f9f9f9;
+    border: 1px dashed #ddd;
 }
 
 .no-columns-message:before {
-  content: "⚠️";
-  display: block;
-  font-size: 2rem;
-  margin-bottom: 10px;
+    content: "⚠️";
+    display: block;
+    font-size: 2rem;
+    margin-bottom: 10px;
 }

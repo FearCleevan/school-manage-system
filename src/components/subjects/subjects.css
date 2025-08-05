@@ -132,6 +132,7 @@
 }
 
 /* Table Styles */
+/* Subjects Table Specific Styles */
 .subjects-table {
     overflow-x: auto;
     margin-bottom: 20px;
@@ -146,22 +147,30 @@
 
 .subjects-table th,
 .subjects-table td {
-    padding: 12px 15px;
+    padding: 10px 15px;
     text-align: left;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #e0e0e0;
+    vertical-align: middle;
 }
 
 .subjects-table th {
-    background: #f9f9f9;
-    font-weight: 500;
-    color: #555;
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: var(--dark-color);
     cursor: pointer;
-    -webkit-user-select: none;
     user-select: none;
+    position: relative;
+    white-space: nowrap;
 }
 
 .subjects-table th:hover {
-    background: #f0f0f0;
+    background-color: #f1f3f5;
+}
+
+.sortable-header {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
 }
 
 /* Status Badges */
@@ -406,3 +415,4 @@
 .delete-btn:hover {
   color: #b71c1c;
 }
+
