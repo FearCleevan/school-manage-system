@@ -75,23 +75,26 @@ const SubjectsTable = ({
                 <td>
                   <div className="action-buttons">
                     <button
-                      className="view-btn"
-                      title="View"
+                      className="action-btn view-btn"
+                      data-tooltip="View details"
                       onClick={() => onViewSubject(subject)}
+                      aria-label="View subject details"
                     >
                       <FaEye />
                     </button>
                     <button
-                      className="edit-btn"
-                      title="Edit"
+                      className="action-btn edit-btn"
+                      data-tooltip="Edit subject"
                       onClick={() => onEditSubject(subject)}
+                      aria-label="Edit subject"
                     >
                       <FaEdit />
                     </button>
                     <button
-                      className="delete-btn"
-                      title="Delete"
+                      className="action-btn delete-btn"
+                      data-tooltip="Delete subject"
                       onClick={() => onDeleteSubject(subject)}
+                      aria-label="Delete subject"
                     >
                       <FaTrash />
                     </button>

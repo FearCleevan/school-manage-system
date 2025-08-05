@@ -23,7 +23,7 @@ const StudentTable = ({
   getDepartmentLabel,
   onViewStudent,
   onEditStudent,
-  onDeleteStudent,
+  // onDeleteStudent,
   onPrintSelected,
   onExportExcelSelected,
   onExportPDFSelected,
@@ -273,25 +273,20 @@ const StudentTable = ({
                       <td>
                         <div className="action-buttons">
                           <button
-                            className="view-btn"
-                            title="View"
+                            className="action-btn view-btn"
+                            data-tooltip="View details"
                             onClick={() => onViewStudent(student)}
+                            aria-label="View student details"
                           >
                             <FaEye />
                           </button>
                           <button
-                            className="edit-btn"
-                            title="Edit"
+                            className="action-btn edit-btn"
+                            data-tooltip="Edit student"
                             onClick={() => onEditStudent(student)}
+                            aria-label="Edit student"
                           >
                             <FaEdit />
-                          </button>
-                          <button
-                            className="delete-btn"
-                            title="Delete"
-                            onClick={() => onDeleteStudent(student)}
-                          >
-                            <FaTrash />
                           </button>
                         </div>
                       </td>
@@ -330,22 +325,10 @@ const StudentTable = ({
         <div className="bulk-actions-menu">
           <span className="selected-count">{selectedRows.length} selected</span>
           <button
-            onClick={() => handleBulkAction('print')}
-            className="bulk-action-btn"
-          >
-            <FaPrint /> Print Selected
-          </button>
-          <button
             onClick={() => handleBulkAction('excel')}
             className="bulk-action-btn"
           >
             <FaFileExcel /> Export to Excel
-          </button>
-          <button
-            onClick={() => handleBulkAction('pdf')}
-            className="bulk-action-btn"
-          >
-            <FaFilePdf /> Export to PDF
           </button>
           <button
             onClick={() => handleBulkAction('delete')}

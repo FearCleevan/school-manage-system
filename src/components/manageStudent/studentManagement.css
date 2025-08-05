@@ -256,45 +256,88 @@
     color: #383d41;
 }
 
-/* Action Buttons */
+/* Modern Action Buttons with Floating Effect */
 .action-buttons {
     display: flex;
-    gap: 8px;
+    gap: 6px;
+    justify-content: center;
+    padding: 6px;
+    width: fit-content;
+    margin: 0 auto;
 }
 
-.action-buttons button {
-    padding: 6px 10px;
-    border: none;
-    border-radius: var(--border-radius);
+.action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    transition: var(--transition);
+    transition: all 0.2s ease;
+    border: none;
+    background: transparent;
+    color: var(--gray-color);
+    position: relative;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.178);
 }
 
-.view-btn {
-    background-color: #e2e3e5;
-    color: #383d41;
+.action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.274);
+}
+
+.action-btn::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: var(--dark-color);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.action-btn:hover::after {
+    opacity: 1;
+    visibility: visible;
+    margin-bottom: 8px;
 }
 
 .view-btn:hover {
-    background-color: #d5d6d8;
-}
-
-.edit-btn {
-    background-color: #fff3cd;
-    color: #856404;
+    color: var(--primary-color);
+    background-color: rgba(67, 97, 238, 0.1);
 }
 
 .edit-btn:hover {
-    background-color: #ffeeba;
+    color: var(--accent-color);
+    background-color: rgba(72, 149, 239, 0.1);
 }
 
-.delete-btn {
-    background-color: #f8d7da;
-    color: #721c24;
+/* Modern icon styling */
+.action-btn svg {
+    width: 14px;
+    height: 14px;
+    transition: transform 0.2s ease;
 }
 
-.delete-btn:hover {
-    background-color: #f5c6cb;
+.action-btn:hover svg {
+    transform: scale(1.1);
+}
+
+/* Selected row styling */
+.selected-row .action-buttons {
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 
 /* Pagination */
