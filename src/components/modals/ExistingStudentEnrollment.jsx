@@ -1,15 +1,21 @@
-//src/components/modals/ExistingStudentEnrollment.jsx
+// src/components/modals/ExistingStudentEnrollment.jsx
 import React, { useState, useEffect } from 'react';
 import { doc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../lib/firebase/config';
 import { logActivity } from '../../lib/firebase/activityLogger';
-import { auth } from '../../lib/firebase/config';  // Adjust path as needed
+import { auth } from '../../lib/firebase/config';
 import styles from './ExistingStudentEnroll.module.css';
-import { FaPrint, FaPlus, FaTrash, FaEdit, FaSave } from 'react-icons/fa';
+import { FaPrint } from 'react-icons/fa';
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+import StudentSearchForm from './StudentSearchForm';
+import StudentDetailsSection from './StudentDetailsSection';
+import EnrollmentForm from './EnrollmentForm';
+import SubjectsDisplay from './SubjectsDisplay';
+
 const ExistingStudentEnrollment = ({ show, onClose }) => {
+    // State declarations
     const [studentId, setStudentId] = useState('');
     const [studentData, setStudentData] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -17,7 +23,6 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
     const [subjects, setSubjects] = useState([]);
     const [showSubjects, setShowSubjects] = useState(false);
     const [searchPerformed, setSearchPerformed] = useState(false);
-
     const [editingMode, setEditingMode] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [subjectToDelete, setSubjectToDelete] = useState(null);
@@ -28,7 +33,8 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
         yearLevel: '',
         semester: '',
         schoolYearFrom: new Date().getFullYear(),
-        schoolYearTo: new Date().getFullYear() + 1
+        schoolYearTo: new Date().getFullYear() + 1,
+        isIrregular: false
     });
 
     // Available options
@@ -59,7 +65,7 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
         }
     }, [show]);
 
-    // Enhanced fetch student data function
+    // Fetch student data function
     const fetchStudentData = async () => {
         if (!studentId) return;
 
@@ -78,13 +84,11 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
             const querySnapshot = await getDocs(studentIdQuery);
 
             if (!querySnapshot.empty) {
-                // Found by formatted studentId
                 docSnap = querySnapshot.docs[0];
                 docRef = doc(db, 'students', docSnap.id);
                 foundStudent = {
                     ...docSnap.data(),
                     id: docSnap.id,
-                    // Initialize customizedSubjects if they exist
                     customizedSubjects: docSnap.data().customizedSubjects || null
                 };
             } else {
@@ -96,7 +100,6 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
                     foundStudent = {
                         ...docSnap.data(),
                         id: docSnap.id,
-                        // Initialize customizedSubjects if they exist
                         customizedSubjects: docSnap.data().customizedSubjects || null
                     };
                 }
@@ -104,7 +107,6 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
 
             if (foundStudent) {
                 setStudentData(foundStudent);
-                // Display the formatted studentId if available, otherwise use what was searched
                 setStudentId(foundStudent.studentId || studentId);
 
                 // Set default course based on department
@@ -135,7 +137,6 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
                         semester: foundStudent.enrollment.semester || '1st Semester',
                         schoolYearFrom: from || new Date().getFullYear(),
                         schoolYearTo: to || new Date().getFullYear() + 1,
-                        // Preserve isIrregular flag if it exists
                         isIrregular: foundStudent.enrollment.isIrregular || false
                     });
                 } else {
@@ -165,40 +166,6 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
         }
     };
 
-    // const saveCustomizedSubjects = async () => {
-    //     setLoading(true);
-    //     try {
-    //         if (!studentData) throw new Error('No student data loaded');
-
-    //         // Find the student document by studentId
-    //         const studentsRef = collection(db, 'students');
-    //         const q = query(studentsRef, where('studentId', '==', studentId));
-    //         const querySnapshot = await getDocs(q);
-
-    //         if (querySnapshot.empty) {
-    //             throw new Error('Student document not found');
-    //         }
-
-    //         const docRef = querySnapshot.docs[0].ref;
-
-    //         await updateDoc(docRef, {
-    //             customizedSubjects: subjects, // Save the customized subjects
-    //             updatedAt: new Date()
-    //         });
-
-    //         setError(null);
-    //         toast.success('Customized subjects saved successfully!', {
-    //             position: 'top-right',
-    //             autoClose: 3000,
-    //         });
-    //     } catch (err) {
-    //         console.error('Error saving customized subjects:', err);
-    //         setError(err.message || 'Failed to save customized subjects');
-    //     } finally {
-    //         setLoading(false);
-    //     }
-    // };
-
     const handleEnrollmentChange = (e) => {
         const { name, value } = e.target;
         setEnrollmentData(prev => ({
@@ -217,7 +184,6 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
                 [name]: newValue
             };
 
-            // Ensure to is always 1 more than from
             if (name === 'schoolYearFrom') {
                 updated.schoolYearTo = newValue + 1;
             }
@@ -249,7 +215,6 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
                 updatedAt: new Date()
             });
 
-            // Reload standard subjects
             await loadSubjects();
             setEditingMode(false);
 
@@ -268,12 +233,10 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-        // Don't hide subjects after submission - removed setShowSubjects(false);
 
         try {
             if (!studentData) throw new Error('No student data loaded');
 
-            // Find the student document by studentId
             const studentsRef = collection(db, 'students');
             const q = query(studentsRef, where('studentId', '==', studentId));
             const querySnapshot = await getDocs(q);
@@ -284,7 +247,6 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
 
             const docRef = querySnapshot.docs[0].ref;
 
-            // Prepare update data
             const updateData = {
                 enrollment: {
                     ...enrollmentData,
@@ -296,7 +258,6 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
                 status: 'Enrolled'
             };
 
-            // Only save customized subjects if in editing mode
             if (editingMode) {
                 updateData.customizedSubjects = subjects;
             }
@@ -346,10 +307,7 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
                 }
             );
 
-            // Keep subjects visible after submission
             setShowSubjects(true);
-
-            // Reset editing mode after submission if needed
             if (editingMode) {
                 setEditingMode(false);
             }
@@ -372,7 +330,6 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
         setError(null);
 
         try {
-            // Only load customized subjects if we're in editing mode
             if (editingMode && studentData.customizedSubjects) {
                 setSubjects(studentData.customizedSubjects);
                 setShowSubjects(true);
@@ -399,14 +356,13 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
                 return;
             }
 
-            // Load ALL subjects for autocomplete (not filtered by course/year/semester)
+            // Load ALL subjects for autocomplete
             const allSubjectsQuery = query(collection(db, 'subjects'));
             const allSubjectsSnapshot = await getDocs(allSubjectsQuery);
             const allSubjects = [];
 
             allSubjectsSnapshot.forEach(doc => {
                 const subjectData = doc.data();
-                // Flatten all terms into a single array
                 const flattenedSubjects = [
                     ...(subjectData.terms?.firstTerm || []),
                     ...(subjectData.terms?.secondTerm || []),
@@ -414,18 +370,16 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
                     ...(subjectData.secondTerm || [])
                 ];
 
-                // Add department info to each subject for better filtering if needed
                 flattenedSubjects.forEach(subject => {
                     allSubjects.push({
                         ...subject,
-                        department: subjectData.department || 'college' // default to college if not specified
+                        department: subjectData.department || 'college'
                     });
                 });
             });
 
             setAvailableSubjects(allSubjects);
 
-            // Process the subjects data for display
             const loadedSubjects = querySnapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data(),
@@ -447,10 +401,8 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
         }
     };
 
-
     const toggleEditingMode = () => {
         if (editingMode) {
-            // Trigger form submission when exiting edit mode
             handleSubmit(new Event('submit'));
         }
         setEditingMode(!editingMode);
@@ -489,22 +441,14 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
         const newSubjects = [...subjects];
         newSubjects[subjectIndex].terms[term][rowIndex][field] = value;
 
-        // If subject code changed, try to autofill other fields
         if (field === 'subjectCode' && value) {
-            // Normalize the input and search values
             const searchCode = value.trim().toUpperCase();
-
-            console.log('Searching for:', searchCode);
-            console.log('Available subjects:', availableSubjects);
-
-            // Find the first matching subject (case insensitive, trimmed)
             const matchedSubject = availableSubjects.find(sub => {
                 const subjectCode = sub.subjectCode?.toUpperCase().trim();
                 return subjectCode === searchCode;
             });
 
             if (matchedSubject) {
-                console.log('Found matching subject:', matchedSubject);
                 newSubjects[subjectIndex].terms[term][rowIndex] = {
                     ...newSubjects[subjectIndex].terms[term][rowIndex],
                     description: matchedSubject.description || '',
@@ -513,8 +457,6 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
                     units: matchedSubject.units || '',
                     preReq: matchedSubject.preReq || 'NONE'
                 };
-            } else {
-                console.warn(`No subject found with code: ${searchCode}`);
             }
         }
 
@@ -1080,549 +1022,6 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
         }, 500);
     };
 
-    const renderSubjects = () => {
-        if (!showSubjects || subjects.length === 0) return null;
-
-        return (
-            <div className={styles.subjectsContainer}>
-                <div className={styles.subjectsHeader}>
-                    <h4 className={styles.subjectsTitle}>
-                        Subjects for {enrollmentData.course} - {enrollmentData.yearLevel} - {enrollmentData.semester}
-                    </h4>
-                    <button
-                        type="button"
-                        className={styles.editBtn}
-                        onClick={toggleEditingMode}
-                        disabled={loading}
-                    >
-                        {editingMode ? (
-                            <>
-                                <FaSave /> Save View
-                            </>
-                        ) : (
-                            <>
-                                <FaEdit /> Customize Subjects
-                            </>
-                        )}
-                    </button>
-
-                    {editingMode && (
-                        <button
-                            type="button"
-                            className={styles.clearCustomBtn}
-                            onClick={handleClearCustomization}
-                            disabled={loading}
-                        >
-                            Clear Customization
-                        </button>
-                    )}
-                </div>
-
-                {subjects.map((subject, subjectIndex) => (
-                    <div key={subjectIndex} className={styles.subjectGroup}>
-                        {subject.terms.firstTerm.length > 0 && (
-                            <div className={styles.termContainer}>
-                                <h6 className={styles.termTitle}>First Term</h6>
-                                <div className={styles.tableWrapper}>
-                                    <table className={styles.subjectsTable}>
-                                        <thead>
-                                            <tr>
-                                                <th>Code</th>
-                                                <th>Description</th>
-                                                <th>Lec</th>
-                                                <th>Lab</th>
-                                                <th>Units</th>
-                                                <th>Pre Req</th>
-                                                {editingMode && <th>Actions</th>}
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {subject.terms.firstTerm.map((course, rowIndex) => (
-                                                <tr key={`first-${rowIndex}`}>
-                                                    <td>
-                                                        {editingMode ? (
-                                                            <input
-                                                                type="text"
-                                                                value={course.subjectCode}
-                                                                onChange={(e) => handleSubjectChange(
-                                                                    subjectIndex,
-                                                                    'firstTerm',
-                                                                    rowIndex,
-                                                                    'subjectCode',
-                                                                    e.target.value
-                                                                )}
-                                                                className={styles.tableInput}
-                                                            />
-                                                        ) : (
-                                                            course.subjectCode
-                                                        )}
-                                                    </td>
-                                                    <td>
-                                                        {editingMode ? (
-                                                            <input
-                                                                type="text"
-                                                                value={course.description}
-                                                                onChange={(e) => handleSubjectChange(
-                                                                    subjectIndex,
-                                                                    'firstTerm',
-                                                                    rowIndex,
-                                                                    'description',
-                                                                    e.target.value
-                                                                )}
-                                                                className={styles.tableInput}
-                                                            />
-                                                        ) : (
-                                                            course.description
-                                                        )}
-                                                    </td>
-                                                    <td>
-                                                        {editingMode ? (
-                                                            <input
-                                                                type="text"
-                                                                value={course.lec}
-                                                                onChange={(e) => handleSubjectChange(
-                                                                    subjectIndex,
-                                                                    'firstTerm',
-                                                                    rowIndex,
-                                                                    'lec',
-                                                                    e.target.value
-                                                                )}
-                                                                className={styles.tableInput}
-                                                            />
-                                                        ) : (
-                                                            course.lec
-                                                        )}
-                                                    </td>
-                                                    <td>
-                                                        {editingMode ? (
-                                                            <input
-                                                                type="text"
-                                                                value={course.lab}
-                                                                onChange={(e) => handleSubjectChange(
-                                                                    subjectIndex,
-                                                                    'firstTerm',
-                                                                    rowIndex,
-                                                                    'lab',
-                                                                    e.target.value
-                                                                )}
-                                                                className={styles.tableInput}
-                                                            />
-                                                        ) : (
-                                                            course.lab
-                                                        )}
-                                                    </td>
-                                                    <td>
-                                                        {editingMode ? (
-                                                            <input
-                                                                type="text"
-                                                                value={course.units}
-                                                                onChange={(e) => handleSubjectChange(
-                                                                    subjectIndex,
-                                                                    'firstTerm',
-                                                                    rowIndex,
-                                                                    'units',
-                                                                    e.target.value
-                                                                )}
-                                                                className={styles.tableInput}
-                                                            />
-                                                        ) : (
-                                                            course.units
-                                                        )}
-                                                    </td>
-                                                    <td>
-                                                        {editingMode ? (
-                                                            <input
-                                                                type="text"
-                                                                value={course.preReq}
-                                                                onChange={(e) => handleSubjectChange(
-                                                                    subjectIndex,
-                                                                    'firstTerm',
-                                                                    rowIndex,
-                                                                    'preReq',
-                                                                    e.target.value
-                                                                )}
-                                                                className={styles.tableInput}
-                                                            />
-                                                        ) : (
-                                                            course.preReq || '-'
-                                                        )}
-                                                    </td>
-                                                    {editingMode && (
-                                                        <td>
-                                                            <button
-                                                                className={styles.deleteBtn}
-                                                                onClick={() => handleDeleteRow(
-                                                                    subjectIndex,
-                                                                    'firstTerm',
-                                                                    rowIndex
-                                                                )}
-                                                                title="Delete row"
-                                                            >
-                                                                <FaTrash />
-                                                            </button>
-                                                        </td>
-                                                    )}
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                                {editingMode && (
-                                    <button
-                                        className={styles.addRowBtn}
-                                        onClick={() => handleAddRow(subjectIndex, 'firstTerm')}
-                                    >
-                                        <FaPlus /> Add Row
-                                    </button>
-                                )}
-                            </div>
-                        )}
-
-                        {subject.terms.secondTerm.length > 0 && (
-                            <div className={styles.termContainer}>
-                                <h6 className={styles.termTitle}>Second Term</h6>
-                                <div className={styles.tableWrapper}>
-                                    <table className={styles.subjectsTable}>
-                                        <thead>
-                                            <tr>
-                                                <th>Code</th>
-                                                <th>Description</th>
-                                                <th>Lec</th>
-                                                <th>Lab</th>
-                                                <th>Units</th>
-                                                <th>Pre Req</th>
-                                                {editingMode && <th>Actions</th>}
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {subject.terms.secondTerm.map((course, rowIndex) => (
-                                                <tr key={`second-${rowIndex}`}>
-                                                    <td>
-                                                        {editingMode ? (
-                                                            <input
-                                                                type="text"
-                                                                value={course.subjectCode}
-                                                                onChange={(e) => handleSubjectChange(
-                                                                    subjectIndex,
-                                                                    'secondTerm',
-                                                                    rowIndex,
-                                                                    'subjectCode',
-                                                                    e.target.value
-                                                                )}
-                                                                className={styles.tableInput}
-                                                            />
-                                                        ) : (
-                                                            course.subjectCode
-                                                        )}
-                                                    </td>
-                                                    <td>
-                                                        {editingMode ? (
-                                                            <input
-                                                                type="text"
-                                                                value={course.description}
-                                                                onChange={(e) => handleSubjectChange(
-                                                                    subjectIndex,
-                                                                    'secondTerm',
-                                                                    rowIndex,
-                                                                    'description',
-                                                                    e.target.value
-                                                                )}
-                                                                className={styles.tableInput}
-                                                            />
-                                                        ) : (
-                                                            course.description
-                                                        )}
-                                                    </td>
-                                                    <td>
-                                                        {editingMode ? (
-                                                            <input
-                                                                type="text"
-                                                                value={course.lec}
-                                                                onChange={(e) => handleSubjectChange(
-                                                                    subjectIndex,
-                                                                    'secondTerm',
-                                                                    rowIndex,
-                                                                    'lec',
-                                                                    e.target.value
-                                                                )}
-                                                                className={styles.tableInput}
-                                                            />
-                                                        ) : (
-                                                            course.lec
-                                                        )}
-                                                    </td>
-                                                    <td>
-                                                        {editingMode ? (
-                                                            <input
-                                                                type="text"
-                                                                value={course.lab}
-                                                                onChange={(e) => handleSubjectChange(
-                                                                    subjectIndex,
-                                                                    'secondTerm',
-                                                                    rowIndex,
-                                                                    'lab',
-                                                                    e.target.value
-                                                                )}
-                                                                className={styles.tableInput}
-                                                            />
-                                                        ) : (
-                                                            course.lab
-                                                        )}
-                                                    </td>
-                                                    <td>
-                                                        {editingMode ? (
-                                                            <input
-                                                                type="text"
-                                                                value={course.units}
-                                                                onChange={(e) => handleSubjectChange(
-                                                                    subjectIndex,
-                                                                    'secondTerm',
-                                                                    rowIndex,
-                                                                    'units',
-                                                                    e.target.value
-                                                                )}
-                                                                className={styles.tableInput}
-                                                            />
-                                                        ) : (
-                                                            course.units
-                                                        )}
-                                                    </td>
-                                                    <td>
-                                                        {editingMode ? (
-                                                            <input
-                                                                type="text"
-                                                                value={course.preReq}
-                                                                onChange={(e) => handleSubjectChange(
-                                                                    subjectIndex,
-                                                                    'secondTerm',
-                                                                    rowIndex,
-                                                                    'preReq',
-                                                                    e.target.value
-                                                                )}
-                                                                className={styles.tableInput}
-                                                            />
-                                                        ) : (
-                                                            course.preReq || '-'
-                                                        )}
-                                                    </td>
-                                                    {editingMode && (
-                                                        <td>
-                                                            <button
-                                                                className={styles.deleteBtn}
-                                                                onClick={() => handleDeleteRow(
-                                                                    subjectIndex,
-                                                                    'secondTerm',
-                                                                    rowIndex
-                                                                )}
-                                                                title="Delete row"
-                                                            >
-                                                                <FaTrash />
-                                                            </button>
-                                                        </td>
-                                                    )}
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                                {editingMode && (
-                                    <button
-                                        className={styles.addRowBtn}
-                                        onClick={() => handleAddRow(subjectIndex, 'secondTerm')}
-                                    >
-                                        <FaPlus /> Add Row
-                                    </button>
-                                )}
-                            </div>
-                        )}
-
-                        {enrollmentData.semester === 'Summer' && subject.terms.firstTerm.length > 0 && (
-                            <div className={styles.termContainer}>
-                                <h6 className={styles.termTitle}>Summer</h6>
-                                <div className={styles.tableWrapper}>
-                                    <table className={styles.subjectsTable}>
-                                        <thead>
-                                            <tr>
-                                                <th>Code</th>
-                                                <th>Description</th>
-                                                <th>Lec</th>
-                                                <th>Lab</th>
-                                                <th>Units</th>
-                                                <th>Pre Req</th>
-                                                {editingMode && <th>Actions</th>}
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {subject.terms.firstTerm.map((course, rowIndex) => (
-                                                <tr key={`summer-${rowIndex}`}>
-                                                    <td>
-                                                        {editingMode ? (
-                                                            <input
-                                                                type="text"
-                                                                value={course.subjectCode}
-                                                                onChange={(e) => handleSubjectChange(
-                                                                    subjectIndex,
-                                                                    'firstTerm',
-                                                                    rowIndex,
-                                                                    'subjectCode',
-                                                                    e.target.value
-                                                                )}
-                                                                className={styles.tableInput}
-                                                            />
-                                                        ) : (
-                                                            course.subjectCode
-                                                        )}
-                                                    </td>
-                                                    <td>
-                                                        {editingMode ? (
-                                                            <input
-                                                                type="text"
-                                                                value={course.description}
-                                                                onChange={(e) => handleSubjectChange(
-                                                                    subjectIndex,
-                                                                    'firstTerm',
-                                                                    rowIndex,
-                                                                    'description',
-                                                                    e.target.value
-                                                                )}
-                                                                className={styles.tableInput}
-                                                            />
-                                                        ) : (
-                                                            course.description
-                                                        )}
-                                                    </td>
-                                                    <td>
-                                                        {editingMode ? (
-                                                            <input
-                                                                type="text"
-                                                                value={course.lec}
-                                                                onChange={(e) => handleSubjectChange(
-                                                                    subjectIndex,
-                                                                    'firstTerm',
-                                                                    rowIndex,
-                                                                    'lec',
-                                                                    e.target.value
-                                                                )}
-                                                                className={styles.tableInput}
-                                                            />
-                                                        ) : (
-                                                            course.lec
-                                                        )}
-                                                    </td>
-                                                    <td>
-                                                        {editingMode ? (
-                                                            <input
-                                                                type="text"
-                                                                value={course.lab}
-                                                                onChange={(e) => handleSubjectChange(
-                                                                    subjectIndex,
-                                                                    'firstTerm',
-                                                                    rowIndex,
-                                                                    'lab',
-                                                                    e.target.value
-                                                                )}
-                                                                className={styles.tableInput}
-                                                            />
-                                                        ) : (
-                                                            course.lab
-                                                        )}
-                                                    </td>
-                                                    <td>
-                                                        {editingMode ? (
-                                                            <input
-                                                                type="text"
-                                                                value={course.units}
-                                                                onChange={(e) => handleSubjectChange(
-                                                                    subjectIndex,
-                                                                    'firstTerm',
-                                                                    rowIndex,
-                                                                    'units',
-                                                                    e.target.value
-                                                                )}
-                                                                className={styles.tableInput}
-                                                            />
-                                                        ) : (
-                                                            course.units
-                                                        )}
-                                                    </td>
-                                                    <td>
-                                                        {editingMode ? (
-                                                            <input
-                                                                type="text"
-                                                                value={course.preReq}
-                                                                onChange={(e) => handleSubjectChange(
-                                                                    subjectIndex,
-                                                                    'firstTerm',
-                                                                    rowIndex,
-                                                                    'preReq',
-                                                                    e.target.value
-                                                                )}
-                                                                className={styles.tableInput}
-                                                            />
-                                                        ) : (
-                                                            course.preReq || '-'
-                                                        )}
-                                                    </td>
-                                                    {editingMode && (
-                                                        <td>
-                                                            <button
-                                                                className={styles.deleteBtn}
-                                                                onClick={() => handleDeleteRow(
-                                                                    subjectIndex,
-                                                                    'firstTerm',
-                                                                    rowIndex
-                                                                )}
-                                                                title="Delete row"
-                                                            >
-                                                                <FaTrash />
-                                                            </button>
-                                                        </td>
-                                                    )}
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                                {editingMode && (
-                                    <button
-                                        className={styles.addRowBtn}
-                                        onClick={() => handleAddRow(subjectIndex, 'firstTerm')}
-                                    >
-                                        <FaPlus /> Add Row
-                                    </button>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                ))}
-
-                {/* Delete Confirmation Modal */}
-                {showDeleteModal && (
-                    <div className={styles.deleteModal}>
-                        <div className={styles.deleteModalContent}>
-                            <h4>Confirm Deletion</h4>
-                            <p>Are you sure you want to delete this subject?</p>
-                            <div className={styles.deleteModalActions}>
-                                <button
-                                    className={styles.deleteModalCancel}
-                                    onClick={() => setShowDeleteModal(false)}
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    className={styles.deleteModalConfirm}
-                                    onClick={confirmDeleteRow}
-                                >
-                                    Delete
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </div>
-        );
-    };
-
     if (!show) return null;
 
     return (
@@ -1652,215 +1051,51 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
                     )}
 
                     {!studentData ? (
-                        <div className={styles.searchContainer}>
-                            <div className={styles.studentIdInput}>
-                                <label htmlFor="existingStudentId" className={styles.formLabel}>
-                                    Enter Student ID
-                                </label>
-                                <input
-                                    id="existingStudentId"
-                                    type="text"
-                                    value={studentId}
-                                    onChange={(e) => setStudentId(e.target.value)}
-                                    className={styles.formInput}
-                                    placeholder="e.g., SPC25-0001"
-                                />
-                                <button
-                                    className={styles.searchBtn}
-                                    onClick={fetchStudentData}
-                                    disabled={!studentId.trim() || loading}
-                                >
-                                    {loading ? 'Searching...' : 'Search'}
-                                </button>
-                            </div>
-                            {searchPerformed && !loading && !studentData && (
-                                <p className={styles.notFoundMessage}>Student not found. Please check the ID and try again.</p>
-                            )}
-                        </div>
+                        <StudentSearchForm
+                            studentId={studentId}
+                            setStudentId={setStudentId}
+                            fetchStudentData={fetchStudentData}
+                            loading={loading}
+                            searchPerformed={searchPerformed}
+                        />
                     ) : (
                         <div className={styles.enrollmentContainer}>
-                            <div className={styles.enrollmentForm}>
-                                <div className={styles.profileSection}>
-                                    {studentData.profilePhoto ? (
-                                        <img
-                                            src={studentData.profilePhoto}
-                                            alt="Profile"
-                                            className={styles.profileImage}
-                                        />
-                                    ) : (
-                                        <div className={styles.profilePlaceholder}>
-                                            <span>{studentData.firstName.charAt(0)}{studentData.lastName.charAt(0)}</span>
-                                        </div>
-                                    )}
-                                    <h4 className={styles.studentName}>
-                                        {studentData.firstName} {studentData.lastName}
-                                    </h4>
-                                </div>
+                            <EnrollmentForm
+                                studentData={studentData}
+                                enrollmentData={enrollmentData}
+                                handleEnrollmentChange={handleEnrollmentChange}
+                                handleSchoolYearChange={handleSchoolYearChange}
+                                handleSubmit={handleSubmit}
+                                loading={loading}
+                                getAvailableCourses={getAvailableCourses}
+                                getAvailableYearLevels={getAvailableYearLevels}
+                                semesters={semesters}
+                            />
 
-                                <div className={styles.formGroup}>
-                                    <label className={styles.formLabel}>Course *</label>
-                                    <select
-                                        name="course"
-                                        value={enrollmentData.course}
-                                        onChange={handleEnrollmentChange}
-                                        className={`${styles.formInput} ${styles.formSelect}`}
-                                        disabled={loading}
-                                    >
-                                        {getAvailableCourses().map(course => (
-                                            <option key={course} value={course}>{course}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div className={styles.formGroup}>
-                                    <label className={styles.formLabel}>Year Level *</label>
-                                    <select
-                                        name="yearLevel"
-                                        value={enrollmentData.yearLevel}
-                                        onChange={handleEnrollmentChange}
-                                        className={`${styles.formInput} ${styles.formSelect}`}
-                                        disabled={loading}
-                                    >
-                                        {getAvailableYearLevels().map(level => (
-                                            <option key={level} value={level}>{level}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div className={styles.formGroup}>
-                                    <label className={styles.formLabel}>Semester *</label>
-                                    <select
-                                        name="semester"
-                                        value={enrollmentData.semester}
-                                        onChange={handleEnrollmentChange}
-                                        className={`${styles.formInput} ${styles.formSelect}`}
-                                        disabled={loading}
-                                    >
-                                        {semesters.map(sem => (
-                                            <option key={sem} value={sem}>{sem}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                <div className={styles.formGroup}>
-                                    <label className={styles.formLabel}>School Year *</label>
-                                    <div className={styles.schoolYearInputs}>
-                                        <input
-                                            type="number"
-                                            name="schoolYearFrom"
-                                            value={enrollmentData.schoolYearFrom}
-                                            onChange={handleSchoolYearChange}
-                                            className={styles.formInput}
-                                            disabled={loading}
-                                        />
-                                        <span className={styles.schoolYearSeparator}>-</span>
-                                        <input
-                                            type="number"
-                                            name="schoolYearTo"
-                                            value={enrollmentData.schoolYearTo}
-                                            onChange={handleSchoolYearChange}
-                                            className={styles.formInput}
-                                            disabled={loading}
-                                        />
-                                    </div>
-                                </div>
-
-                                <button
-                                    type="button"
-                                    className={styles.submitBtn}
-                                    onClick={handleSubmit}
-                                    disabled={loading || !enrollmentData.course || !enrollmentData.yearLevel || !enrollmentData.semester}
-                                >
-                                    {loading ? 'Updating...' : 'Submit Enrollment'}
-                                </button>
-                            </div>
-
-                            <div className={styles.studentDetails}>
-                                <h3 className={styles.sectionTitle}>Student Details</h3>
-
-                                <div className={styles.detailRow}>
-                                    <span className={styles.detailLabel}>ID:</span>
-                                    <span className={styles.detailValue}>{studentData.studentId || studentId}</span>
-                                </div>
-
-                                <div className={styles.detailRow}>
-                                    <span className={styles.detailLabel}>Department:</span>
-                                    <span className={styles.detailValue}>
-                                        {studentData.department === 'college' ? 'College' :
-                                            studentData.department === 'tvet' ? 'TVET' :
-                                                studentData.department === 'shs' ? 'Senior High School' :
-                                                    studentData.department === 'jhs' ? 'Junior High School' : ''}
-                                    </span>
-                                </div>
-
-                                <div className={styles.detailRow}>
-                                    <span className={styles.detailLabel}>Course:</span>
-                                    <span className={styles.detailValue}>
-                                        {studentData.enrollment?.course || 'Not enrolled'}
-                                    </span>
-                                </div>
-
-                                <div className={styles.detailRow}>
-                                    <span className={styles.detailLabel}>Year Level:</span>
-                                    <span className={styles.detailValue}>
-                                        {studentData.enrollment?.yearLevel || 'Not enrolled'}
-                                    </span>
-                                </div>
-
-                                <div className={styles.detailRow}>
-                                    <span className={styles.detailLabel}>Semester:</span>
-                                    <span className={styles.detailValue}>
-                                        {studentData.enrollment?.semester || 'Not enrolled'}
-                                    </span>
-                                </div>
-
-                                <div className={styles.detailRow}>
-                                    <span className={styles.detailLabel}>School Year:</span>
-                                    <span className={styles.detailValue}>
-                                        {studentData.enrollment?.schoolYear || 'Not enrolled'}
-                                    </span>
-                                </div>
-
-                                <div className={styles.detailRow}>
-                                    <span className={styles.detailLabel}>Full Name:</span>
-                                    <span className={styles.detailValue}>
-                                        {`${studentData.firstName} ${studentData.middleName ? studentData.middleName + ' ' : ''}${studentData.lastName}`}
-                                    </span>
-                                </div>
-
-                                <div className={styles.detailRow}>
-                                    <span className={styles.detailLabel}>Email:</span>
-                                    <span className={styles.detailValue}>{studentData.email}</span>
-                                </div>
-
-                                <div className={styles.detailRow}>
-                                    <span className={styles.detailLabel}>Phone:</span>
-                                    <span className={styles.detailValue}>{studentData.phone}</span>
-                                </div>
-
-                                <div className={styles.detailRow}>
-                                    <span className={styles.detailLabel}>Address:</span>
-                                    <span className={styles.detailValue}>
-                                        {`${studentData.address?.street}, ${studentData.address?.city}, ${studentData.address?.province}`}
-                                    </span>
-                                </div>
-
-                                {studentData.enrollment && (
-                                    <button
-                                        type="button"
-                                        className={styles.loadSubjectsBtn}
-                                        onClick={loadSubjects}
-                                        disabled={loading}
-                                    >
-                                        {loading ? 'Loading...' : 'Load Subjects'}
-                                    </button>
-                                )}
-                            </div>
+                            <StudentDetailsSection
+                                studentData={studentData}
+                                loadSubjects={loadSubjects}
+                                loading={loading}
+                            />
                         </div>
                     )}
 
-                    {/* This replaces the entire subjects display section */}
-                    {renderSubjects()}
+                    <SubjectsDisplay
+                        showSubjects={showSubjects}
+                        subjects={subjects}
+                        enrollmentData={enrollmentData}
+                        editingMode={editingMode}
+                        toggleEditingMode={toggleEditingMode}
+                        handleClearCustomization={handleClearCustomization}
+                        loading={loading}
+                        handleAddRow={handleAddRow}
+                        handleSubjectChange={handleSubjectChange}
+                        handleDeleteRow={handleDeleteRow}
+                        showDeleteModal={showDeleteModal}
+                        setShowDeleteModal={setShowDeleteModal}
+                        confirmDeleteRow={confirmDeleteRow}
+                        subjectToDelete={subjectToDelete}
+                    />
                 </div>
 
                 <div className={styles.modalFooter}>
