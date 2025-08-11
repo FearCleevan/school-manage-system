@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useRef } from 'react';
-import styles from './EditStudent.module.css';
-import { db } from '../../lib/firebase/config';
-import { logActivity } from '../../lib/firebase/activityLogger';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { uploadToCloudinary } from '../../lib/firebase/storage';
+import React, { useState, useRef, useEffect } from 'react';
+import styles from './EnrollModal.module.css';
+import { db, auth } from '../../../lib/firebase/config';
+import { logActivity } from '../../../lib/firebase/activityLogger';
+import { doc, runTransaction, collection, addDoc } from 'firebase/firestore';
+import { uploadToCloudinary } from '../../../lib/firebase/storage';
+import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-
-const EditStudent = ({ show, onClose, student, onUpdate }) => {
+const EnrollModal = ({ show, onClose }) => {
     const [formData, setFormData] = useState({
         department: '',
         lrn: '',
@@ -28,12 +28,13 @@ const EditStudent = ({ show, onClose, student, onUpdate }) => {
         profilePhoto: null
     });
 
-    const [previewPhoto, setPreviewPhoto] = useState(student?.profilePhoto || null);
+    const [previewPhoto, setPreviewPhoto] = useState(null);
+    const [generatedId, setGeneratedId] = useState('Generating...');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [error, setError] = useState(null);
     const fileInputRef = useRef(null);
 
     const departments = [
+        { value: '', label: 'Select Department' },
         { value: 'college', label: 'College' },
         { value: 'tvet', label: 'TVET' },
         { value: 'shs', label: 'Senior High School (SHS)' },
@@ -41,6 +42,7 @@ const EditStudent = ({ show, onClose, student, onUpdate }) => {
     ];
 
     const relations = [
+        { value: '', label: 'Select Relation' },
         { value: 'father', label: 'Father' },
         { value: 'mother', label: 'Mother' },
         { value: 'sister', label: 'Sister' },
@@ -48,31 +50,35 @@ const EditStudent = ({ show, onClose, student, onUpdate }) => {
         { value: 'guardian', label: 'Guardian' }
     ];
 
-    // Initialize form with student data
+    // Generate sequential student ID
     useEffect(() => {
-        if (student) {
-            setFormData({
-                department: student.department || '',
-                lrn: student.lrn || '',
-                firstName: student.firstName || '',
-                middleName: student.middleName || '',
-                lastName: student.lastName || '',
-                email: student.email || '',
-                phone: student.phone || '',
-                username: student.username || '',
-                password: student.password || '',
-                address: student.address?.street || '',
-                province: student.address?.province || '',
-                zipCode: student.address?.zipCode || '',
-                city: student.address?.city || '',
-                emergencyName: student.emergencyContact?.name || '',
-                emergencyContact: student.emergencyContact?.phone || '',
-                emergencyRelation: student.emergencyContact?.relation || '',
-                profilePhoto: null
-            });
-            setPreviewPhoto(student.profilePhoto || null);
+        const generateSequentialId = async () => {
+            const currentYear = new Date().getFullYear().toString().slice(-2);
+            const prefix = `SPC${currentYear}-`;
+
+            try {
+                const counterRef = doc(db, 'counters', 'studentIds');
+                const newId = await runTransaction(db, async (transaction) => {
+                    const counterDoc = await transaction.get(counterRef);
+                    let lastNumber = counterDoc.exists() ? (counterDoc.data().lastNumber || 0) : 0;
+                    const newNumber = lastNumber + 1;
+                    transaction.set(counterRef, { lastNumber: newNumber }, { merge: true });
+                    return `${prefix}${newNumber.toString().padStart(4, '0')}`;
+                });
+                setGeneratedId(newId);
+            } catch (error) {
+                console.error('ID generation error:', error);
+                const fallbackNum = Date.now().toString().slice(-4);
+                setGeneratedId(`${prefix}${fallbackNum}`);
+            }
+        };
+
+        if (show) {
+            generateSequentialId();
+        } else {
+            setGeneratedId('Generating...');
         }
-    }, [student]);
+    }, [show]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -86,12 +92,12 @@ const EditStudent = ({ show, onClose, student, onUpdate }) => {
         const file = e.target.files[0];
         if (file) {
             if (!file.type.match('image.*')) {
-                setError('Please select an image file (jpg, png, etc.)');
+                alert('Please select an image file (jpg, png, etc.)');
                 return;
             }
 
             if (file.size > 5 * 1024 * 1024) {
-                setError('Image size should be less than 5MB');
+                alert('Image size should be less than 5MB');
                 return;
             }
 
@@ -118,130 +124,142 @@ const EditStudent = ({ show, onClose, student, onUpdate }) => {
         }
     };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError(null);
-  setIsSubmitting(true);
+    const handleSubmit = async (e) => {
+        e.preventDefault();
 
-  try {
-    const requiredFields = [
-      'department', 'firstName', 'lastName', 'email',
-      'phone', 'username', 'address',
-      'province', 'city', 'zipCode', 'emergencyName',
-      'emergencyContact', 'emergencyRelation'
-    ];
-
-    const missingFields = requiredFields.filter(field => !formData[field]);
-    if (missingFields.length > 0) {
-      throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
-    }
-
-    if ((formData.department === 'shs' || formData.department === 'jhs') && !formData.lrn) {
-      throw new Error('LRN is required for SHS/JHS students');
-    }
-
-    // Track changed fields
-    const changes = {};
-    Object.keys(formData).forEach(key => {
-      if (key === 'address' || key === 'emergencyContact') {
-        Object.keys(formData[key]).forEach(subKey => {
-          const originalValue = student[key]?.[subKey] || '';
-          const newValue = formData[key][subKey];
-          if (originalValue !== newValue) {
-            changes[`${key}.${subKey}`] = {
-              from: originalValue,
-              to: newValue
-            };
-          }
-        });
-      } else if (key !== 'profilePhoto') {
-        const originalValue = student[key] || '';
-        const newValue = formData[key];
-        if (originalValue !== newValue) {
-          changes[key] = {
-            from: originalValue,
-            to: newValue
-          };
+        if (!auth.currentUser) {
+            toast.error('Please sign in to enroll students', {
+                position: "top-right",
+                autoClose: 3000,
+            });
+            return;
         }
-      }
-    });
 
-    if (Object.keys(changes).length === 0 && !formData.profilePhoto) {
-      throw new Error('No changes detected');
-    }
+        setIsSubmitting(true);
 
-    let photoURL = previewPhoto;
-    if (formData.profilePhoto) {
-      try {
-        const cloudinaryResponse = await uploadToCloudinary(formData.profilePhoto);
-        photoURL = cloudinaryResponse?.secure_url || previewPhoto;
-      } catch (error) {
-        console.error('Photo upload failed:', error);
-      }
-    }
+        try {
+            const requiredFields = [
+                'department', 'firstName', 'lastName', 'email',
+                'phone', 'username', 'password', 'address',
+                'province', 'city', 'zipCode', 'emergencyName',
+                'emergencyContact', 'emergencyRelation'
+            ];
 
-    const updatedData = {
-      department: formData.department,
-      lrn: formData.lrn || null,
-      firstName: formData.firstName.trim(),
-      middleName: formData.middleName?.trim() || null,
-      lastName: formData.lastName.trim(),
-      email: formData.email.toLowerCase().trim(),
-      phone: formData.phone.trim(),
-      username: formData.username.toLowerCase().trim(),
-      ...(formData.password && { password: formData.password }),
-      address: {
-        street: formData.address.trim(),
-        province: formData.province.trim(),
-        city: formData.city.trim(),
-        zipCode: formData.zipCode.trim()
-      },
-      emergencyContact: {
-        name: formData.emergencyName.trim(),
-        phone: formData.emergencyContact.trim(),
-        relation: formData.emergencyRelation
-      },
-      ...(photoURL && { profilePhoto: photoURL }),
-      updatedAt: serverTimestamp()
+            const missingFields = requiredFields.filter(field => !formData[field]);
+            if (missingFields.length > 0) {
+                throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+            }
+
+            if ((formData.department === 'shs' || formData.department === 'jhs') && !formData.lrn) {
+                throw new Error('LRN is required for SHS/JHS students');
+            }
+
+            let photoURL = null;
+            if (formData.profilePhoto) {
+                try {
+                    const cloudinaryResponse = await uploadToCloudinary(formData.profilePhoto);
+                    photoURL = cloudinaryResponse?.secure_url || null;
+                    toast.info('Profile photo uploaded successfully', {
+                        position: "top-right",
+                        autoClose: 2000,
+                    });
+                } catch (error) {
+                    console.error('Photo upload failed:', error);
+                    toast.warn('Profile photo upload failed, continuing without photo', {
+                        position: "top-right",
+                        autoClose: 3000,
+                    });
+                }
+            }
+
+            const studentData = {
+                studentId: generatedId,
+                department: formData.department,
+                lrn: formData.lrn || null,
+                firstName: formData.firstName.trim(),
+                middleName: formData.middleName?.trim() || null,
+                lastName: formData.lastName.trim(),
+                email: formData.email.toLowerCase().trim(),
+                phone: formData.phone.trim(),
+                username: formData.username.toLowerCase().trim(),
+                password: formData.password,
+                address: {
+                    street: formData.address.trim(),
+                    province: formData.province.trim(),
+                    city: formData.city.trim(),
+                    zipCode: formData.zipCode.trim()
+                },
+                emergencyContact: {
+                    name: formData.emergencyName.trim(),
+                    phone: formData.emergencyContact.trim(),
+                    relation: formData.emergencyRelation
+                },
+                profilePhoto: photoURL,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+                status: 'active',
+                isVerified: false,
+                academicStatus: 'enrolled',
+                enrolledBy: auth.currentUser.uid
+            };
+
+            await addDoc(collection(db, 'students'), studentData);
+
+            logActivity('added a new student', {
+                studentId: generatedId,
+                studentName: `${formData.firstName} ${formData.lastName}`
+            }, auth.currentUser.displayName);
+
+            toast.success(`Student ${generatedId} enrolled successfully!`, {
+                position: "top-right",
+                autoClose: 4000,
+            });
+
+            resetForm();
+            onClose();
+        } catch (error) {
+            console.error('Enrollment error:', error);
+            toast.error(error.message || 'Failed to enroll student. Please try again.', {
+                position: "top-right",
+                autoClose: 4000,
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
-    await updateDoc(doc(db, 'students', student.id), updatedData);
+    const resetForm = () => {
+        setFormData({
+            department: '',
+            lrn: '',
+            firstName: '',
+            middleName: '',
+            lastName: '',
+            email: '',
+            phone: '',
+            username: '',
+            password: '',
+            address: '',
+            province: '',
+            zipCode: '',
+            city: '',
+            emergencyName: '',
+            emergencyContact: '',
+            emergencyRelation: '',
+            profilePhoto: null
+        });
+        setPreviewPhoto(null);
+        setGeneratedId('Generating...');
+    };
 
-    // Log the activity
-    try {
-      await logActivity('edited student', {
-        studentId: student.studentId,
-        studentName: `${student.firstName} ${student.lastName}`,
-        changes: Object.keys(changes).length > 0 ? changes : null,
-        ...(formData.profilePhoto && { photoUpdated: true })
-      });
-    } catch (logError) {
-      console.error('Failed to log activity:', logError);
-    }
-
-    onUpdate({
-      id: student.id,
-      ...updatedData,
-      profilePhoto: photoURL || student.profilePhoto
-    });
-
-    onClose();
-  } catch (error) {
-    console.error('Update error:', error);
-    setError(error.message || 'Failed to update student. Please try again.');
-  } finally {
-    setIsSubmitting(false);
-  }
-};
-
-    if (!show || !student) return null;
+    if (!show) return null;
 
     return (
         <div className={styles.modalOverlay}>
-            <div className={styles.editModal}>
+            <div className={`${styles.enrollModal} ${styles.scaledModal}`}>
                 <div className={styles.modalHeader}>
-                    <h2 className={styles.modalTitle}>Edit Student: {student.studentId}</h2>
-                    <button 
+                    <h2 className={styles.modalTitle}>Enroll New Student</h2>
+                    <button
                         className={styles.closeBtn}
                         onClick={onClose}
                         disabled={isSubmitting}
@@ -250,9 +268,7 @@ const handleSubmit = async (e) => {
                     </button>
                 </div>
 
-                {error && <div className={styles.errorMessage}>{error}</div>}
-
-                <form onSubmit={handleSubmit} className={styles.editForm}>
+                <form onSubmit={handleSubmit} className={styles.enrollForm}>
                     <div className={styles.formSection}>
                         <h3 className={styles.sectionTitle}>Academic Information</h3>
                         <div className={styles.formRow}>
@@ -261,7 +277,7 @@ const handleSubmit = async (e) => {
                                 <input
                                     id="studentId"
                                     type="text"
-                                    value={student.studentId}
+                                    value={generatedId}
                                     disabled
                                     className={`${styles.formInput} ${styles.disabledInput}`}
                                 />
@@ -433,16 +449,16 @@ const handleSubmit = async (e) => {
                                 />
                             </div>
                             <div className={styles.formGroup}>
-                                <label htmlFor="password" className={styles.formLabel}>New Password</label>
+                                <label htmlFor="password" className={styles.formLabel}>Password *</label>
                                 <input
                                     id="password"
                                     type="password"
                                     name="password"
                                     value={formData.password}
                                     onChange={handleInputChange}
+                                    required
                                     disabled={isSubmitting}
                                     minLength="6"
-                                    placeholder="Leave blank to keep current"
                                     className={styles.formInput}
                                 />
                             </div>
@@ -575,7 +591,7 @@ const handleSubmit = async (e) => {
                             className={styles.submitBtn}
                             disabled={isSubmitting}
                         >
-                            {isSubmitting ? 'Updating...' : 'Update Student'}
+                            {isSubmitting ? 'Enrolling...' : 'Submit Enrollment'}
                         </button>
                     </div>
                 </form>
@@ -584,4 +600,4 @@ const handleSubmit = async (e) => {
     );
 };
 
-export default EditStudent;
+export default EnrollModal;

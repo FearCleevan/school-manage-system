@@ -3,7 +3,8 @@ import styles from './AllStudents.module.css';
 import { FaSearch, FaPlus } from 'react-icons/fa';
 import { db } from '../../lib/firebase/config';
 import { collection, getDocs } from 'firebase/firestore';
-import PaymentDetails from '../modals/PaymentDetails';
+import PaymentDetails from './PaymentDetails';
+
 
 // Department mapping (Firestore value -> Display value)
 const departmentMapping = {
@@ -299,7 +300,7 @@ const AllStudents = () => {
 
       {/* Payment Details Modal */}
       {showPaymentModal && (
-        <PaymentDetails 
+        <PaymentDetails
           student={selectedStudent} 
           onClose={() => setShowPaymentModal(false)} 
         />

@@ -1,7 +1,7 @@
 // src/components/modals/ViewStudentDetails.jsx
 import React, { useState, useEffect } from 'react';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../../lib/firebase/config';
+import { db } from '../../../lib/firebase/config';
 import styles from './viewStudent.module.css';
 import { FaTimes, FaPrint, FaFilePdf, FaFileExcel, FaRedo } from 'react-icons/fa';
 import { CSVLink } from 'react-csv';

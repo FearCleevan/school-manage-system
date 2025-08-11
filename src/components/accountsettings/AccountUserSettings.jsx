@@ -13,9 +13,10 @@ import DeleteConfirmationModal from './components/DeleteConfirmationModal';
 import UsersTable from './components/UsersTable';
 import TableControls from './components/TableControls';
 import { useUsersData } from './hooks/useUsersData';
-import CreateUserModal from '../modals/CreateUserModal';
-import EditUserModal from '../modals/EditUserModal';
-import ViewUserModal from '../modals/ViewUserModal';
+import CreateUserModal from '../modals/CreateUser/CreateUserModal';
+import EditUserModal from '../modals/EditUser/EditUserModal';
+import ViewUserModal from '../modals/ViewUser/ViewUserModal';
+
 
 const AccountUserSettings = () => {
     // State management

@@ -21,10 +21,10 @@ import { useStudentFilters } from './hooks/useStudentFilters';
 import { useStudentExports } from './hooks/useStudentExports';
 import { departmentOptions, fieldMap } from './utils/departmentOptions';
 import { formatFullName, formatAddress, getDepartmentLabel } from './utils/studentFormatters';
-import EnrollModal from '../modals/EnrollModal';
-import EditStudent from '../modals/EditStudent';
-import ExistingStudentEnrollment from '../modals/ExistingStudentEnrollment';
-import ViewStudentDetails from '../modals/ViewStudentDetails';
+import EnrollModal from '../modals/EnrollStudent/EnrollModal';
+import EditStudent from '../modals/EditStudents.jsx/EditStudent';
+import ExistingStudentEnrollment from '../modals/EnrolledExistingStudent/ExistingStudentEnrollment';
+import ViewStudentDetails from '../modals/ViewStudent/ViewStudentDetails';
 
 const StudentManagement = () => {
   const [departmentTab, setDepartmentTab] = useState("college");

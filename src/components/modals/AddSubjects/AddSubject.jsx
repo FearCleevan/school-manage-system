@@ -1,7 +1,7 @@
 //src/components/modals/AddSubject.jsx
 import React, { useState, useEffect } from 'react';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
-import { db } from '../../lib/firebase/config';
+import { db } from '../../../lib/firebase/config';
 import styles from './AddSubject.module.css';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../../lib/firebase/config';
+import { db } from '../../../lib/firebase/config';
 import styles from './EditSubject.module.css';
 
 const EditSubject = ({ show, onClose, subject, onUpdateSubject }) => {

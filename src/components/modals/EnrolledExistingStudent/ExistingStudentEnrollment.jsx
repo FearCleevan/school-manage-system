@@ -1,9 +1,9 @@
 // src/components/modals/ExistingStudentEnrollment.jsx
 import React, { useState, useEffect } from 'react';
 import { doc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../../lib/firebase/config';
-import { logActivity } from '../../lib/firebase/activityLogger';
-import { auth } from '../../lib/firebase/config';
+import { db } from '../../../lib/firebase/config';
+import { logActivity } from '../../../lib/firebase/activityLogger';
+import { auth } from '../../../lib/firebase/config';
 import styles from './ExistingStudentEnroll.module.css';
 import { FaPrint } from 'react-icons/fa';
 import { toast } from "react-toastify";

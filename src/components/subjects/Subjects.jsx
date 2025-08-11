@@ -14,11 +14,12 @@ import TableControls from './components/TableControls';
 import { useSubjectsData } from './hooks/useSubjectsData';
 import { useSubjectsFilters } from './hooks/useSubjectsFilters';
 import { useSubjectsExports } from './hooks/useSubjectsExports';
-import AddSubject from '../modals/AddSubject';
-import ViewSubject from '../modals/ViewSubject';
-import EditSubject from '../modals/EditSubject';
+
 import { logActivity } from '../../lib/firebase/activityLogger';
 import { auth } from '../../lib/firebase/config';
+import ViewSubject from '../modals/ViewSubject/ViewSubject';
+import AddSubject from '../modals/AddSubjects/AddSubject';
+import EditSubject from '../modals/EditSubjects/EditSubject';
 
 const Subjects = () => {
   // State management

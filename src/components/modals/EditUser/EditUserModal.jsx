@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { auth } from '../../lib/firebase/config';
+import { auth } from '../../../lib/firebase/config';
 import { EmailAuthProvider, reauthenticateWithCredential, updatePassword } from 'firebase/auth';
 import {
     FaTimes, FaUserCircle, FaUpload,
@@ -9,7 +9,7 @@ import {
     FaShieldAlt, FaCog, FaEye, FaEyeSlash
 } from 'react-icons/fa';
 import styles from './EditUserModal.module.css';
-import { logUserActivity } from '../../lib/firebase/userActivityLogger';
+import { logUserActivity } from '../../../lib/firebase/userActivityLogger';
 
 const EditUserModal = ({ isOpen, onClose, user, onSave }) => {
     const [formData, setFormData] = useState({

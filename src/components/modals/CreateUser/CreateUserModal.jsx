@@ -7,13 +7,13 @@ import {
   FaChartLine, FaCalendarCheck, FaBell,
   FaShieldAlt, FaCog
 } from 'react-icons/fa';
-import { auth } from '../../lib/firebase/config';
+import { auth } from '../../../lib/firebase/config';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { db } from '../../lib/firebase/config';
-import { uploadToCloudinary } from '../../lib/firebase/storage';
+import { db } from '../../../lib/firebase/config';
+import { uploadToCloudinary } from '../../../lib/firebase/storage';
 import styles from './CreateUserModal.module.css';
-import { logUserActivity } from '../../lib/firebase/userActivityLogger';
+import { logUserActivity } from '../../../lib/firebase/userActivityLogger';
 
 const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
   const [formData, setFormData] = useState({
