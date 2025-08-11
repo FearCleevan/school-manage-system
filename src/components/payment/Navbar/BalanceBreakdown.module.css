@@ -1,0 +1,111 @@
+.balanceSection {
+    flex: 1;
+    padding: 24px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.sectionTitle {
+    margin: 0 0 16px 0;
+    color: #2c3e50;
+}
+
+.balanceGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.balanceItem {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px;
+    background-color: #f9f9f9;
+    border-radius: 6px;
+}
+
+.balanceLabel {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.balanceValue {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.totalBalance {
+    grid-column: span 2;
+    background-color: #e8f4fd;
+    border: 1px solid #3498db;
+}
+
+.note {
+    padding: 12px;
+    background-color: #fff8e1;
+    border-left: 4px solid #ffc107;
+    color: #5d4037;
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+}
+
+.paymentActions {
+    display: flex;
+    gap: 12px;
+    margin-top: auto;
+}
+
+.payButton {
+    padding: 10px 20px;
+    background-color: #2ecc71;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+}
+
+.payButton:hover {
+    background-color: #27ae60;
+}
+
+.payButton:disabled {
+    background-color: #95a5a6;
+    cursor: not-allowed;
+}
+
+.printButton {
+    padding: 10px 20px;
+    background: none;
+    border: 1px solid #bdc3c7;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.printButton:hover {
+    background-color: #f5f5f5;
+}
+
+.error {
+    padding: 16px;
+    background-color: #ffebee;
+    border-left: 4px solid #e74c3c;
+    color: #c0392b;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 900px) {
+    .balanceGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .totalBalance {
+        grid-column: span 1;
+    }
+}

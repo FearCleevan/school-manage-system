@@ -1,79 +1,160 @@
-import React, { useState } from 'react';
-import { FaTimes, FaPrint, FaFileExcel, FaRedo, FaEye } from 'react-icons/fa';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { FaTimes } from 'react-icons/fa';
 import styles from './PaymentDetails.module.css';
+import { db } from '../../lib/firebase/config';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import BalanceBreakdown from './Navbar/BalanceBreakdown';
+import PaymentHistory from './Navbar/PaymentHistory';
+import SubjectLoad from './Navbar/SubjectLoad';
 
 const PaymentDetails = ({ student, onClose }) => {
     const [activeTab, setActiveTab] = useState('balance');
-    
-    // Mock data for total balance calculation
-    const balanceData = {
-        tuitionFee: 15000,
-        miscFee: 2500,
-        labFee: 3000,
-        otherFees: [
-            { name: 'Library Fee', amount: 500 },
-            { name: 'Medical Fee', amount: 300 },
-            { name: 'Athletic Fee', amount: 200 }
-        ],
-        discount: 1000,
-        totalUnits: 24
-    };
+    const [loading, setLoading] = useState(true);
+    const [subjects, setSubjects] = useState([]);
 
-    // Calculate total other fees
-    const totalOtherFees = balanceData.otherFees.reduce((sum, fee) => sum + fee.amount, 0);
-    
-    // Calculate total balance
-    const totalBalance = balanceData.tuitionFee + 
-                         balanceData.miscFee + 
-                         balanceData.labFee + 
-                         totalOtherFees - 
-                         balanceData.discount;
-
-    // Mock data for payment history
-    const paymentHistory = [
-        {
-            id: 'PAY-2023-001',
-            date: '2023-01-15',
-            amount: 5000,
-            type: 'Tuition',
-            status: 'Completed'
+    // Memoized fee structure to prevent recreation on every render
+    const feeStructure = useMemo(() => ({
+        college: {
+            name: "College",
+            perUnit: 365,
+            miscFee: 2500,
+            labFeePerUnit: 150,
+            libraryFee: 500,
+            athleticFee: 200,
+            medicalFee: 300,
+            registrationFee: 1000
         },
-        {
-            id: 'PAY-2023-002',
-            date: '2023-02-20',
-            amount: 3000,
-            type: 'Enrollment',
-            status: 'Completed'
+        tvet: {
+            name: "TVET",
+            perUnit: 320,
+            miscFee: 2000,
+            labFeePerUnit: 200,
+            libraryFee: 400,
+            athleticFee: 150,
+            medicalFee: 250,
+            registrationFee: 800
         },
-        {
-            id: 'PAY-2023-003',
-            date: '2023-03-10',
-            amount: 1500,
-            type: 'Exam',
-            status: 'Pending'
+        shs: {
+            name: "Senior High School",
+            perUnit: 0,
+            fixedFee: 8000,
+            miscFee: 1500,
+            libraryFee: 300,
+            athleticFee: 100,
+            medicalFee: 200,
+            registrationFee: 500
         },
-        {
-            id: 'PAY-2023-004',
-            date: '2023-04-05',
-            amount: 800,
-            type: 'Others',
-            status: 'Completed'
-        },
-        {
-            id: 'PAY-2023-005',
-            date: '2023-05-12',
-            amount: 1200,
-            type: 'Lab',
-            status: 'Completed'
-        },
-        {
-            id: 'PAY-2023-006',
-            date: '2023-06-18',
-            amount: 2000,
-            type: 'Tuition',
-            status: 'Completed'
+        jhs: {
+            name: "Junior High School",
+            perUnit: 0,
+            fixedFee: 6000,
+            miscFee: 1200,
+            libraryFee: 250,
+            athleticFee: 80,
+            medicalFee: 150,
+            registrationFee: 400
         }
-    ];
+    }), []);
+
+    // Calculate balance
+    const calculateBalance = useCallback((subjectsList) => {
+        if (!student || !student.enrollment) return;
+
+        const department = student.department || 'college';
+        const fees = feeStructure[department] || feeStructure.college;
+        let totalUnits = 0;
+        let labUnits = 0;
+        let tuitionFee = 0;
+
+        const hasSubjects = subjectsList.length > 0;
+        const isEnrolled = student.enrollment.course !== 'Not enrolled';
+
+        if (isEnrolled && hasSubjects) {
+            subjectsList.forEach(subject => {
+                const units = parseFloat(subject.units) || 0;
+                totalUnits += units;
+
+                const lab = parseFloat(subject.lab) || 0;
+                labUnits += lab;
+            });
+
+            if (department === 'shs' || department === 'jhs') {
+                tuitionFee = fees.fixedFee;
+            } else {
+                tuitionFee = totalUnits * fees.perUnit;
+            }
+        } else if (isEnrolled) {
+            tuitionFee = fees.registrationFee;
+        }
+
+        const labFee = labUnits * (fees.labFeePerUnit || 0);
+
+        return {
+            departmentName: fees.name,
+            tuitionFee,
+            miscFee: isEnrolled ? fees.miscFee : 0,
+            labFee,
+            otherFees: [
+                { name: 'Library Fee', amount: fees.libraryFee },
+                { name: 'Medical Fee', amount: fees.medicalFee },
+                { name: 'Athletic Fee', amount: fees.athleticFee }
+            ],
+            discount: student.discount || 0,
+            totalUnits,
+            labUnits,
+            isEnrolled,
+            hasSubjects,
+            perUnitRate: fees.perUnit,
+            labUnitRate: fees.labFeePerUnit
+        };
+    }, [student, feeStructure]);
+
+    // Fetch subjects
+    useEffect(() => {
+        const fetchEnrolledSubjects = async () => {
+            if (!student || !student.enrollment || student.enrollment.course === 'Not enrolled') {
+                setLoading(false);
+                return;
+            }
+
+            try {
+                if (student.enrolledSubjects?.length > 0) {
+                    const subjectPromises = student.enrolledSubjects.map(async (subjectId) => {
+                        const subjectDoc = await getDocs(query(
+                            collection(db, 'subjects'),
+                            where('__name__', '==', subjectId)
+                        ));
+                        return subjectDoc.docs[0]?.data();
+                    });
+
+                    const subjectsData = (await Promise.all(subjectPromises)).filter(Boolean);
+                    setSubjects(subjectsData);
+                } else {
+                    const q = query(
+                        collection(db, 'subjects'),
+                        where('course', '==', student.enrollment.course),
+                        where('yearLevel', '==', student.enrollment.yearLevel),
+                        where('semester', '==', student.enrollment.semester)
+                    );
+
+                    const querySnapshot = await getDocs(q);
+                    const subjectsData = querySnapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+
+                    setSubjects(subjectsData);
+                }
+            } catch (error) {
+                console.error('Error fetching subjects:', error);
+                setSubjects([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchEnrolledSubjects();
+    }, [student]);
 
     const formatFullName = (student) => {
         return `${student.lastName}, ${student.firstName}${student.middleName ? ` ${student.middleName.charAt(0)}.` : ''}`;
@@ -87,19 +168,24 @@ const PaymentDetails = ({ student, onClose }) => {
                 <div className={styles.modalHeader}>
                     <h2>Payment Details</h2>
                     <div className={styles.headerButtons}>
-                        <button className={styles.closeButton} onClick={onClose}>
+                        <button
+                            className={styles.closeButton}
+                            onClick={onClose}
+                            aria-label="Close payment details"
+                        >
                             <FaTimes />
                         </button>
                     </div>
                 </div>
 
                 <div className={styles.modalContent}>
+                    {/* Student Profile */}
                     <div className={styles.studentDetails}>
                         <div className={styles.profileSection}>
                             {student.profilePhoto ? (
                                 <img
                                     src={student.profilePhoto}
-                                    alt="Profile"
+                                    alt={`${student.firstName} ${student.lastName}'s profile`}
                                     className={styles.profileImage}
                                 />
                             ) : (
@@ -115,28 +201,24 @@ const PaymentDetails = ({ student, onClose }) => {
                                 <span className={styles.detailLabel}>Student ID:</span>
                                 <span className={styles.detailValue}>{student.studentId}</span>
                             </div>
-
                             <div className={styles.detailItem}>
                                 <span className={styles.detailLabel}>Course:</span>
                                 <span className={styles.detailValue}>
                                     {student.enrollment?.course || 'Not enrolled'}
                                 </span>
                             </div>
-
                             <div className={styles.detailItem}>
                                 <span className={styles.detailLabel}>Year:</span>
                                 <span className={styles.detailValue}>
                                     {student.enrollment?.yearLevel || 'Not enrolled'}
                                 </span>
                             </div>
-
                             <div className={styles.detailItem}>
                                 <span className={styles.detailLabel}>Semester:</span>
                                 <span className={styles.detailValue}>
                                     {student.enrollment?.semester || 'Not enrolled'}
                                 </span>
                             </div>
-
                             <div className={styles.detailItem}>
                                 <span className={styles.detailLabel}>Status:</span>
                                 <span className={`${styles.detailValue} ${styles.statusBadge} ${student.status?.toLowerCase()}`}>
@@ -146,13 +228,14 @@ const PaymentDetails = ({ student, onClose }) => {
                         </div>
                     </div>
 
+                    {/* Tabs */}
                     <div className={styles.paymentContent}>
                         <div className={styles.paymentTabs}>
                             <button
                                 className={`${styles.tabButton} ${activeTab === 'balance' ? styles.active : ''}`}
                                 onClick={() => setActiveTab('balance')}
                             >
-                                Total Balance
+                                Balance Breakdown
                             </button>
                             <button
                                 className={`${styles.tabButton} ${activeTab === 'history' ? styles.active : ''}`}
@@ -160,107 +243,41 @@ const PaymentDetails = ({ student, onClose }) => {
                             >
                                 Payment History
                             </button>
+                            <button
+                                className={`${styles.tabButton} ${activeTab === 'subjects' ? styles.active : ''}`}
+                                onClick={() => setActiveTab('subjects')}
+                            >
+                                Subject Load
+                            </button>
                         </div>
 
-                        {activeTab === 'balance' ? (
-                            <div className={styles.balanceSection}>
-                                <h3 className={styles.sectionTitle}>Balance Breakdown</h3>
-                                
-                                <div className={styles.balanceGrid}>
-                                    <div className={styles.balanceItem}>
-                                        <span className={styles.balanceLabel}>Tuition Fee:</span>
-                                        <span className={styles.balanceValue}>₱{balanceData.tuitionFee.toLocaleString()}</span>
-                                    </div>
-                                    
-                                    <div className={styles.balanceItem}>
-                                        <span className={styles.balanceLabel}>Miscellaneous Fee:</span>
-                                        <span className={styles.balanceValue}>₱{balanceData.miscFee.toLocaleString()}</span>
-                                    </div>
-                                    
-                                    <div className={styles.balanceItem}>
-                                        <span className={styles.balanceLabel}>Laboratory Fee:</span>
-                                        <span className={styles.balanceValue}>₱{balanceData.labFee.toLocaleString()}</span>
-                                    </div>
-                                    
-                                    {balanceData.otherFees.map((fee, index) => (
-                                        <div key={index} className={styles.balanceItem}>
-                                            <span className={styles.balanceLabel}>{fee.name}:</span>
-                                            <span className={styles.balanceValue}>₱{fee.amount.toLocaleString()}</span>
-                                        </div>
-                                    ))}
-                                    
-                                    <div className={styles.balanceItem}>
-                                        <span className={styles.balanceLabel}>Total Units:</span>
-                                        <span className={styles.balanceValue}>{balanceData.totalUnits}</span>
-                                    </div>
-                                    
-                                    <div className={styles.balanceItem}>
-                                        <span className={styles.balanceLabel}>Discount:</span>
-                                        <span className={styles.balanceValue}>-₱{balanceData.discount.toLocaleString()}</span>
-                                    </div>
-                                    
-                                    <div className={`${styles.balanceItem} ${styles.totalBalance}`}>
-                                        <span className={styles.balanceLabel}>Total Balance:</span>
-                                        <span className={styles.balanceValue}>₱{totalBalance.toLocaleString()}</span>
-                                    </div>
-                                </div>
-                                
-                                <div className={styles.paymentActions}>
-                                    <button className={styles.payButton}>Make Payment</button>
-                                    <button className={styles.printButton}>
-                                        <FaPrint /> Print Statement
-                                    </button>
-                                </div>
+                        {/* Tab Contents */}
+                        {loading ? (
+                            <div className={styles.loading}>
+                                <div className={styles.loadingSpinner}></div>
+                                Loading payment details...
                             </div>
                         ) : (
-                            <div className={styles.historySection}>
-                                <div className={styles.historyHeader}>
-                                    <h3 className={styles.sectionTitle}>Payment History</h3>
-                                    <div className={styles.exportButtons}>
-                                        <button className={styles.exportButton}>
-                                            <FaFileExcel /> Export
-                                        </button>
-                                        <button className={styles.exportButton}>
-                                            <FaPrint /> Print
-                                        </button>
-                                    </div>
-                                </div>
-                                
-                                <div className={styles.historyTableContainer}>
-                                    <table className={styles.historyTable}>
-                                        <thead>
-                                            <tr>
-                                                <th>Payment Ref. No</th>
-                                                <th>Date</th>
-                                                <th>Amount</th>
-                                                <th>Type</th>
-                                                <th>Status</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {paymentHistory.map((payment) => (
-                                                <tr key={payment.id}>
-                                                    <td>{payment.id}</td>
-                                                    <td>{payment.date}</td>
-                                                    <td>₱{payment.amount.toLocaleString()}</td>
-                                                    <td>{payment.type}</td>
-                                                    <td>
-                                                        <span className={`${styles.statusBadge} ${payment.status.toLowerCase()}`}>
-                                                            {payment.status}
-                                                        </span>
-                                                    </td>
-                                                    <td>
-                                                        <button className={styles.printButton}>
-                                                            <FaPrint /> Print
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
+                            <>
+                                {activeTab === 'balance' && (
+                                    <BalanceBreakdown 
+                                        student={student} 
+                                        subjects={subjects}
+                                        calculateBalance={calculateBalance}
+                                    />
+                                )}
+                                {activeTab === 'subjects' && (
+                                    <SubjectLoad 
+                                        student={student} 
+                                        subjects={subjects} 
+                                    />
+                                )}
+                                {activeTab === 'history' && (
+                                    <PaymentHistory 
+                                        student={student} 
+                                    />
+                                )}
+                            </>
                         )}
                     </div>
                 </div>
