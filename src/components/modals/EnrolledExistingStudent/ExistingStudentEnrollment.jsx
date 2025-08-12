@@ -451,10 +451,10 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
             if (matchedSubject) {
                 newSubjects[subjectIndex].terms[term][rowIndex] = {
                     ...newSubjects[subjectIndex].terms[term][rowIndex],
-                    description: matchedSubject.description || '',
-                    lec: matchedSubject.lec || '',
-                    lab: matchedSubject.lab || '',
-                    units: matchedSubject.units || '',
+                    description: matchedSubject.description || 'NONE',
+                    lec: matchedSubject.lec || '0',
+                    lab: matchedSubject.lab || '0',
+                    units: matchedSubject.units || '0',
                     preReq: matchedSubject.preReq || 'NONE'
                 };
             }

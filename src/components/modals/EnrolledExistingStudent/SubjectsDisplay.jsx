@@ -17,7 +17,6 @@ const SubjectsDisplay = ({
   showDeleteModal,
   setShowDeleteModal,
   confirmDeleteRow,
-  subjectToDelete
 }) => {
   if (!showSubjects || subjects.length === 0) return null;
 
