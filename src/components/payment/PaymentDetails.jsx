@@ -118,6 +118,14 @@ const PaymentDetails = ({ student, onClose }) => {
             }
 
             try {
+                // First check for customized subjects
+                if (student.customizedSubjects) {
+                    setSubjects(student.customizedSubjects);
+                    setLoading(false);
+                    return;
+                }
+
+                // If no customized subjects, check for enrolledSubjects array
                 if (student.enrolledSubjects?.length > 0) {
                     const subjectPromises = student.enrolledSubjects.map(async (subjectId) => {
                         const subjectDoc = await getDocs(query(
@@ -130,6 +138,7 @@ const PaymentDetails = ({ student, onClose }) => {
                     const subjectsData = (await Promise.all(subjectPromises)).filter(Boolean);
                     setSubjects(subjectsData);
                 } else {
+                    // Fall back to standard subjects by course/year/semester
                     const q = query(
                         collection(db, 'subjects'),
                         where('course', '==', student.enrollment.course),
@@ -140,7 +149,12 @@ const PaymentDetails = ({ student, onClose }) => {
                     const querySnapshot = await getDocs(q);
                     const subjectsData = querySnapshot.docs.map(doc => ({
                         id: doc.id,
-                        ...doc.data()
+                        ...doc.data(),
+                        // Ensure terms structure exists
+                        terms: doc.data().terms || {
+                            firstTerm: doc.data().firstTerm || [],
+                            secondTerm: doc.data().secondTerm || []
+                        }
                     }));
 
                     setSubjects(subjectsData);
@@ -260,21 +274,21 @@ const PaymentDetails = ({ student, onClose }) => {
                         ) : (
                             <>
                                 {activeTab === 'balance' && (
-                                    <BalanceBreakdown 
-                                        student={student} 
+                                    <BalanceBreakdown
+                                        student={student}
                                         subjects={subjects}
                                         calculateBalance={calculateBalance}
                                     />
                                 )}
                                 {activeTab === 'subjects' && (
-                                    <SubjectLoad 
-                                        student={student} 
-                                        subjects={subjects} 
+                                    <SubjectLoad
+                                        student={student}
+                                        subjects={subjects}
                                     />
                                 )}
                                 {activeTab === 'history' && (
-                                    <PaymentHistory 
-                                        student={student} 
+                                    <PaymentHistory
+                                        student={student}
                                     />
                                 )}
                             </>

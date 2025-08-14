@@ -68,7 +68,7 @@ const BalanceBreakdown = ({ student, subjects }) => {
                     if (subject.units) {
                         const units = parseFloat(subject.units) || 0;
                         totalUnits += units;
-                        
+
                         const lab = parseFloat(subject.lab) || 0;
                         labUnits += lab;
                     }
@@ -78,7 +78,7 @@ const BalanceBreakdown = ({ student, subjects }) => {
                             term.forEach(course => {
                                 const units = parseFloat(course.units) || 0;
                                 totalUnits += units;
-                                
+
                                 const lab = parseFloat(course.lab) || 0;
                                 labUnits += lab;
                             });
@@ -133,14 +133,14 @@ const BalanceBreakdown = ({ student, subjects }) => {
         );
     }
 
-    const totalBalance = 
+    const totalBalance =
         balanceData.tuitionFee +
         (balanceData.isEnrolled ? balanceData.miscFee : 0) +
         (balanceData.isEnrolled ? balanceData.labFee : 0) +
-        (balanceData.isEnrolled 
-            ? balanceData.otherFees.reduce((sum, fee) => sum + fee.amount, 0) 
+        (balanceData.isEnrolled
+            ? balanceData.otherFees.reduce((sum, fee) => sum + fee.amount, 0)
             : 0
-        ) - 
+        ) -
         balanceData.discount;
 
     return (

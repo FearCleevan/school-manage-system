@@ -158,7 +158,8 @@
     font-weight: 600;
     color: var(--dark-color);
     cursor: pointer;
-    user-select: none;
+    -webkit-user-select: none; /* Safari 3+, iOS Safari 3+ */
+    user-select: none;         /* Standard */
     position: relative;
     white-space: nowrap;
 }
@@ -294,10 +295,10 @@
 }
 
 /* Selected row styling */
-.selected-row .action-buttons {
+/* .selected-row .action-buttons {
     background: rgba(255, 255, 255, 0.95);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-}
+} */
 
 /* Pagination */
 .pagination-controls {

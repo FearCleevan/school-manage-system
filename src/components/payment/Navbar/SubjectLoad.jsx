@@ -10,7 +10,7 @@ const SubjectLoad = ({ student, subjects }) => {
             if (subject.units) {
                 totalUnits += parseFloat(subject.units) || 0;
             }
-            // For subjects with terms structure
+            // For subjects with terms structure (customized subjects)
             else if (subject.terms) {
                 // First term
                 if (subject.terms.firstTerm) {
@@ -57,7 +57,7 @@ const SubjectLoad = ({ student, subjects }) => {
             return renderCourseRow(subject, index);
         }
         
-        // For subjects with terms structure
+        // For customized subjects with terms structure
         if (subject.terms) {
             return (
                 <React.Fragment key={`subject-${index}`}>
