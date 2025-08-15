@@ -112,7 +112,6 @@ const CenterSideDashboard = () => {
             try {
               const activitiesData = snapshot.docs.map(doc => {
                 const data = doc.data();
-                const actorName = data.user?.name || 'System';
                 let actionText = formatActivityAction(data.action);
                 let details = data.details || {};
 

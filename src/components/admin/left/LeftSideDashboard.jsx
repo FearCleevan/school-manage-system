@@ -1,4 +1,3 @@
-// src/components/admin/left/LeftSideDashboard.jsx
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
@@ -8,12 +7,10 @@ import {
 } from 'react-icons/fa';
 import { auth } from "../../../lib/firebase/config";
 import { signOut } from 'firebase/auth';
-import { useAuth } from '../../../context/AuthContext';
 import styles from './LeftSideDashboard.module.css';
 
 const LeftSideDashboard = () => {
     const location = useLocation();
-    const { userData, setUserData } = useAuth();
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [loading, setLoading] = useState(false);
     const [logoutOptions, setLogoutOptions] = useState({
@@ -39,7 +36,6 @@ const LeftSideDashboard = () => {
         setLoading(true);
         try {
             await signOut(auth);
-            setUserData(null);
 
             if (logoutOptions.clearCache) {
                 if ('caches' in window) {
@@ -55,18 +51,12 @@ const LeftSideDashboard = () => {
                 console.log("Terminating all active sessions");
             }
 
-            await new Promise(resolve => setTimeout(resolve, 1000));
             window.location.href = `/login?cache=${Date.now()}`;
         } catch (error) {
             console.error('Logout error:', error);
             setLoading(false);
             setShowLogoutModal(false);
         }
-    };
-
-    const hasPermission = (permission) => {
-        if (!userData?.permissions) return false;
-        return userData.permissions.includes(permission);
     };
 
     const getActiveMenuItem = () => {
@@ -98,20 +88,18 @@ const LeftSideDashboard = () => {
                     <h3 className={styles.sidebarSectionTitle}>Navigation</h3>
                     <ul className={styles.navMenu}>
                         {menuItems.map((item) => (
-                            hasPermission(item.permission) && (
-                                <li key={item.path} className={styles.navItem}>
-                                    <Link
-                                        to={item.path}
-                                        className={`${styles.navLink} ${location.pathname === item.path ||
-                                                (item.path !== '/dashboard' && location.pathname.startsWith(item.path)) ?
-                                                styles.active : ''
-                                            }`}
-                                    >
-                                        <span className={styles.navIcon}>{item.icon}</span>
-                                        <span className={styles.navLabel}>{item.label}</span>
-                                    </Link>
-                                </li>
-                            )
+                            <li key={item.path} className={styles.navItem}>
+                                <Link
+                                    to={item.path}
+                                    className={`${styles.navLink} ${location.pathname === item.path ||
+                                            (item.path !== '/dashboard' && location.pathname.startsWith(item.path)) ?
+                                            styles.active : ''
+                                        }`}
+                                >
+                                    <span className={styles.navIcon}>{item.icon}</span>
+                                    <span className={styles.navLabel}>{item.label}</span>
+                                </Link>
+                            </li>
                         ))}
                     </ul>
                 </div>

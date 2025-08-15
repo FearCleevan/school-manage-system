@@ -1,6 +1,5 @@
 //src/components/login/Login.jsx
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '../../lib/firebase/config';
 import {
@@ -20,13 +19,16 @@ const Login = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
-    const navigate = useNavigate();
 
     // Load remembered email on mount
     useEffect(() => {
         const rememberedEmail = localStorage.getItem('rememberedEmail');
         if (rememberedEmail) {
-            setFormData(prev => ({ ...prev, email: rememberedEmail, rememberMe: true }));
+            setFormData(prev => ({ 
+                ...prev, 
+                email: rememberedEmail, 
+                rememberMe: true 
+            }));
         }
     }, []);
 
@@ -56,8 +58,7 @@ const Login = () => {
             await auth.signOut();
 
             // Then perform the login
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            const user = userCredential.user;
+            await signInWithEmailAndPassword(auth, email, password);
 
             // Store email if remember me is checked
             if (rememberMe) {

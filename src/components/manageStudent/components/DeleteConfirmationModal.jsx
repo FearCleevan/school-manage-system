@@ -1,19 +1,21 @@
-//src/components/manageStudent/components/DeleteConfirmationModal.jsx
 import React from 'react';
 import '../studentManagement.css';
 
-const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, student }) => {
+const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, student, isBulkDelete, students }) => {
   if (!isOpen) return null;
 
   return (
     <div className="modal-overlay">
       <div className="modal-content">
         <h3>Confirm Deletion</h3>
-        <p>
-          Are you sure you want to delete {student?.firstName} {student?.lastName}?
-          <br />
-          Student ID: {student?.studentId}
-        </p>
+        {isBulkDelete ? (
+          <p>Are you sure you want to delete {students.length} selected students?</p>
+        ) : (
+          <>
+            <p>Are you sure you want to delete {student?.firstName} {student?.lastName}?</p>
+            <p>Student ID: {student?.studentId}</p>
+          </>
+        )}
         <div className="modal-actions">
           <button className="btn btn-cancel" onClick={onClose}>
             Cancel

@@ -1,4 +1,3 @@
-//src/components/dashboard/Dashboard.jsx
 import React, { useEffect, useState } from "react";
 import { FaBars } from "react-icons/fa";
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
@@ -14,6 +13,7 @@ const Dashboard = () => {
   const { currentUser, userData, loading } = useAuth();
   const [showLoading, setShowLoading] = useState(true);
   
+
   const pathChecks = [
     'account-user-settings',
     'manage-student',
@@ -27,18 +27,16 @@ const Dashboard = () => {
     'permission'
   ].some(path => location.pathname.includes(path));
 
-  // Redirect to login if not authenticated
   useEffect(() => {
     if (!loading && !currentUser) {
       navigate('/');
     }
   }, [currentUser, loading, navigate]);
 
-  // Hide loading after a minimum time to ensure it's visible
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowLoading(false);
-    }, 500); // Minimum 500ms loading time
+    }, 500);
     
     return () => clearTimeout(timer);
   }, []);

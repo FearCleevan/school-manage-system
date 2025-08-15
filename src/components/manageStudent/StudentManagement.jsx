@@ -286,7 +286,7 @@ const StudentManagement = () => {
   };
   // Delete functions
   const handleDeleteClick = (student) => {
-    setStudentToDelete(student);
+    setStudentToDelete(student);  // Make sure this is the full student object
     setDeleteModalOpen(true);
   };
 
@@ -654,8 +654,11 @@ const StudentManagement = () => {
           isOpen={deleteModalOpen}
           onClose={cancelDelete}
           onConfirm={confirmDelete}
-          student={studentToDelete}
+          student={Array.isArray(studentToDelete) ? null : studentToDelete}
           isBulkDelete={Array.isArray(studentToDelete)}
+          students={Array.isArray(studentToDelete)
+            ? students.filter(student => studentToDelete.includes(student.id))
+            : []}
         />
 
         <ImportModal
