@@ -5,14 +5,21 @@ import { db } from '../../../lib/firebase/config';
 import styles from './viewStudent.module.css';
 import { FaTimes, FaPrint, FaFilePdf, FaFileExcel, FaRedo } from 'react-icons/fa';
 import { CSVLink } from 'react-csv';
+import StudentSubject from './StudentSubject';
+import SubjectHistory from './SubjectHistory';
+
 
 const ViewStudentDetails = ({ studentId, onClose }) => {
     const [student, setStudent] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [subjects, setSubjects] = useState([]);
+    const [subjectHistory, setSubjectHistory] = useState([]);
     const [subjectError, setSubjectError] = useState(null);
     const [subjectLoading, setSubjectLoading] = useState(false);
+    const [historyLoading, setHistoryLoading] = useState(false);
+    const [historyError, setHistoryError] = useState(null);
+    const [activeTab, setActiveTab] = useState('current');
 
     useEffect(() => {
         const fetchStudentData = async () => {
@@ -27,12 +34,13 @@ const ViewStudentDetails = ({ studentId, onClose }) => {
                     const studentWithId = {
                         id: docSnap.id,
                         ...studentData,
-                        customizedSubjects: studentData.customizedSubjects || null
+                        customizedSubjects: studentData.customizedSubjects || null,
+                        subjectHistory: studentData.subjectHistory || []
                     };
                     setStudent(studentWithId);
+                    setSubjectHistory(studentWithId.subjectHistory);
 
                     if (studentData.enrollment) {
-                        // Pass the student data to loadSubjects
                         await loadSubjects(studentData.enrollment, studentWithId);
                     }
                 } else {
@@ -759,7 +767,7 @@ const ViewStudentDetails = ({ studentId, onClose }) => {
                                 <div className={styles.sectionHeader}>
                                     <h3>Enrolled Subjects</h3>
                                     <div className={styles.exportButtons}>
-                                        {subjects.length > 0 && (
+                                        {activeTab === 'current' && subjects.length > 0 && (
                                             <>
                                                 <CSVLink
                                                     data={subjects}
@@ -771,10 +779,7 @@ const ViewStudentDetails = ({ studentId, onClose }) => {
                                                 <button className={styles.exportButton}>
                                                     <FaFilePdf /> PDF
                                                 </button>
-                                                <button
-                                                    className={styles.exportButton}
-                                                    onClick={handlePrint}
-                                                >
+                                                <button className={styles.exportButton}>
                                                     <FaPrint /> Print
                                                 </button>
                                             </>
@@ -782,93 +787,37 @@ const ViewStudentDetails = ({ studentId, onClose }) => {
                                     </div>
                                 </div>
 
-                                {subjectError && (
-                                    <div className={styles.subjectError}>
-                                        {subjectError}
-                                    </div>
-                                )}
+                                {/* Add the tabs with matching styling */}
+                                <div className={styles.paymentTabs}>
+                                    <button
+                                        className={`${styles.tabButton} ${activeTab === 'current' ? styles.active : ''}`}
+                                        onClick={() => setActiveTab('current')}
+                                    >
+                                        Current Subjects
+                                    </button>
+                                    <button
+                                        className={`${styles.tabButton} ${activeTab === 'history' ? styles.active : ''}`}
+                                        onClick={() => setActiveTab('history')}
+                                    >
+                                        Subject History
+                                    </button>
+                                </div>
 
-                                {subjectLoading ? (
-                                    <div className={styles.loading}>Loading subjects...</div>
-                                ) : subjects.length > 0 ? (
-                                    <div className={styles.subjectsContainer}>
-                                        {subjects.map((subject, index) => (
-                                            <div key={index} className={styles.subjectGroup}>
-                                                <h4 className={styles.subjectTitle}>
-                                                    {subject.subjectName || 'Custom Subjects'}
-                                                </h4>
-
-                                                {/* First Term */}
-                                                {subject.terms?.firstTerm?.length > 0 && (
-                                                    <div className={styles.termContainer}>
-                                                        <h5 className={styles.termTitle}>First Term</h5>
-                                                        <table className={styles.subjectTable}>
-                                                            <thead>
-                                                                <tr>
-                                                                    <th>Code</th>
-                                                                    <th>Description</th>
-                                                                    <th>Lec</th>
-                                                                    <th>Lab</th>
-                                                                    <th>Units</th>
-                                                                    <th>Pre Req</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                {subject.terms.firstTerm.map((course, idx) => (
-                                                                    <tr key={`first-${idx}`}>
-                                                                        <td>{course.subjectCode}</td>
-                                                                        <td>{course.description}</td>
-                                                                        <td>{course.lec}</td>
-                                                                        <td>{course.lab}</td>
-                                                                        <td>{course.units}</td>
-                                                                        <td>{course.preReq || '-'}</td>
-                                                                    </tr>
-                                                                ))}
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                )}
-
-                                                {/* Second Term */}
-                                                {subject.terms?.secondTerm?.length > 0 && (
-                                                    <div className={styles.termContainer}>
-                                                        <h5 className={styles.termTitle}>Second Term</h5>
-                                                        <table className={styles.subjectTable}>
-                                                            <thead>
-                                                                <tr>
-                                                                    <th>Code</th>
-                                                                    <th>Description</th>
-                                                                    <th>Lec</th>
-                                                                    <th>Lab</th>
-                                                                    <th>Units</th>
-                                                                    <th>Pre Req</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                {subject.terms.secondTerm.map((course, idx) => (
-                                                                    <tr key={`second-${idx}`}>
-                                                                        <td>{course.subjectCode}</td>
-                                                                        <td>{course.description}</td>
-                                                                        <td>{course.lec}</td>
-                                                                        <td>{course.lab}</td>
-                                                                        <td>{course.units}</td>
-                                                                        <td>{course.preReq || '-'}</td>
-                                                                    </tr>
-                                                                ))}
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className={styles.noSubjects}>
-                                        {student.enrollment
-                                            ? 'No subjects found for this enrollment'
-                                            : 'Student is not currently enrolled'}
-                                    </div>
-                                )}
+                                <div className={styles.tabContent}>
+                                    {activeTab === 'current' ? (
+                                        <StudentSubject 
+                                            subjects={subjects}
+                                            subjectLoading={subjectLoading}
+                                            subjectError={subjectError}
+                                        />
+                                    ) : (
+                                        <SubjectHistory 
+                                            subjectHistory={subjectHistory}
+                                            loading={historyLoading}
+                                            error={historyError}
+                                        />
+                                    )}
+                                </div>
                             </div>
                         </>
                     )}
