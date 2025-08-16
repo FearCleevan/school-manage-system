@@ -1,3 +1,4 @@
+//src/components/payment/Navbar/SubjectLoad.jsx
 import React from 'react';
 import styles from './SubjectLoad.module.css';
 
