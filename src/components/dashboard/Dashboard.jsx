@@ -70,7 +70,7 @@ const Dashboard = () => {
           <div className={styles.logoContainer}>
             <img
               src="/school-logo.png"
-              alt="School Logo"
+              alt="School-Logo"
               className={styles.schoolLogo}
             />
           </div>
