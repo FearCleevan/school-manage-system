@@ -11,7 +11,7 @@ import { auth } from '../../lib/firebase/config';  // Adjust path as needed
 import { logActivity } from '../../lib/firebase/activityLogger';
 import { collection, doc, writeBatch, query, where, getDocs } from 'firebase/firestore';
 
-import './StudentManagement.css';
+import './studentManagement.css';
 import DeleteConfirmationModal from './components/DeleteConfirmationModal';
 import ImportModal from './components/ImportModal';
 import StudentTable from './components/StudentTable';
