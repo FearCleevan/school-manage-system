@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import styles from './EditStudent.module.css';
+import styles from './editStudent.module.css';
 import { db } from '../../../lib/firebase/config';
 import { logActivity } from '../../../lib/firebase/activityLogger';
 import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';

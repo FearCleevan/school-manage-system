@@ -1,5 +1,5 @@
 import React from 'react';
-import styles from './ViewSubject.module.css';
+import styles from './viewSubject.module.css';
 
 const ViewSubject = ({ show, onClose, subject }) => {
   if (!show || !subject) return null;
