@@ -1,34 +1,120 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import styles from './AllStudents.module.css';
 import { FaSearch, FaPlus } from 'react-icons/fa';
 import { db } from '../../lib/firebase/config';
 import { collection, getDocs } from 'firebase/firestore';
 import PaymentDetails from './PaymentDetails';
 
-
-// Department mapping (Firestore value -> Display value)
-const departmentMapping = {
-  'college': 'College',
-  'tvet': 'TVET',
-  'shs': 'SHS',
-  'jhs': 'JHS'
+// Constants moved to a separate configuration object
+const config = {
+  departmentMapping: {
+    'college': 'College',
+    'tvet': 'TVET',
+    'shs': 'SHS',
+    'jhs': 'JHS'
+  },
+  courseOptions: {
+    'college': ['BSIT', 'BSHM', 'BSBA', 'BSTM'],
+    'tvet': ['BTVTeD-AT', 'BTVTeD-HVACR TECH', 'BTVTeD-FSM', 'BTVTeD-ET'],
+    'shs': ['SHS'],
+    'jhs': ['JHS']
+  },
+  departmentOptions: [
+    { value: 'college', label: 'College' },
+    { value: 'tvet', label: 'TVET' },
+    { value: 'shs', label: 'SHS' },
+    { value: 'jhs', label: 'JHS' }
+  ],
+  pageSizeOptions: [5, 10, 20, 50, 100]
 };
 
-// Course options organized by department
-const courseOptions = {
-  'college': ['BSIT', 'BSHM', 'BSBA', 'BSTM'],
-  'tvet': ['BTVTeD-AT', 'BTVTeD-HVACR TECH', 'BTVTeD-FSM', 'BTVTeD-ET'],
-  'shs': ['SHS'],
-  'jhs': ['JHS']
-};
+// Extracted Pagination component for better reusability
+const Pagination = ({ 
+  currentPage, 
+  totalPages, 
+  paginate,
+  itemsPerPage,
+  totalItems,
+  indexOfFirstItem,
+  indexOfLastItem
+}) => {
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else if (currentPage <= 3) {
+      for (let i = 1; i <= maxVisiblePages; i++) {
+        pages.push(i);
+      }
+    } else if (currentPage >= totalPages - 2) {
+      for (let i = totalPages - 4; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      for (let i = currentPage - 2; i <= currentPage + 2; i++) {
+        pages.push(i);
+      }
+    }
+    
+    return pages;
+  };
 
-// Department options for filter dropdown
-const departmentOptions = [
-  { value: 'college', label: 'College' },
-  { value: 'tvet', label: 'TVET' },
-  { value: 'shs', label: 'SHS' },
-  { value: 'jhs', label: 'JHS' }
-];
+  return (
+    <div className={styles.paginationContainer}>
+      <div className={styles.paginationInfo}>
+        Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, totalItems)} of {totalItems} entries
+      </div>
+
+      <div className={styles.paginationButtons}>
+        <button
+          onClick={() => paginate(1)}
+          disabled={currentPage === 1}
+          aria-label="First page"
+        >
+          First
+        </button>
+        <button
+          onClick={() => paginate(Math.max(1, currentPage - 1))}
+          disabled={currentPage === 1}
+          aria-label="Previous page"
+        >
+          Previous
+        </button>
+
+        {getPageNumbers().map(pageNum => (
+          <button
+            key={pageNum}
+            onClick={() => paginate(pageNum)}
+            className={currentPage === pageNum ? styles.active : ''}
+            aria-label={`Page ${pageNum}`}
+            aria-current={currentPage === pageNum ? 'page' : undefined}
+          >
+            {pageNum}
+          </button>
+        ))}
+
+        <button
+          onClick={() => paginate(Math.min(totalPages, currentPage + 1))}
+          disabled={currentPage === totalPages}
+          aria-label="Next page"
+        >
+          Next
+        </button>
+        <button
+          onClick={() => paginate(totalPages)}
+          disabled={currentPage === totalPages}
+          aria-label="Last page"
+        >
+          Last
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const AllStudents = () => {
   const [students, setStudents] = useState([]);
@@ -42,7 +128,7 @@ const AllStudents = () => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
-  // Fetch students from Firestore
+  // Fetch students from Firestore with error handling
   useEffect(() => {
     const fetchStudents = async () => {
       try {
@@ -50,14 +136,13 @@ const AllStudents = () => {
         const studentsData = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data(),
-          // Format department for display
-          formattedDepartment: departmentMapping[doc.data().department] || 'Not assigned'
+          formattedDepartment: config.departmentMapping[doc.data().department] || 'Not assigned'
         }));
         setStudents(studentsData);
-        setLoading(false);
       } catch (err) {
         console.error('Error fetching students:', err);
-        setError('Failed to load students');
+        setError('Failed to load students. Please try again later.');
+      } finally {
         setLoading(false);
       }
     };
@@ -65,48 +150,83 @@ const AllStudents = () => {
     fetchStudents();
   }, []);
 
-  // Filter students based on search and filters
-  const filteredStudents = students.filter(student => {
-    const matchesSearch = 
-      student.studentId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      `${student.firstName} ${student.lastName}`.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesCourse = courseFilter ? student.enrollment?.course === courseFilter : true;
-    const matchesDepartment = departmentFilter ? student.department === departmentFilter : true;
-    
-    return matchesSearch && matchesCourse && matchesDepartment;
-  });
+  // Debounced search term
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  useEffect(() => {
+    const timerId = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1);
+    }, 300);
+
+    return () => clearTimeout(timerId);
+  }, [searchTerm]);
+
+  // Memoized filtered students
+  const filteredStudents = useMemo(() => {
+    return students.filter(student => {
+      const matchesSearch = 
+        student.studentId.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        `${student.firstName} ${student.lastName}`.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+      
+      const matchesCourse = courseFilter ? student.enrollment?.course === courseFilter : true;
+      const matchesDepartment = departmentFilter ? student.department === departmentFilter : true;
+      
+      return matchesSearch && matchesCourse && matchesDepartment;
+    });
+  }, [students, debouncedSearchTerm, courseFilter, departmentFilter]);
+
+  // Memoized pagination data
+  const paginationData = useMemo(() => {
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentItems = filteredStudents.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(filteredStudents.length / itemsPerPage);
+
+    return {
+      indexOfLastItem,
+      indexOfFirstItem,
+      currentItems,
+      totalPages
+    };
+  }, [currentPage, itemsPerPage, filteredStudents]);
 
   // Get available courses based on selected department
-  const getAvailableCourses = () => {
+  const getAvailableCourses = useCallback(() => {
     if (!departmentFilter) {
-      return Object.values(courseOptions).flat();
+      return Object.values(config.courseOptions).flat();
     }
-    return courseOptions[departmentFilter] || [];
-  };
-
-  // Pagination
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredStudents.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredStudents.length / itemsPerPage);
-
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+    return config.courseOptions[departmentFilter] || [];
+  }, [departmentFilter]);
 
   // Reset all filters
-  const resetFilters = () => {
+  const resetFilters = useCallback(() => {
     setSearchTerm('');
     setCourseFilter('');
     setDepartmentFilter('');
     setCurrentPage(1);
-  };
+  }, []);
 
   if (loading) {
-    return <div className={styles.loading}>Loading students...</div>;
+    return (
+      <div className={styles.loading} aria-live="polite">
+        <div className={styles.spinner} aria-hidden="true" />
+        Loading students...
+      </div>
+    );
   }
 
   if (error) {
-    return <div className={styles.error}>{error}</div>;
+    return (
+      <div className={styles.error} role="alert">
+        {error}
+        <button 
+          className={styles.retryButton}
+          onClick={() => window.location.reload()}
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -115,49 +235,57 @@ const AllStudents = () => {
       <div className={styles.tableControls}>
         <div className={styles.leftControls}>
           <div className={styles.searchBar}>
-            <FaSearch className={styles.searchIcon} />
+            <FaSearch className={styles.searchIcon} aria-hidden="true" />
             <input
+              id="studentSearch"
               type="text"
               placeholder="Search students..."
               value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setCurrentPage(1);
-              }}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              aria-label="Search students by ID or name"
             />
           </div>
 
           <div className={styles.filterControls}>
             <div className={styles.filterDropdown}>
-              <label>Department</label>
+              <label htmlFor="departmentFilter">Department</label>
               <select
+                id="departmentFilter"
                 value={departmentFilter}
                 onChange={(e) => {
                   setDepartmentFilter(e.target.value);
                   setCourseFilter('');
                   setCurrentPage(1);
                 }}
+                aria-label="Filter by department"
               >
                 <option value="">All Departments</option>
-                {departmentOptions.map(dept => (
-                  <option key={dept.value} value={dept.value}>{dept.label}</option>
+                {config.departmentOptions.map(dept => (
+                  <option key={dept.value} value={dept.value}>
+                    {dept.label}
+                  </option>
                 ))}
               </select>
             </div>
 
             <div className={styles.filterDropdown}>
-              <label>Course</label>
+              <label htmlFor="courseFilter">Course</label>
               <select
+                id="courseFilter"
                 value={courseFilter}
                 onChange={(e) => {
                   setCourseFilter(e.target.value);
                   setCurrentPage(1);
                 }}
                 disabled={!departmentFilter}
+                aria-label="Filter by course"
+                aria-disabled={!departmentFilter}
               >
                 <option value="">All Courses</option>
                 {getAvailableCourses().map(course => (
-                  <option key={course} value={course}>{course}</option>
+                  <option key={course} value={course}>
+                    {course}
+                  </option>
                 ))}
               </select>
             </div>
@@ -166,6 +294,7 @@ const AllStudents = () => {
               className={styles.resetFiltersBtn}
               onClick={resetFilters}
               disabled={!searchTerm && !courseFilter && !departmentFilter}
+              aria-label="Reset all filters"
             >
               Reset Filters
             </button>
@@ -173,8 +302,11 @@ const AllStudents = () => {
         </div>
 
         <div className={styles.rightControls}>
-          <button className={styles.addPaymentBtn}>
-            <FaPlus /> Add New Payment
+          <button 
+            className={styles.addPaymentBtn}
+            aria-label="Add new payment"
+          >
+            <FaPlus aria-hidden="true" /> Add New Payment
           </button>
         </div>
       </div>
@@ -182,121 +314,100 @@ const AllStudents = () => {
       {/* Students Table */}
       <div className={styles.studentsTable}>
         <div className={styles.showEntries}>
-          <span>Show</span>
+          <label htmlFor="itemsPerPage">Show</label>
           <select
+            id="itemsPerPage"
             value={itemsPerPage}
             onChange={(e) => {
               setItemsPerPage(Number(e.target.value));
               setCurrentPage(1);
             }}
+            aria-label="Items per page"
           >
-            {[5, 10, 20, 50, 100].map(size => (
-              <option key={size} value={size}>{size}</option>
+            {config.pageSizeOptions.map(size => (
+              <option key={size} value={size}>
+                {size}
+              </option>
             ))}
           </select>
           <span>entries</span>
         </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Student ID</th>
-              <th>Full Name</th>
-              <th>Course</th>
-              <th>Year</th>
-              <th>Semester</th>
-              <th>Department</th>
-              <th>Payment Details</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentItems.length > 0 ? (
-              currentItems.map(student => (
-                <tr key={student.id}>
-                  <td>{student.studentId}</td>
-                  <td>{`${student.firstName} ${student.lastName}`}</td>
-                  <td>{student.enrollment?.course || 'Not enrolled'}</td>
-                  <td>{student.enrollment?.yearLevel || 'Not enrolled'}</td>
-                  <td>{student.enrollment?.semester || 'Not enrolled'}</td>
-                  <td>{student.formattedDepartment}</td>
-                  <td>
-                    <button 
-                      className={styles.detailsBtn}
-                      onClick={() => {
+        
+        <div className={styles.tableWrapper}>
+          <table aria-label="Students list">
+            <thead>
+              <tr>
+                <th scope="col">Student ID</th>
+                <th scope="col">Full Name</th>
+                <th scope="col">Course</th>
+                <th scope="col">Year</th>
+                <th scope="col">Semester</th>
+                <th scope="col">Department</th>
+                <th scope="col">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {paginationData.currentItems.length > 0 ? (
+                paginationData.currentItems.map(student => (
+                  <tr 
+                    key={student.id}
+                    tabIndex={0}
+                    onClick={() => {
+                      setSelectedStudent(student);
+                      setShowPaymentModal(true);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
                         setSelectedStudent(student);
                         setShowPaymentModal(true);
-                      }}
-                    >
-                      ...
-                    </button>
+                      }
+                    }}
+                    role="button"
+                    aria-label={`View payment details for ${student.firstName} ${student.lastName}`}
+                  >
+                    <td>{student.studentId}</td>
+                    <td>{`${student.firstName} ${student.lastName}`}</td>
+                    <td>{student.enrollment?.course || 'Not enrolled'}</td>
+                    <td>{student.enrollment?.yearLevel || 'Not enrolled'}</td>
+                    <td>{student.enrollment?.semester || 'Not enrolled'}</td>
+                    <td>{student.formattedDepartment}</td>
+                    <td>
+                      <button 
+                        className={styles.detailsBtn}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedStudent(student);
+                          setShowPaymentModal(true);
+                        }}
+                        aria-label={`Payment details for ${student.firstName} ${student.lastName}`}
+                      >
+                        ...
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="7" className={styles.noResults}>
+                    No students found matching your criteria
                   </td>
                 </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="7" className={styles.noResults}>No students found</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Pagination */}
-      <div className={styles.paginationContainer}>
-        <div className={styles.paginationInfo}>
-          Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredStudents.length)} of {filteredStudents.length} entries
-        </div>
-
-        <div className={styles.paginationButtons}>
-          <button
-            onClick={() => paginate(1)}
-            disabled={currentPage === 1}
-          >
-            First
-          </button>
-          <button
-            onClick={() => paginate(Math.max(1, currentPage - 1))}
-            disabled={currentPage === 1}
-          >
-            Previous
-          </button>
-
-          {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
-            let pageNum;
-            if (totalPages <= 5) {
-              pageNum = i + 1;
-            } else if (currentPage <= 3) {
-              pageNum = i + 1;
-            } else if (currentPage >= totalPages - 2) {
-              pageNum = totalPages - 4 + i;
-            } else {
-              pageNum = currentPage - 2 + i;
-            }
-
-            return (
-              <button
-                key={pageNum}
-                onClick={() => paginate(pageNum)}
-                className={currentPage === pageNum ? styles.active : ''}
-              >
-                {pageNum}
-              </button>
-            );
-          })}
-
-          <button
-            onClick={() => paginate(Math.min(totalPages, currentPage + 1))}
-            disabled={currentPage === totalPages}
-          >
-            Next
-          </button>
-          <button
-            onClick={() => paginate(totalPages)}
-            disabled={currentPage === totalPages}
-          >
-            Last
-          </button>
-        </div>
-      </div>
+      <Pagination
+        currentPage={currentPage}
+        totalPages={paginationData.totalPages}
+        paginate={setCurrentPage}
+        itemsPerPage={itemsPerPage}
+        totalItems={filteredStudents.length}
+        indexOfFirstItem={paginationData.indexOfFirstItem}
+        indexOfLastItem={paginationData.indexOfLastItem}
+      />
 
       {/* Payment Details Modal */}
       {showPaymentModal && (

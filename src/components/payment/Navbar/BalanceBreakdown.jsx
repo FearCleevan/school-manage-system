@@ -1,12 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import styles from './BalanceBreakdown.module.css';
+import { FaFileInvoiceDollar, FaMoneyBillWave, FaWallet } from 'react-icons/fa';
 
-const BalanceBreakdown = ({ student, subjects }) => {
+const BalanceBreakdown = ({ student, subjects, onMakePayment }) => {
     const [balanceData, setBalanceData] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [totalPaid, setTotalPaid] = useState(0);
 
     useEffect(() => {
         if (!student || !subjects) return;
+
+        // Calculate total paid amount from payment history
+        const calculateTotalPaid = () => {
+            if (!student.paymentHistory || student.paymentHistory.length === 0) return 0;
+            return student.paymentHistory.reduce((sum, payment) => {
+                return sum + (payment.amount || 0);
+            }, 0);
+        };
 
         const calculateBalance = () => {
             const department = student.department || 'college';
@@ -62,23 +72,17 @@ const BalanceBreakdown = ({ student, subjects }) => {
             const hasSubjects = subjects.length > 0;
 
             if (isEnrolled && hasSubjects) {
-                // Calculate total units and lab units from all subjects
                 subjects.forEach(subject => {
-                    // For standard subjects
                     if (subject.units) {
                         const units = parseFloat(subject.units) || 0;
                         totalUnits += units;
-
                         const lab = parseFloat(subject.lab) || 0;
                         labUnits += lab;
-                    }
-                    // For customized subjects with terms
-                    else if (subject.terms) {
+                    } else if (subject.terms) {
                         Object.values(subject.terms).forEach(term => {
                             term.forEach(course => {
                                 const units = parseFloat(course.units) || 0;
                                 totalUnits += units;
-
                                 const lab = parseFloat(course.lab) || 0;
                                 labUnits += lab;
                             });
@@ -115,15 +119,46 @@ const BalanceBreakdown = ({ student, subjects }) => {
                 perUnitRate: fees.perUnit,
                 labUnitRate: fees.labFeePerUnit
             });
+
+            // Calculate total paid amount
+            setTotalPaid(calculateTotalPaid());
             setLoading(false);
         };
 
         calculateBalance();
     }, [student, subjects]);
 
-    if (loading) {
-        return <div className={styles.loading}>Calculating fees...</div>;
-    }
+    const calculateTotalUnits = () => {
+        let totalUnits = 0;
+        let labUnits = 0;
+
+        subjects.forEach(subject => {
+            if (subject.units) {
+                totalUnits += parseFloat(subject.units) || 0;
+                labUnits += parseFloat(subject.lab) || 0;
+            } else if (subject.terms) {
+                if (subject.terms.firstTerm) {
+                    subject.terms.firstTerm.forEach(course => {
+                        totalUnits += parseFloat(course.units) || 0;
+                        labUnits += parseFloat(course.lab) || 0;
+                    });
+                }
+                if (subject.terms.secondTerm) {
+                    subject.terms.secondTerm.forEach(course => {
+                        totalUnits += parseFloat(course.units) || 0;
+                        labUnits += parseFloat(course.lab) || 0;
+                    });
+                }
+            } else if (Array.isArray(subject)) {
+                subject.forEach(course => {
+                    totalUnits += parseFloat(course.units) || 0;
+                    labUnits += parseFloat(course.lab) || 0;
+                });
+            }
+        });
+
+        return { totalUnits, labUnits };
+    };
 
     if (!balanceData) {
         return (
@@ -133,20 +168,41 @@ const BalanceBreakdown = ({ student, subjects }) => {
         );
     }
 
-    const totalBalance =
-        balanceData.tuitionFee +
-        (balanceData.isEnrolled ? balanceData.miscFee : 0) +
-        (balanceData.isEnrolled ? balanceData.labFee : 0) +
-        (balanceData.isEnrolled
-            ? balanceData.otherFees.reduce((sum, fee) => sum + fee.amount, 0)
+    const { totalUnits, labUnits } = calculateTotalUnits();
+
+    // Merge recalculated values with balanceData
+    const mergedBalanceData = {
+        ...balanceData,
+        totalUnits,
+        labUnits,
+        tuitionFee: balanceData.isEnrolled && balanceData.hasSubjects
+            ? (student.department === 'shs' || student.department === 'jhs')
+                ? balanceData.tuitionFee
+                : totalUnits * balanceData.perUnitRate
+            : balanceData.tuitionFee,
+        labFee: labUnits * balanceData.labUnitRate
+    };
+
+    const totalFees =
+        mergedBalanceData.tuitionFee +
+        (mergedBalanceData.isEnrolled ? mergedBalanceData.miscFee : 0) +
+        (mergedBalanceData.isEnrolled ? mergedBalanceData.labFee : 0) +
+        (mergedBalanceData.isEnrolled
+            ? mergedBalanceData.otherFees.reduce((sum, fee) => sum + fee.amount, 0)
             : 0
         ) -
-        balanceData.discount;
+        mergedBalanceData.discount;
+
+    const remainingBalance = totalFees - totalPaid;
+
+    if (loading) {
+        return <div className={styles.loading}>Calculating fees...</div>;
+    }
 
     return (
         <div className={styles.balanceSection}>
             <h3 className={styles.sectionTitle}>
-                {balanceData.isEnrolled
+                {mergedBalanceData.isEnrolled
                     ? `${student.enrollment?.semester} Semester Fees`
                     : 'Registration Information'}
             </h3>
@@ -154,36 +210,36 @@ const BalanceBreakdown = ({ student, subjects }) => {
             <div className={styles.balanceGrid}>
                 <div className={styles.balanceItem}>
                     <span className={styles.balanceLabel}>
-                        {balanceData.isEnrolled
-                            ? `Tuition Fee (${balanceData.totalUnits} units @ ₱${balanceData.perUnitRate}/unit)`
+                        {mergedBalanceData.isEnrolled
+                            ? `Tuition Fee (${mergedBalanceData.totalUnits} units @ ₱${mergedBalanceData.perUnitRate}/unit)`
                             : 'Registration Fee'}
                     </span>
                     <span className={styles.balanceValue}>
-                        ₱{balanceData.tuitionFee.toLocaleString()}
+                        ₱{mergedBalanceData.tuitionFee.toLocaleString()}
                     </span>
                 </div>
 
-                {balanceData.isEnrolled && (
+                {mergedBalanceData.isEnrolled && (
                     <>
                         <div className={styles.balanceItem}>
                             <span className={styles.balanceLabel}>Miscellaneous Fee:</span>
                             <span className={styles.balanceValue}>
-                                ₱{balanceData.miscFee.toLocaleString()}
+                                ₱{mergedBalanceData.miscFee.toLocaleString()}
                             </span>
                         </div>
 
-                        {balanceData.labFee > 0 && (
+                        {mergedBalanceData.labFee > 0 && (
                             <div className={styles.balanceItem}>
                                 <span className={styles.balanceLabel}>
-                                    Laboratory Fee ({balanceData.labUnits} units @ ₱{balanceData.labUnitRate}/unit)
+                                    Laboratory Fee ({mergedBalanceData.labUnits} units @ ₱{mergedBalanceData.labUnitRate}/unit)
                                 </span>
                                 <span className={styles.balanceValue}>
-                                    ₱{balanceData.labFee.toLocaleString()}
+                                    ₱{mergedBalanceData.labFee.toLocaleString()}
                                 </span>
                             </div>
                         )}
 
-                        {balanceData.otherFees.map((fee, index) => (
+                        {mergedBalanceData.otherFees.map((fee, index) => (
                             <div key={index} className={styles.balanceItem}>
                                 <span className={styles.balanceLabel}>{fee.name}:</span>
                                 <span className={styles.balanceValue}>
@@ -194,24 +250,46 @@ const BalanceBreakdown = ({ student, subjects }) => {
                     </>
                 )}
 
-                {balanceData.discount > 0 && (
+                {mergedBalanceData.discount > 0 && (
                     <div className={styles.balanceItem}>
                         <span className={styles.balanceLabel}>Discount/Scholarship:</span>
                         <span className={styles.balanceValue}>
-                            -₱{balanceData.discount.toLocaleString()}
+                            -₱{mergedBalanceData.discount.toLocaleString()}
                         </span>
                     </div>
                 )}
 
-                <div className={`${styles.balanceItem} ${styles.totalBalance}`}>
-                    <span className={styles.balanceLabel}>Total Current Balance:</span>
+                <div className={`${styles.balanceItem} ${styles.totalFees}`}>
+                    <span className={styles.balanceLabel}>
+                        <FaFileInvoiceDollar style={{ marginRight: '8px' }} />
+                        Total Fees:
+                    </span>
                     <span className={styles.balanceValue}>
-                        ₱{totalBalance.toLocaleString()}
+                        ₱{totalFees.toLocaleString()}
+                    </span>
+                </div>
+
+                <div className={`${styles.balanceItem} ${styles.totalPaid}`}>
+                    <span className={styles.balanceLabel}>
+                        <FaMoneyBillWave/>Total Paid:
+                    </span>
+                    <span className={styles.balanceValue}>
+                        ₱{totalPaid.toLocaleString()}
+                    </span>
+                </div>
+
+                <div className={`${styles.balanceItem} ${styles.totalBalance}`}>
+                    <span className={styles.balanceLabel}>
+                        <FaWallet style={{ marginRight: '8px' }} />
+                        Remaining Balance:
+                    </span>
+                    <span className={styles.balanceValue}>
+                        ₱{remainingBalance.toLocaleString()}
                     </span>
                 </div>
             </div>
 
-            {balanceData.isEnrolled && !balanceData.hasSubjects && (
+            {mergedBalanceData.isEnrolled && !mergedBalanceData.hasSubjects && (
                 <div className={styles.note}>
                     <strong>Note:</strong> Final tuition fee will be calculated after all subjects are loaded.
                     Current amount shows the minimum registration fee.
@@ -221,12 +299,10 @@ const BalanceBreakdown = ({ student, subjects }) => {
             <div className={styles.paymentActions}>
                 <button
                     className={styles.payButton}
-                    disabled={!balanceData.isEnrolled}
+                    onClick={onMakePayment}
+                    disabled={!balanceData.isEnrolled || remainingBalance <= 0}
                 >
                     Make Payment
-                </button>
-                <button className={styles.printButton}>
-                    Print Statement
                 </button>
             </div>
         </div>

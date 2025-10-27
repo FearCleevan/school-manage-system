@@ -27,6 +27,7 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [subjectToDelete, setSubjectToDelete] = useState(null);
     const [availableSubjects, setAvailableSubjects] = useState([]);
+    const [subjectHistory, setSubjectHistory] = useState([]);
 
     const [enrollmentData, setEnrollmentData] = useState({
         course: '',
@@ -89,7 +90,8 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
                 foundStudent = {
                     ...docSnap.data(),
                     id: docSnap.id,
-                    customizedSubjects: docSnap.data().customizedSubjects || null
+                    customizedSubjects: docSnap.data().customizedSubjects || null,
+                    subjectHistory: docSnap.data().subjectHistory || [] // Initialize subject history
                 };
             } else {
                 // Fallback to searching by document ID
@@ -100,7 +102,8 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
                     foundStudent = {
                         ...docSnap.data(),
                         id: docSnap.id,
-                        customizedSubjects: docSnap.data().customizedSubjects || null
+                        customizedSubjects: docSnap.data().customizedSubjects || null,
+                        subjectHistory: docSnap.data().subjectHistory || [] // Initialize subject history
                     };
                 }
             }
@@ -108,6 +111,7 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
             if (foundStudent) {
                 setStudentData(foundStudent);
                 setStudentId(foundStudent.studentId || studentId);
+                setSubjectHistory(foundStudent.subjectHistory); // Set subject history state
 
                 // Set default course based on department
                 let defaultCourse = '';
@@ -130,7 +134,7 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
 
                 // Set current enrollment data if exists
                 if (foundStudent.enrollment) {
-                    const [from, to] = foundStudent.enrollment.schoolYear.split('-').map(Number);
+                    const [from, to] = foundStudent.enrollment.schoolYear?.split('-')?.map(Number) || [];
                     setEnrollmentData({
                         course: foundStudent.enrollment.course || defaultCourse,
                         yearLevel: foundStudent.enrollment.yearLevel || defaultYearLevel,
@@ -154,13 +158,16 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
                 if (foundStudent.customizedSubjects) {
                     setSubjects(foundStudent.customizedSubjects);
                     setShowSubjects(true);
+                } else if (foundStudent.enrollment) {
+                    // Load standard subjects if no customized subjects exist
+                    await loadSubjects(foundStudent.enrollment, foundStudent);
                 }
             } else {
                 setError('Student not found. Please check the ID and try again.');
             }
         } catch (err) {
             console.error('Error fetching student:', err);
-            setError('Failed to fetch student data. Please try again.');
+            setError(`Failed to load student data: ${err.message}`);
         } finally {
             setLoading(false);
         }
@@ -247,6 +254,7 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
 
             const docRef = querySnapshot.docs[0].ref;
 
+            // Prepare the update data
             const updateData = {
                 enrollment: {
                     ...enrollmentData,
@@ -259,6 +267,22 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
             };
 
             if (editingMode) {
+                // Get the current subjects (either customized or standard)
+                const currentSubjects = studentData.customizedSubjects || subjects;
+
+                // Create a new history entry
+                const newHistoryEntry = {
+                    schoolYear: `${enrollmentData.schoolYearFrom}-${enrollmentData.schoolYearTo}`,
+                    semester: enrollmentData.semester,
+                    subjects: currentSubjects,
+                    updatedAt: new Date()
+                };
+
+                // Add to update data
+                updateData.subjectHistory = [
+                    ...(studentData.subjectHistory || []),
+                    newHistoryEntry
+                ];
                 updateData.customizedSubjects = subjects;
             }
 
@@ -270,17 +294,29 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
                 studentName: `${studentData.firstName} ${studentData.lastName}`,
                 course: enrollmentData.course,
                 yearLevel: enrollmentData.yearLevel,
-                semester: enrollmentData.semester
+                semester: enrollmentData.semester,
+                subjectCount: subjects.length,
+                historyEntryAdded: editingMode
             }, auth.currentUser.displayName);
 
             // Refresh student data
             const updatedDoc = await getDoc(docRef);
-            setStudentData(updatedDoc.data());
+            const updatedData = updatedDoc.data();
+            setStudentData(updatedData);
+
+            // Update local state with the new history
+            if (editingMode) {
+                setSubjectHistory(updatedData.subjectHistory || []);
+            }
 
             setError(null);
             toast.success(
                 <div>
-                    <div>Customized subjects saved successfully!</div>
+                    <div>
+                        {editingMode
+                            ? 'Customized subjects saved successfully!'
+                            : 'Enrollment updated successfully!'}
+                    </div>
                     {editingMode && (
                         <div style={{ marginTop: '10px' }}>
                             <button
@@ -1083,6 +1119,7 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
                     <SubjectsDisplay
                         showSubjects={showSubjects}
                         subjects={subjects}
+                        subjectHistory={subjectHistory}
                         enrollmentData={enrollmentData}
                         editingMode={editingMode}
                         toggleEditingMode={toggleEditingMode}

@@ -27,6 +27,24 @@
     border-radius: 6px;
 }
 
+/* Update the existing .balanceItem to not apply to these special items */
+.balanceItem:not(.totalFees):not(.totalPaid):not(.totalBalance) {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px;
+    background-color: #f9f9f9;
+    border-radius: 6px;
+}
+
+/* Add some spacing between sections */
+.balanceGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+    row-gap: 8px;
+}
+
 .balanceLabel {
     font-weight: 600;
     color: #2c3e50;
@@ -35,12 +53,6 @@
 .balanceValue {
     font-weight: 600;
     color: #2c3e50;
-}
-
-.totalBalance {
-    grid-column: span 2;
-    background-color: #e8f4fd;
-    border: 1px solid #3498db;
 }
 
 .note {
@@ -108,4 +120,34 @@
     .totalBalance {
         grid-column: span 1;
     }
+}
+
+/* In BalanceBreakdown.module.css */
+.totalFees {
+    grid-column: span 2;
+    background-color: #f8f9fa;
+    border-left: 4px solid #4c6baf;
+    padding-top: 12px;
+    font-weight: bold;
+    color: #343a40;
+    margin-top: 8px;
+}
+
+.totalPaid {
+    grid-column: span 2;
+    background-color: #e8f5e9;
+    border-left: 4px solid #4caf50;
+    padding-left: 8px;
+    font-weight: bold;
+    color: #2e7d32;
+}
+
+.totalBalance {
+    grid-column: span 2;
+    background-color: #ffebee;
+    border-left: 4px solid #f44336;
+    padding-left: 8px;
+    font-weight: bold;
+    color: #c62828;
+    margin-bottom: 8px;
 }

@@ -23,6 +23,7 @@
     "cloudinary": "^2.7.0",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
+    "exceljs": "^4.4.0",
     "firebase": "^11.6.0",
     "formik": "^2.4.6",
     "glob": "11.0.3",
