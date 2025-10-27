@@ -4,13 +4,14 @@ import {
     FaBuilding, FaBook, FaClipboardList, FaMoneyBillWave,
     FaChartLine, FaCalendarCheck, FaGraduationCap, FaBell,
     FaCog, FaShieldAlt, FaHome, FaSignOutAlt, FaTimes
-} from 'react-icons/fa';
+} from "react-icons/fa";
 import { auth } from "../../../lib/firebase/config";
 import { signOut } from 'firebase/auth';
 import styles from './LeftSideDashboard.module.css';
 
 const LeftSideDashboard = () => {
     const location = useLocation();
+    // const navigate = useNavigate();
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [loading, setLoading] = useState(false);
     const [logoutOptions, setLogoutOptions] = useState({
@@ -51,7 +52,8 @@ const LeftSideDashboard = () => {
                 console.log("Terminating all active sessions");
             }
 
-            window.location.href = `/login?cache=${Date.now()}`;
+            // Redirect to login page with cache busting
+            window.location.href = `/?cache=${Date.now()}`;
         } catch (error) {
             console.error('Logout error:', error);
             setLoading(false);
@@ -60,9 +62,14 @@ const LeftSideDashboard = () => {
     };
 
     const getActiveMenuItem = () => {
+        // For dashboard index route
+        if (location.pathname === '/dashboard') {
+            return menuItems[0]; // Dashboard item
+        }
+        
+        // For nested routes
         const activeItem = menuItems.find(item =>
-            location.pathname === item.path ||
-            (item.path !== '/dashboard' && location.pathname.startsWith(item.path))
+            location.pathname.startsWith(item.path)
         );
         return activeItem || menuItems[0];
     };
@@ -91,10 +98,12 @@ const LeftSideDashboard = () => {
                             <li key={item.path} className={styles.navItem}>
                                 <Link
                                     to={item.path}
-                                    className={`${styles.navLink} ${location.pathname === item.path ||
-                                            (item.path !== '/dashboard' && location.pathname.startsWith(item.path)) ?
-                                            styles.active : ''
-                                        }`}
+                                    className={`${styles.navLink} ${
+                                        location.pathname === item.path || 
+                                        (item.path !== '/dashboard' && location.pathname.startsWith(item.path)) 
+                                            ? styles.active 
+                                            : ''
+                                    }`}
                                 >
                                     <span className={styles.navIcon}>{item.icon}</span>
                                     <span className={styles.navLabel}>{item.label}</span>

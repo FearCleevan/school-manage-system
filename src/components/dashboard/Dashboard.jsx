@@ -12,20 +12,9 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { currentUser, userData, loading } = useAuth();
   const [showLoading, setShowLoading] = useState(true);
-  
 
-  const pathChecks = [
-    'account-user-settings',
-    'manage-student',
-    'department',
-    'course',
-    'subjects',
-    'payment',
-    'grading-system',
-    'attendance',
-    'announcement',
-    'permission'
-  ].some(path => location.pathname.includes(path));
+  // Check if we're on a nested route (not the dashboard index)
+  const isNestedRoute = location.pathname !== '/dashboard' && location.pathname.startsWith('/dashboard/');
 
   useEffect(() => {
     if (!loading && !currentUser) {
@@ -96,9 +85,15 @@ const Dashboard = () => {
 
       <div className={styles.dashboardContent}>
         <LeftSideDashboard />
-        {!pathChecks && <CenterSideDashboard />}
+        
+        {/* Show CenterSideDashboard only on dashboard index route */}
+        {!isNestedRoute && <CenterSideDashboard />}
+        
+        {/* Outlet will render the nested routes */}
         <Outlet />
-        {!pathChecks && <RightSideDashboard />}
+        
+        {/* Show RightSideDashboard only on dashboard index route */}
+        {!isNestedRoute && <RightSideDashboard />}
       </div>
     </div>
   );
