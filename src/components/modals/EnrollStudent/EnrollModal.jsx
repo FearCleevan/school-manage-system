@@ -339,7 +339,11 @@ const EnrollModal = ({ show, onClose }) => {
                                 ) : (
                                     <>
                                         <div className={styles.profilePhotoPlaceholder}>
-                                            <i className={`fas fa-user ${styles.profileIcon}`}></i>
+                                            <img
+                                                src="/default-user.png"
+                                                alt="Default user"
+                                                className={styles.defaultUserImage}
+                                            />
                                         </div>
                                         <button
                                             type="button"
