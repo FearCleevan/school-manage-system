@@ -201,7 +201,7 @@
 
 .students-table th,
 .students-table td {
-    padding: 12px 15px;
+    padding: 2px 15px;
     text-align: left;
     border-bottom: 1px solid #e0e0e0;
     vertical-align: middle;
@@ -233,6 +233,10 @@
     flex-shrink: 0;
     position: relative;
     top: -1px;
+}
+
+.students-table td {
+    font-size: 11px;
 }
 
 /* Status Badges */
