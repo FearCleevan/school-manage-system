@@ -118,121 +118,121 @@ const EditStudent = ({ show, onClose, student, onUpdate }) => {
         }
     };
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError(null);
-  setIsSubmitting(true);
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError(null);
+        setIsSubmitting(true);
 
-  try {
-    const requiredFields = [
-      'department', 'firstName', 'lastName', 'email',
-      'phone', 'username', 'address',
-      'province', 'city', 'zipCode', 'emergencyName',
-      'emergencyContact', 'emergencyRelation'
-    ];
+        try {
+            const requiredFields = [
+                'department', 'firstName', 'lastName', 'email',
+                'phone', 'username', 'address',
+                'province', 'city', 'zipCode', 'emergencyName',
+                'emergencyContact', 'emergencyRelation'
+            ];
 
-    const missingFields = requiredFields.filter(field => !formData[field]);
-    if (missingFields.length > 0) {
-      throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
-    }
+            const missingFields = requiredFields.filter(field => !formData[field]);
+            if (missingFields.length > 0) {
+                throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+            }
 
-    if ((formData.department === 'shs' || formData.department === 'jhs') && !formData.lrn) {
-      throw new Error('LRN is required for SHS/JHS students');
-    }
+            if ((formData.department === 'shs' || formData.department === 'jhs') && !formData.lrn) {
+                throw new Error('LRN is required for SHS/JHS students');
+            }
 
-    // Track changed fields
-    const changes = {};
-    Object.keys(formData).forEach(key => {
-      if (key === 'address' || key === 'emergencyContact') {
-        Object.keys(formData[key]).forEach(subKey => {
-          const originalValue = student[key]?.[subKey] || '';
-          const newValue = formData[key][subKey];
-          if (originalValue !== newValue) {
-            changes[`${key}.${subKey}`] = {
-              from: originalValue,
-              to: newValue
+            // Track changed fields
+            const changes = {};
+            Object.keys(formData).forEach(key => {
+                if (key === 'address' || key === 'emergencyContact') {
+                    Object.keys(formData[key]).forEach(subKey => {
+                        const originalValue = student[key]?.[subKey] || '';
+                        const newValue = formData[key][subKey];
+                        if (originalValue !== newValue) {
+                            changes[`${key}.${subKey}`] = {
+                                from: originalValue,
+                                to: newValue
+                            };
+                        }
+                    });
+                } else if (key !== 'profilePhoto') {
+                    const originalValue = student[key] || '';
+                    const newValue = formData[key];
+                    if (originalValue !== newValue) {
+                        changes[key] = {
+                            from: originalValue,
+                            to: newValue
+                        };
+                    }
+                }
+            });
+
+            if (Object.keys(changes).length === 0 && !formData.profilePhoto) {
+                throw new Error('No changes detected');
+            }
+
+            let photoURL = previewPhoto;
+            if (formData.profilePhoto) {
+                try {
+                    const cloudinaryResponse = await uploadToCloudinary(formData.profilePhoto);
+                    photoURL = cloudinaryResponse?.secure_url || previewPhoto;
+                } catch (error) {
+                    console.error('Photo upload failed:', error);
+                }
+            }
+
+            const updatedData = {
+                department: formData.department,
+                lrn: formData.lrn || null,
+                firstName: formData.firstName.trim(),
+                middleName: formData.middleName?.trim() || null,
+                lastName: formData.lastName.trim(),
+                email: formData.email.toLowerCase().trim(),
+                phone: formData.phone.trim(),
+                username: formData.username.toLowerCase().trim(),
+                ...(formData.password && { password: formData.password }),
+                address: {
+                    street: formData.address.trim(),
+                    province: formData.province.trim(),
+                    city: formData.city.trim(),
+                    zipCode: formData.zipCode.trim()
+                },
+                emergencyContact: {
+                    name: formData.emergencyName.trim(),
+                    phone: formData.emergencyContact.trim(),
+                    relation: formData.emergencyRelation
+                },
+                ...(photoURL && { profilePhoto: photoURL }),
+                updatedAt: serverTimestamp()
             };
-          }
-        });
-      } else if (key !== 'profilePhoto') {
-        const originalValue = student[key] || '';
-        const newValue = formData[key];
-        if (originalValue !== newValue) {
-          changes[key] = {
-            from: originalValue,
-            to: newValue
-          };
+
+            await updateDoc(doc(db, 'students', student.id), updatedData);
+
+            // Log the activity
+            try {
+                await logActivity('edited student', {
+                    studentId: student.studentId,
+                    studentName: `${student.firstName} ${student.lastName}`,
+                    changes: Object.keys(changes).length > 0 ? changes : null,
+                    ...(formData.profilePhoto && { photoUpdated: true })
+                });
+            } catch (logError) {
+                console.error('Failed to log activity:', logError);
+            }
+
+            onUpdate({
+                id: student.id,
+                ...updatedData,
+                profilePhoto: photoURL || student.profilePhoto
+            });
+
+            onClose();
+        } catch (error) {
+            console.error('Update error:', error);
+            setError(error.message || 'Failed to update student. Please try again.');
+        } finally {
+            setIsSubmitting(false);
         }
-      }
-    });
-
-    if (Object.keys(changes).length === 0 && !formData.profilePhoto) {
-      throw new Error('No changes detected');
-    }
-
-    let photoURL = previewPhoto;
-    if (formData.profilePhoto) {
-      try {
-        const cloudinaryResponse = await uploadToCloudinary(formData.profilePhoto);
-        photoURL = cloudinaryResponse?.secure_url || previewPhoto;
-      } catch (error) {
-        console.error('Photo upload failed:', error);
-      }
-    }
-
-    const updatedData = {
-      department: formData.department,
-      lrn: formData.lrn || null,
-      firstName: formData.firstName.trim(),
-      middleName: formData.middleName?.trim() || null,
-      lastName: formData.lastName.trim(),
-      email: formData.email.toLowerCase().trim(),
-      phone: formData.phone.trim(),
-      username: formData.username.toLowerCase().trim(),
-      ...(formData.password && { password: formData.password }),
-      address: {
-        street: formData.address.trim(),
-        province: formData.province.trim(),
-        city: formData.city.trim(),
-        zipCode: formData.zipCode.trim()
-      },
-      emergencyContact: {
-        name: formData.emergencyName.trim(),
-        phone: formData.emergencyContact.trim(),
-        relation: formData.emergencyRelation
-      },
-      ...(photoURL && { profilePhoto: photoURL }),
-      updatedAt: serverTimestamp()
     };
-
-    await updateDoc(doc(db, 'students', student.id), updatedData);
-
-    // Log the activity
-    try {
-      await logActivity('edited student', {
-        studentId: student.studentId,
-        studentName: `${student.firstName} ${student.lastName}`,
-        changes: Object.keys(changes).length > 0 ? changes : null,
-        ...(formData.profilePhoto && { photoUpdated: true })
-      });
-    } catch (logError) {
-      console.error('Failed to log activity:', logError);
-    }
-
-    onUpdate({
-      id: student.id,
-      ...updatedData,
-      profilePhoto: photoURL || student.profilePhoto
-    });
-
-    onClose();
-  } catch (error) {
-    console.error('Update error:', error);
-    setError(error.message || 'Failed to update student. Please try again.');
-  } finally {
-    setIsSubmitting(false);
-  }
-};
 
     if (!show || !student) return null;
 
@@ -241,7 +241,7 @@ const handleSubmit = async (e) => {
             <div className={styles.editModal}>
                 <div className={styles.modalHeader}>
                     <h2 className={styles.modalTitle}>Edit Student: {student.studentId}</h2>
-                    <button 
+                    <button
                         className={styles.closeBtn}
                         onClick={onClose}
                         disabled={isSubmitting}
@@ -323,7 +323,11 @@ const handleSubmit = async (e) => {
                                 ) : (
                                     <>
                                         <div className={styles.profilePhotoPlaceholder}>
-                                            <i className={`fas fa-user ${styles.profileIcon}`}></i>
+                                            <img
+                                                src="/default-user.png"
+                                                alt="Default user"
+                                                className={styles.defaultUserImage}
+                                            />
                                         </div>
                                         <button
                                             type="button"

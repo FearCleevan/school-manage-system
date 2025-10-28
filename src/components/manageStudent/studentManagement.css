@@ -218,6 +218,14 @@
     white-space: nowrap;
 }
 
+.default-user-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #ddd;
+}
+
 
 .students-table th:hover {
     background-color: #f1f3f5;

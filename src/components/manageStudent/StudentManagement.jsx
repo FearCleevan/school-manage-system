@@ -142,6 +142,7 @@ const StudentManagement = () => {
   };
 
   // Process import
+  // Process import
   const processImport = async () => {
     if (!importFile) return;
 
@@ -215,8 +216,9 @@ const StudentManagement = () => {
       const batch = writeBatch(db);
       const studentsRef = collection(db, "students");
 
-      Object.entries(studentsByDepartment).forEach(([deptStudents]) => {
-        deptStudents.forEach((student) => {
+      // FIXED: Only get the students array, ignore the department key
+      Object.values(studentsByDepartment).forEach((studentsArray) => {
+        studentsArray.forEach((student) => {
           const docRef = doc(studentsRef);
           batch.set(docRef, student);
         });

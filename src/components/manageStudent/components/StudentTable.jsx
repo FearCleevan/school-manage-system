@@ -227,7 +227,11 @@ const StudentTable = ({
                           />
                         ) : (
                           <div className="profile-placeholder">
-                            <i className="fas fa-user"></i>
+                            <img 
+                              src="/default-user.png" 
+                              alt="Default user" 
+                              className="default-user-image"
+                            />
                           </div>
                         )}
                       </td>

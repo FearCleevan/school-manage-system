@@ -12,8 +12,8 @@ export const getDepartmentLabel = (dept) => {
   const labels = {
     college: "College",
     tvet: "TVET",
-    shs: "Senior High",
-    jhs: "Junior High",
+    shs: "SHS",
+    jhs: "JHS",
   };
   return labels[dept] || dept;
 };
