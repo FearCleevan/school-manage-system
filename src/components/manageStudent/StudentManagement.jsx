@@ -94,12 +94,20 @@ const StudentManagement = () => {
   // Filter students
   const filteredStudents = students.filter((student) => {
     const searchLower = searchTerm.toLowerCase();
+
+    // Safely handle all string conversions with proper null checks
+    const studentId = student.studentId?.toLowerCase() || '';
+    const fullName = `${student.firstName || ''} ${student.lastName || ''}`.toLowerCase();
+    const email = student.email?.toLowerCase() || '';
+    const street = student.address?.street?.toLowerCase() || '';
+    const phone = String(student.phone || '').toLowerCase(); // Convert to string first
+
     const matchesSearch =
-      student.studentId.toLowerCase().includes(searchLower) ||
-      `${student.firstName} ${student.lastName}`.toLowerCase().includes(searchLower) ||
-      student.email?.toLowerCase()?.includes(searchLower) ||
-      student.address?.street?.toLowerCase()?.includes(searchLower) ||
-      student.phone?.toLowerCase()?.includes(searchLower);
+      studentId.includes(searchLower) ||
+      fullName.includes(searchLower) ||
+      email.includes(searchLower) ||
+      street.includes(searchLower) ||
+      phone.includes(searchLower);
 
     const matchesEnrollment =
       (!courseFilter || student.enrollment?.course === courseFilter) &&
@@ -365,14 +373,14 @@ const StudentManagement = () => {
     const dataToExport = studentsToExport || filteredStudents;
 
     return dataToExport.map((student) => ({
-      "Student ID": student.studentId,
-      "Department": getDepartmentLabel(student.department),
+      "Student ID": student.studentId || "",
+      "Department": getDepartmentLabel(student.department) || "",
       "LRN": student.lrn || "",
-      "First Name": student.firstName,
+      "First Name": student.firstName || "",
       "Middle Name": student.middleName || "",
-      "Last Name": student.lastName,
-      "Email": student.email,
-      "Phone": student.phone,
+      "Last Name": student.lastName || "",
+      "Email": student.email || "",
+      "Phone": String(student.phone || ""), // Convert to string
       "Username": student.username || "",
       "Password": student.password || "Fear@123",
       "Address": student.address?.street || "",
@@ -380,9 +388,9 @@ const StudentManagement = () => {
       "City": student.address?.city || "",
       "ZIP Code": student.address?.zipCode || "",
       "Emergency Name": student.emergencyContact?.name || "",
-      "Emergency Contact": student.emergencyContact?.phone || "",
+      "Emergency Contact": String(student.emergencyContact?.phone || ""), // Convert to string
       "Emergency Relation": student.emergencyContact?.relation || "guardian",
-      "Status": student.status,
+      "Status": student.status || "",
       "Course": student.enrollment?.course || "Not Enrolled",
       "Year Level": student.enrollment?.yearLevel || "Not Enrolled",
       "Semester": student.enrollment?.semester || "Not Enrolled",

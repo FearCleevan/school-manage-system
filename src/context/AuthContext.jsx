@@ -28,7 +28,7 @@ export const AuthProvider = ({ children }) => {
             };
             setUserData(userData);
             
-            // Force token refresh if admin status changed
+            // Force token refresh if admin status changed - with better error handling
             try {
               const tokenResult = await user.getIdTokenResult();
               if (userData.isAdmin !== !!tokenResult.claims.admin) {
@@ -36,15 +36,29 @@ export const AuthProvider = ({ children }) => {
               }
             } catch (tokenError) {
               console.warn("Token refresh error:", tokenError);
+              // Continue even if token refresh fails
             }
+          } else {
+            console.warn("User document not found for uid:", user.uid);
+            setUserData(null);
           }
         } catch (error) {
           console.error("Error fetching user data:", error);
+          // Set user data to null but don't block the auth flow
+          setUserData(null);
         }
       } else {
         setUserData(null);
+        setCurrentUser(null);
       }
+      
       setCurrentUser(user);
+      setLoading(false);
+    }, (error) => {
+      // Handle auth state change errors
+      console.error("Auth state change error:", error);
+      setCurrentUser(null);
+      setUserData(null);
       setLoading(false);
     });
 
