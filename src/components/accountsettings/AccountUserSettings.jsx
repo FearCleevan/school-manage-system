@@ -324,6 +324,7 @@ const AccountUserSettings = () => {
                 isOpen={showCreateModal}
                 onClose={() => setShowCreateModal(false)}
                 onCreate={handleCreateUser}
+                currentUser={currentUser} // Pass currentUser to the modal
             />
 
             <EditUserModal

@@ -1,4 +1,3 @@
-//src/components/modals/CreateUserModal.jsx
 import React, { useState, useRef } from 'react';
 import {
   FaTimes, FaUserCircle, FaUpload,
@@ -8,14 +7,14 @@ import {
   FaShieldAlt, FaCog
 } from 'react-icons/fa';
 import { auth } from '../../../lib/firebase/config';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../lib/firebase/config';
 import { uploadToCloudinary } from '../../../lib/firebase/storage';
 import styles from './CreateUserModal.module.css';
 import { logUserActivity } from '../../../lib/firebase/userActivityLogger';
 
-const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
+const CreateUserModal = ({ isOpen, onClose, onCreate, currentUser }) => {
   const [formData, setFormData] = useState({
     profile: null,
     firstName: '',
@@ -114,6 +113,20 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
     onClose();
   };
 
+  const reauthenticateCurrentUser = async (currentUser, currentPassword) => {
+    try {
+      const credential = EmailAuthProvider.credential(
+        currentUser.email,
+        currentPassword
+      );
+      await reauthenticateWithCredential(currentUser, credential);
+      return true;
+    } catch (error) {
+      console.error('Reauthentication failed:', error);
+      throw new Error('Current password is incorrect');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -136,7 +149,7 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
     }
 
     // Prevent creating a user with the same email as the current user
-    if (auth.currentUser && formData.email === auth.currentUser.email) {
+    if (currentUser && formData.email === currentUser.email) {
       setError('Cannot create a user with the same email as the currently logged-in user');
       return;
     }
@@ -157,6 +170,13 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
           console.error('Cloudinary upload error:', uploadError);
           throw new Error(`Profile image upload failed: ${uploadError.message}`);
         }
+      }
+
+      // Store current user reference before creating new user
+      const originalUser = auth.currentUser;
+      
+      if (!originalUser) {
+        throw new Error('No user is currently logged in');
       }
 
       // 2. Create auth user
@@ -182,7 +202,19 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
         lastUpdated: serverTimestamp()
       });
 
+      // 4. IMPORTANT: Re-authenticate as the original user
+      // For admin users, we'll sign back in as the original admin
+      // In a real app, you might want to ask for the admin's password again
+      // For now, we'll sign out and let the auth context handle the redirect
+      
+      // Sign out the newly created user
+      await auth.signOut();
+      
+      // The AuthContext will detect the sign-out and redirect to login
+      // The admin will need to log in again
+
       try {
+        // Log the activity before we lose the admin context
         await logUserActivity('user_created', {
           targetUserId: authUser.uid,
           targetUserEmail: formData.email,
@@ -193,10 +225,17 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
       } catch (logError) {
         console.error("Activity logging failed:", logError);
       }
-      // Success
-      onCreate();
+
+      // Success - show message that admin needs to log in again
+      toast.success('User created successfully! Please log in again to continue.');
+      
+      // Reset form and close modal
       resetForm();
       onClose();
+      
+      // Call the onCreate callback
+      onCreate();
+
     } catch (error) {
       console.error('Error in user creation process:', error);
       let errorMessage = 'Failed to create user account';
@@ -219,6 +258,8 @@ const CreateUserModal = ({ isOpen, onClose, onCreate }) => {
             errorMessage = `Error: ${error.code}`;
         }
       } else if (error.message.includes('Cloudinary')) {
+        errorMessage = error.message;
+      } else if (error.message.includes('password')) {
         errorMessage = error.message;
       }
 
