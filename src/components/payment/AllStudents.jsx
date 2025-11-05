@@ -33,7 +33,7 @@ const Pagination = ({
   currentPage,
   totalPages,
   paginate,
-  itemsPerPage,
+  // itemsPerPage,
   totalItems,
   indexOfFirstItem,
   indexOfLastItem

@@ -1,20 +1,26 @@
-//src/components/payment/PaymentDetails.jsx
+// src/components/payment/PaymentDetails.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { FaTimes } from 'react-icons/fa';
 import styles from './PaymentDetails.module.css';
 import { db } from '../../lib/firebase/config';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import BalanceBreakdown from './Navbar/BalanceBreakdown';
 import PaymentHistory from './Navbar/PaymentHistory';
 import SubjectLoad from './Navbar/SubjectLoad';
 import AddPayment from '../modals/AddPayment/AddPayment';
 
-const PaymentDetails = ({ student, onClose }) => {
+const PaymentDetails = ({ student: initialStudent, onClose }) => {
     const [activeTab, setActiveTab] = useState('balance');
     const [loading, setLoading] = useState(true);
     const [subjects, setSubjects] = useState([]);
     const [showAddPayment, setShowAddPayment] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
+    const [student, setStudent] = useState(initialStudent);
+
+    // Update local student state when prop changes
+    useEffect(() => {
+        setStudent(initialStudent);
+    }, [initialStudent]);
 
     const feeStructure = useMemo(() => ({
         college: {
@@ -59,72 +65,81 @@ const PaymentDetails = ({ student, onClose }) => {
         }
     }), []);
 
- // In PaymentDetails.jsx
-const calculateBalance = useCallback((subjectsList) => {
-    if (!student || !student.enrollment) return null;
+    const calculateBalance = useCallback((subjectsList) => {
+        if (!student || !student.enrollment) return null;
 
-    const department = student.department || 'college';
-    const fees = feeStructure[department] || feeStructure.college;
-    
-    // Calculate units (same as SubjectLoad)
-    let totalUnits = 0;
-    let labUnits = 0;
-    
-    subjectsList.forEach(subject => {
-        if (subject.units) {
-            totalUnits += parseFloat(subject.units) || 0;
-            labUnits += parseFloat(subject.lab) || 0;
-        }
-        else if (subject.terms) {
-            Object.values(subject.terms).forEach(term => {
-                term.forEach(course => {
+        const department = student.department || 'college';
+        const fees = feeStructure[department] || feeStructure.college;
+        
+        // Calculate units (same as SubjectLoad)
+        let totalUnits = 0;
+        let labUnits = 0;
+        
+        subjectsList.forEach(subject => {
+            if (subject.units) {
+                totalUnits += parseFloat(subject.units) || 0;
+                labUnits += parseFloat(subject.lab) || 0;
+            }
+            else if (subject.terms) {
+                Object.values(subject.terms).forEach(term => {
+                    term.forEach(course => {
+                        totalUnits += parseFloat(course.units) || 0;
+                        labUnits += parseFloat(course.lab) || 0;
+                    });
+                });
+            }
+            else if (Array.isArray(subject)) {
+                subject.forEach(course => {
                     totalUnits += parseFloat(course.units) || 0;
                     labUnits += parseFloat(course.lab) || 0;
                 });
-            });
+            }
+        });
+
+        const isEnrolled = student.enrollment.course !== 'Not enrolled';
+        const hasSubjects = subjectsList.length > 0;
+
+        let tuitionFee = 0;
+        if (isEnrolled && hasSubjects) {
+            tuitionFee = (department === 'shs' || department === 'jhs') 
+                ? fees.fixedFee 
+                : totalUnits * fees.perUnit;
+        } else if (isEnrolled) {
+            tuitionFee = fees.registrationFee;
         }
-        else if (Array.isArray(subject)) {
-            subject.forEach(course => {
-                totalUnits += parseFloat(course.units) || 0;
-                labUnits += parseFloat(course.lab) || 0;
-            });
-        }
-    });
 
-    const isEnrolled = student.enrollment.course !== 'Not enrolled';
-    const hasSubjects = subjectsList.length > 0;
+        const labFee = labUnits * (fees.labFeePerUnit || 0);
 
-    let tuitionFee = 0;
-    if (isEnrolled && hasSubjects) {
-        tuitionFee = (department === 'shs' || department === 'jhs') 
-            ? fees.fixedFee 
-            : totalUnits * fees.perUnit;
-    } else if (isEnrolled) {
-        tuitionFee = fees.registrationFee;
-    }
+        const otherFeesTotal = fees.libraryFee + fees.medicalFee + fees.athleticFee;
+        const totalFees = tuitionFee + fees.miscFee + labFee + otherFeesTotal;
+        const discountAmount = (totalFees * (student.discount || 0)) / 100;
+        const totalAfterDiscount = totalFees - discountAmount;
+        const currentBalance = student.balance !== undefined ? student.balance : totalAfterDiscount;
 
-    const labFee = labUnits * (fees.labFeePerUnit || 0);
-
-    return {
-        departmentName: fees.name,
-        tuitionFee,
-        miscFee: isEnrolled ? fees.miscFee : 0,
-        labFee,
-        otherFees: [
-            { name: 'Library Fee', amount: fees.libraryFee },
-            { name: 'Medical Fee', amount: fees.medicalFee },
-            { name: 'Athletic Fee', amount: fees.athleticFee }
-        ],
-        discount: student.discount || 0,
-        totalUnits,
-        labUnits,
-        isEnrolled,
-        hasSubjects,
-        perUnitRate: fees.perUnit,
-        labUnitRate: fees.labFeePerUnit,
-        currentBalance: student.balance || 0
-    };
-}, [student, feeStructure]);
+        return {
+            departmentName: fees.name,
+            tuitionFee,
+            miscFee: isEnrolled ? fees.miscFee : 0,
+            labFee,
+            otherFees: [
+                { name: 'Library Fee', amount: fees.libraryFee },
+                { name: 'Medical Fee', amount: fees.medicalFee },
+                { name: 'Athletic Fee', amount: fees.athleticFee }
+            ],
+            discount: student.discount || 0,
+            discountAmount,
+            totalUnits,
+            labUnits,
+            isEnrolled,
+            hasSubjects,
+            perUnitRate: fees.perUnit,
+            labUnitRate: fees.labFeePerUnit,
+            currentBalance,
+            totalFees,
+            totalAfterDiscount,
+            totalPaid: totalAfterDiscount - currentBalance
+        };
+    }, [student, feeStructure]);
 
     const fetchEnrolledSubjects = useCallback(async () => {
         if (!student || !student.enrollment || student.enrollment.course === 'Not enrolled') {
@@ -176,13 +191,41 @@ const calculateBalance = useCallback((subjectsList) => {
         }
     }, [student]);
 
+    const refreshStudentData = useCallback(async () => {
+        try {
+            // Fetch the latest student data from Firestore
+            const studentDoc = await getDoc(doc(db, 'students', student.id));
+            if (studentDoc.exists()) {
+                const updatedStudentData = {
+                    id: studentDoc.id,
+                    ...studentDoc.data()
+                };
+                setStudent(updatedStudentData);
+            }
+        } catch (error) {
+            console.error('Error refreshing student data:', error);
+        }
+    }, [student.id]);
+
+    const handlePaymentSuccess = useCallback(async (updatedStudentData = null) => {
+        if (updatedStudentData) {
+            // Use the updated data passed from AddPayment component
+            setStudent(updatedStudentData);
+        } else {
+            // Fallback: refresh from Firestore
+            await refreshStudentData();
+        }
+        
+        // Refresh subjects data as well
+        setRefreshKey(prev => prev + 1);
+        
+        // Close the payment modal
+        setShowAddPayment(false);
+    }, [refreshStudentData]);
+
     useEffect(() => {
         fetchEnrolledSubjects();
     }, [fetchEnrolledSubjects, refreshKey]);
-
-    const handlePaymentSuccess = () => {
-        setRefreshKey(prev => prev + 1); // Trigger refresh
-    };
 
     const formatFullName = (student) => {
         return `${student.lastName}, ${student.firstName}${student.middleName ? ` ${student.middleName.charAt(0)}.` : ''}`;
@@ -255,9 +298,9 @@ const calculateBalance = useCallback((subjectsList) => {
                                 </span>
                             </div>
                             <div className={styles.detailItem}>
-                                <span className={styles.detailLabel}>Status:</span>
-                                <span className={`${styles.detailValue} ${styles.statusBadge} ${student.status?.toLowerCase()}`}>
-                                    {student.status || 'Unknown'}
+                                <span className={styles.detailLabel}>Current Balance:</span>
+                                <span className={`${styles.detailValue} ${styles.balanceAmount}`}>
+                                    ₱{(student.balance || 0).toLocaleString()}
                                 </span>
                             </div>
                         </div>

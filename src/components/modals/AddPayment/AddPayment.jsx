@@ -1,6 +1,5 @@
-//src/components/modals/AddPayment/AddPayment.jsx
 // src/components/modals/AddPayment/AddPayment.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import styles from './AddPayment.module.css';
 import { db } from '../../../lib/firebase/config';
 import { doc, updateDoc, arrayUnion, getDoc } from 'firebase/firestore';
@@ -45,21 +44,38 @@ const AddPayment = ({ student, onClose, onPaymentSuccess }) => {
         status: 'Completed'
       };
 
+      // Get current student data to calculate new balance
+      const studentDoc = await getDoc(doc(db, 'students', student.id));
+      const currentStudentData = studentDoc.data();
+      const currentBalance = currentStudentData.balance || 0;
+      const currentPaymentHistory = currentStudentData.paymentHistory || [];
+
+      const newBalance = currentBalance - paymentAmount;
+
       // Update student document in Firestore
       const studentRef = doc(db, 'students', student.id);
       await updateDoc(studentRef, {
         paymentHistory: arrayUnion(paymentRecord),
-        // Deduct from balance if needed (you might need to adjust this based on your balance calculation logic)
-        balance: (student.balance || 0) - paymentAmount
+        balance: newBalance
       });
 
       setReceiptData({
         ...paymentRecord,
         studentName: `${student.firstName} ${student.lastName}`,
-        studentId: student.studentId
+        studentId: student.studentId,
+        newBalance: newBalance
       });
+      
       setSuccess(true);
-      if (onPaymentSuccess) onPaymentSuccess();
+      
+      // Pass updated student data to parent component
+      if (onPaymentSuccess) {
+        onPaymentSuccess({
+          ...student,
+          balance: newBalance,
+          paymentHistory: [...currentPaymentHistory, paymentRecord]
+        });
+      }
     } catch (err) {
       console.error('Payment error:', err);
       setError(err.message || 'Failed to process payment');
@@ -82,6 +98,7 @@ const AddPayment = ({ student, onClose, onPaymentSuccess }) => {
             .detail-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
             .footer { text-align: center; margin-top: 20px; font-size: 12px; }
             .divider { border-top: 1px dashed #ccc; margin: 15px 0; }
+            .balance-info { background: #f5f5f5; padding: 10px; border-radius: 4px; margin-top: 10px; }
           </style>
         </head>
         <body>
@@ -117,6 +134,12 @@ const AddPayment = ({ student, onClose, onPaymentSuccess }) => {
                 <span>Date:</span>
                 <span>${new Date(receiptData.date).toLocaleString()}</span>
               </div>
+              <div class="balance-info">
+                <div class="detail-row">
+                  <span><strong>New Balance:</strong></span>
+                  <span><strong>₱${receiptData.newBalance.toLocaleString()}</strong></span>
+                </div>
+              </div>
             </div>
             <div class="footer">
               <p>Thank you for your payment!</p>
@@ -136,13 +159,24 @@ const AddPayment = ({ student, onClose, onPaymentSuccess }) => {
     receiptWindow.document.close();
   };
 
+  const handleClose = () => {
+    if (success && onPaymentSuccess) {
+      // If payment was successful and we have receipt data, pass the updated data
+      onPaymentSuccess({
+        ...student,
+        balance: receiptData.newBalance
+      });
+    }
+    onClose();
+  };
+
   if (success) {
     return (
       <div className={styles.modalOverlay}>
         <div className={styles.modalContainer}>
           <div className={styles.modalHeader}>
             <h2>Payment Successful</h2>
-            <button className={styles.closeButton} onClick={onClose}>
+            <button className={styles.closeButton} onClick={handleClose}>
               <FaTimes />
             </button>
           </div>
@@ -154,12 +188,13 @@ const AddPayment = ({ student, onClose, onPaymentSuccess }) => {
               <p><strong>Student:</strong> {receiptData.studentName}</p>
               <p><strong>Amount:</strong> ₱{receiptData.amount.toLocaleString()}</p>
               <p><strong>Payment Type:</strong> {receiptData.description}</p>
+              <p><strong>New Balance:</strong> ₱{receiptData.newBalance.toLocaleString()}</p>
             </div>
             <div className={styles.buttonGroup}>
               <button className={styles.printButton} onClick={printReceipt}>
                 <FaPrint /> Print Receipt
               </button>
-              <button className={styles.closeButton} onClick={onClose}>
+              <button className={styles.closeButton} onClick={handleClose}>
                 Close
               </button>
             </div>
