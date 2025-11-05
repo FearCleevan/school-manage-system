@@ -11,7 +11,7 @@ const BalanceBreakdown = ({ student, subjects, onMakePayment }) => {
     const calculateTotalPaid = useCallback((paymentHistory) => {
         if (!paymentHistory || paymentHistory.length === 0) return 0;
         return paymentHistory.reduce((sum, payment) => {
-            return sum + (payment.amount || 0);
+            return sum + (parseFloat(payment.amount) || 0);
         }, 0);
     }, []);
 
@@ -43,7 +43,7 @@ const BalanceBreakdown = ({ student, subjects, onMakePayment }) => {
                 },
                 shs: {
                     name: "Senior High School",
-                    perUnit: 320,
+                    perUnit: 0, // FIXED: Set to 0 for SHS
                     fixedFee: 8000,
                     miscFee: 1500,
                     libraryFee: 300,
@@ -53,7 +53,7 @@ const BalanceBreakdown = ({ student, subjects, onMakePayment }) => {
                 },
                 jhs: {
                     name: "Junior High School",
-                    perUnit: 320,
+                    perUnit: 0, // FIXED: Set to 0 for JHS
                     fixedFee: 6000,
                     miscFee: 1200,
                     libraryFee: 250,
@@ -91,33 +91,33 @@ const BalanceBreakdown = ({ student, subjects, onMakePayment }) => {
                 });
 
                 if (department === 'shs' || department === 'jhs') {
-                    tuitionFee = fees.fixedFee;
+                    tuitionFee = fees.fixedFee || 0; // FIXED: Ensure it's a number
                 } else {
-                    tuitionFee = totalUnits * fees.perUnit;
+                    tuitionFee = totalUnits * (fees.perUnit || 0);
                 }
             } else if (isEnrolled) {
-                tuitionFee = fees.registrationFee;
+                tuitionFee = fees.registrationFee || 0;
             }
 
             const labFee = labUnits * (fees.labFeePerUnit || 0);
 
             setBalanceData({
                 departmentName: fees.name,
-                tuitionFee,
-                miscFee: isEnrolled ? fees.miscFee : 0,
-                labFee,
+                tuitionFee: tuitionFee || 0, // FIXED: Ensure it's a number
+                miscFee: isEnrolled ? (fees.miscFee || 0) : 0,
+                labFee: labFee || 0, // FIXED: Ensure it's a number
                 otherFees: [
-                    { name: 'Library Fee', amount: fees.libraryFee },
-                    { name: 'Medical Fee', amount: fees.medicalFee },
-                    { name: 'Athletic Fee', amount: fees.athleticFee }
+                    { name: 'Library Fee', amount: fees.libraryFee || 0 },
+                    { name: 'Medical Fee', amount: fees.medicalFee || 0 },
+                    { name: 'Athletic Fee', amount: fees.athleticFee || 0 }
                 ],
                 discount: student.discount || 0,
                 totalUnits,
                 labUnits,
                 isEnrolled,
                 hasSubjects,
-                perUnitRate: fees.perUnit,
-                labUnitRate: fees.labFeePerUnit
+                perUnitRate: fees.perUnit || 0,
+                labUnitRate: fees.labFeePerUnit || 0
             });
 
             // Calculate total paid amount from current student data
@@ -126,7 +126,7 @@ const BalanceBreakdown = ({ student, subjects, onMakePayment }) => {
         };
 
         calculateBalance();
-    }, [student, subjects, calculateTotalPaid]); // Add student to dependencies
+    }, [student, subjects, calculateTotalPaid]);
 
     const calculateTotalUnits = () => {
         let totalUnits = 0;
@@ -177,23 +177,25 @@ const BalanceBreakdown = ({ student, subjects, onMakePayment }) => {
         labUnits,
         tuitionFee: balanceData.isEnrolled && balanceData.hasSubjects
             ? (student.department === 'shs' || student.department === 'jhs')
-                ? balanceData.tuitionFee
-                : totalUnits * balanceData.perUnitRate
-            : balanceData.tuitionFee,
-        labFee: labUnits * balanceData.labUnitRate
+                ? (balanceData.tuitionFee || 0) // FIXED: Ensure it's a number
+                : (totalUnits * balanceData.perUnitRate) || 0
+            : (balanceData.tuitionFee || 0), // FIXED: Ensure it's a number
+        labFee: (labUnits * balanceData.labUnitRate) || 0 // FIXED: Ensure it's a number
     };
 
-    const totalFees =
-        mergedBalanceData.tuitionFee +
-        (mergedBalanceData.isEnrolled ? mergedBalanceData.miscFee : 0) +
-        (mergedBalanceData.isEnrolled ? mergedBalanceData.labFee : 0) +
+    // FIXED: Ensure all values are numbers and handle NaN cases
+    const totalFees = Math.max(0,
+        (mergedBalanceData.tuitionFee || 0) +
+        (mergedBalanceData.isEnrolled ? (mergedBalanceData.miscFee || 0) : 0) +
+        (mergedBalanceData.isEnrolled ? (mergedBalanceData.labFee || 0) : 0) +
         (mergedBalanceData.isEnrolled
-            ? mergedBalanceData.otherFees.reduce((sum, fee) => sum + fee.amount, 0)
+            ? mergedBalanceData.otherFees.reduce((sum, fee) => sum + (fee.amount || 0), 0)
             : 0
         ) -
-        mergedBalanceData.discount;
+        (mergedBalanceData.discount || 0)
+    );
 
-    const remainingBalance = totalFees - totalPaid;
+    const remainingBalance = Math.max(0, totalFees - totalPaid);
 
     if (loading) {
         return <div className={styles.loading}>Calculating fees...</div>;
@@ -211,7 +213,9 @@ const BalanceBreakdown = ({ student, subjects, onMakePayment }) => {
                 <div className={styles.balanceItem}>
                     <span className={styles.balanceLabel}>
                         {mergedBalanceData.isEnrolled
-                            ? `Tuition Fee (${mergedBalanceData.totalUnits} units @ ₱${mergedBalanceData.perUnitRate}/unit)`
+                            ? (student.department === 'shs' || student.department === 'jhs')
+                                ? 'Tuition Fee (Fixed)'
+                                : `Tuition Fee (${mergedBalanceData.totalUnits} units @ ₱${mergedBalanceData.perUnitRate}/unit)`
                             : 'Registration Fee'}
                     </span>
                     <span className={styles.balanceValue}>
