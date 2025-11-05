@@ -140,3 +140,72 @@
         font-size: 0.9rem;
     }
 }
+
+/* Action button (3 dots) */
+.actionCell {
+    position: relative;
+}
+
+.actionButton {
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    padding: 6px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.actionButton:hover {
+    background-color: #efefef;
+}
+
+/* Dropdown menu container */
+.actionMenu {
+    position: fixed !important;     /* ✅ float above scroll container */
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    width: 160px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    z-index: 9999;                   /* ✅ always above */
+    display: flex;
+    flex-direction: column;
+    animation: fadeIn 0.15s ease-in-out;
+}
+
+/* Menu buttons */
+.actionMenu button {
+    background: none;
+    border: none;
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    transition: background 0.2s ease;
+}
+
+.actionMenu button:hover {
+    background-color: #f2f2f2;
+}
+
+/* Delete button style */
+.deleteAction {
+    color: #e74c3c;
+}
+
+/* Fade-in animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

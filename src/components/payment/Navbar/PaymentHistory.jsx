@@ -135,8 +135,32 @@ const PaymentHistory = ({ student, refreshData }) => {
 
   const toggleActionMenu = (paymentId, e) => {
     e.stopPropagation();
-    setActionMenu(actionMenu === paymentId ? null : paymentId);
+
+    // ✅ If the same menu is open → close it
+    if (actionMenu?.id === paymentId) {
+      setActionMenu(null);
+      return;
+    }
+
+    const rect = e.currentTarget.getBoundingClientRect();
+
+    // ✅ Open menu with coordinates
+    setActionMenu({
+      id: paymentId,
+      x: rect.left - 120,
+      y: rect.bottom + 5,
+    });
   };
+
+  React.useEffect(() => {
+    const handleClickOutside = () => {
+      if (actionMenu) setActionMenu(null);
+    };
+
+    window.addEventListener("click", handleClickOutside);
+    return () => window.removeEventListener("click", handleClickOutside);
+  }, [actionMenu]);
+
 
   return (
     <div className={styles.historySection}>
@@ -224,8 +248,12 @@ const PaymentHistory = ({ student, refreshData }) => {
                         <FaEllipsisV />
                       </button>
 
-                      {actionMenu === payment.id && (
-                        <div className={styles.actionMenu}>
+                      {actionMenu?.id === payment.id && (
+                        <div
+                          className={styles.actionMenu}
+                          style={{ top: actionMenu.y, left: actionMenu.x }}
+                          onClick={(e) => e.stopPropagation()}   // ✅ prevent closing when clicking inside menu
+                        >
                           <button
                             onClick={() => {
                               printReceipt(payment);
