@@ -29,9 +29,9 @@ const config = {
 };
 
 // Extracted Pagination component for better reusability
-const Pagination = ({ 
-  currentPage, 
-  totalPages, 
+const Pagination = ({
+  currentPage,
+  totalPages,
   paginate,
   itemsPerPage,
   totalItems,
@@ -41,7 +41,7 @@ const Pagination = ({
   const getPageNumbers = () => {
     const pages = [];
     const maxVisiblePages = 5;
-    
+
     if (totalPages <= maxVisiblePages) {
       for (let i = 1; i <= totalPages; i++) {
         pages.push(i);
@@ -59,7 +59,7 @@ const Pagination = ({
         pages.push(i);
       }
     }
-    
+
     return pages;
   };
 
@@ -164,13 +164,13 @@ const AllStudents = () => {
   // Memoized filtered students
   const filteredStudents = useMemo(() => {
     return students.filter(student => {
-      const matchesSearch = 
+      const matchesSearch =
         student.studentId.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         `${student.firstName} ${student.lastName}`.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
-      
+
       const matchesCourse = courseFilter ? student.enrollment?.course === courseFilter : true;
       const matchesDepartment = departmentFilter ? student.department === departmentFilter : true;
-      
+
       return matchesSearch && matchesCourse && matchesDepartment;
     });
   }, [students, debouncedSearchTerm, courseFilter, departmentFilter]);
@@ -206,6 +206,12 @@ const AllStudents = () => {
     setCurrentPage(1);
   }, []);
 
+  // Handle opening payment modal
+  const handleOpenPaymentModal = useCallback((student) => {
+    setSelectedStudent(student);
+    setShowPaymentModal(true);
+  }, []);
+
   if (loading) {
     return (
       <div className={styles.loading} aria-live="polite">
@@ -219,7 +225,7 @@ const AllStudents = () => {
     return (
       <div className={styles.error} role="alert">
         {error}
-        <button 
+        <button
           className={styles.retryButton}
           onClick={() => window.location.reload()}
         >
@@ -302,7 +308,7 @@ const AllStudents = () => {
         </div>
 
         <div className={styles.rightControls}>
-          <button 
+          <button
             className={styles.addPaymentBtn}
             aria-label="Add new payment"
           >
@@ -332,7 +338,7 @@ const AllStudents = () => {
           </select>
           <span>entries</span>
         </div>
-        
+
         <div className={styles.tableWrapper}>
           <table aria-label="Students list">
             <thead>
@@ -349,22 +355,7 @@ const AllStudents = () => {
             <tbody>
               {paginationData.currentItems.length > 0 ? (
                 paginationData.currentItems.map(student => (
-                  <tr 
-                    key={student.id}
-                    tabIndex={0}
-                    onClick={() => {
-                      setSelectedStudent(student);
-                      setShowPaymentModal(true);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        setSelectedStudent(student);
-                        setShowPaymentModal(true);
-                      }
-                    }}
-                    role="button"
-                    aria-label={`View payment details for ${student.firstName} ${student.lastName}`}
-                  >
+                  <tr key={student.id}>
                     <td>{student.studentId}</td>
                     <td>{`${student.firstName} ${student.lastName}`}</td>
                     <td>{student.enrollment?.course || 'Not enrolled'}</td>
@@ -372,14 +363,10 @@ const AllStudents = () => {
                     <td>{student.enrollment?.semester || 'Not enrolled'}</td>
                     <td>{student.formattedDepartment}</td>
                     <td>
-                      <button 
+                      <button
                         className={styles.detailsBtn}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedStudent(student);
-                          setShowPaymentModal(true);
-                        }}
-                        aria-label={`Payment details for ${student.firstName} ${student.lastName}`}
+                        onClick={() => handleOpenPaymentModal(student)}
+                        aria-label={`View payment details for ${student.firstName} ${student.lastName}`}
                       >
                         ...
                       </button>
@@ -412,8 +399,8 @@ const AllStudents = () => {
       {/* Payment Details Modal */}
       {showPaymentModal && (
         <PaymentDetails
-          student={selectedStudent} 
-          onClose={() => setShowPaymentModal(false)} 
+          student={selectedStudent}
+          onClose={() => setShowPaymentModal(false)}
         />
       )}
     </div>
