@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import styles from './BalanceBreakdown.module.css';
 import { FaFileInvoiceDollar, FaMoneyBillWave, FaWallet } from 'react-icons/fa';
 
@@ -7,16 +7,16 @@ const BalanceBreakdown = ({ student, subjects, onMakePayment }) => {
     const [loading, setLoading] = useState(true);
     const [totalPaid, setTotalPaid] = useState(0);
 
+    // Calculate total paid amount from payment history
+    const calculateTotalPaid = useCallback((paymentHistory) => {
+        if (!paymentHistory || paymentHistory.length === 0) return 0;
+        return paymentHistory.reduce((sum, payment) => {
+            return sum + (payment.amount || 0);
+        }, 0);
+    }, []);
+
     useEffect(() => {
         if (!student || !subjects) return;
-
-        // Calculate total paid amount from payment history
-        const calculateTotalPaid = () => {
-            if (!student.paymentHistory || student.paymentHistory.length === 0) return 0;
-            return student.paymentHistory.reduce((sum, payment) => {
-                return sum + (payment.amount || 0);
-            }, 0);
-        };
 
         const calculateBalance = () => {
             const department = student.department || 'college';
@@ -43,7 +43,7 @@ const BalanceBreakdown = ({ student, subjects, onMakePayment }) => {
                 },
                 shs: {
                     name: "Senior High School",
-                    perUnit: 0,
+                    perUnit: 320,
                     fixedFee: 8000,
                     miscFee: 1500,
                     libraryFee: 300,
@@ -53,7 +53,7 @@ const BalanceBreakdown = ({ student, subjects, onMakePayment }) => {
                 },
                 jhs: {
                     name: "Junior High School",
-                    perUnit: 0,
+                    perUnit: 320,
                     fixedFee: 6000,
                     miscFee: 1200,
                     libraryFee: 250,
@@ -120,13 +120,13 @@ const BalanceBreakdown = ({ student, subjects, onMakePayment }) => {
                 labUnitRate: fees.labFeePerUnit
             });
 
-            // Calculate total paid amount
-            setTotalPaid(calculateTotalPaid());
+            // Calculate total paid amount from current student data
+            setTotalPaid(calculateTotalPaid(student.paymentHistory));
             setLoading(false);
         };
 
         calculateBalance();
-    }, [student, subjects]);
+    }, [student, subjects, calculateTotalPaid]); // Add student to dependencies
 
     const calculateTotalUnits = () => {
         let totalUnits = 0;

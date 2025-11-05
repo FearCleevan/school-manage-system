@@ -1,4 +1,4 @@
-// src/components/payment/PaymentDetails.jsx
+//src/components/payment/PaymentDetails.jsx
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { FaTimes } from 'react-icons/fa';
 import styles from './PaymentDetails.module.css';
@@ -9,18 +9,13 @@ import PaymentHistory from './Navbar/PaymentHistory';
 import SubjectLoad from './Navbar/SubjectLoad';
 import AddPayment from '../modals/AddPayment/AddPayment';
 
-const PaymentDetails = ({ student: initialStudent, onClose }) => {
+const PaymentDetails = ({ student, onClose }) => {
     const [activeTab, setActiveTab] = useState('balance');
     const [loading, setLoading] = useState(true);
     const [subjects, setSubjects] = useState([]);
     const [showAddPayment, setShowAddPayment] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
-    const [student, setStudent] = useState(initialStudent);
-
-    // Update local student state when prop changes
-    useEffect(() => {
-        setStudent(initialStudent);
-    }, [initialStudent]);
+    const [updatedStudent, setUpdatedStudent] = useState(student); // Add this state
 
     const feeStructure = useMemo(() => ({
         college: {
@@ -65,10 +60,11 @@ const PaymentDetails = ({ student: initialStudent, onClose }) => {
         }
     }), []);
 
+    // In PaymentDetails.jsx
     const calculateBalance = useCallback((subjectsList) => {
-        if (!student || !student.enrollment) return null;
+        if (!updatedStudent || !updatedStudent.enrollment) return null;
 
-        const department = student.department || 'college';
+        const department = updatedStudent.department || 'college';
         const fees = feeStructure[department] || feeStructure.college;
         
         // Calculate units (same as SubjectLoad)
@@ -96,7 +92,7 @@ const PaymentDetails = ({ student: initialStudent, onClose }) => {
             }
         });
 
-        const isEnrolled = student.enrollment.course !== 'Not enrolled';
+        const isEnrolled = updatedStudent.enrollment.course !== 'Not enrolled';
         const hasSubjects = subjectsList.length > 0;
 
         let tuitionFee = 0;
@@ -110,12 +106,6 @@ const PaymentDetails = ({ student: initialStudent, onClose }) => {
 
         const labFee = labUnits * (fees.labFeePerUnit || 0);
 
-        const otherFeesTotal = fees.libraryFee + fees.medicalFee + fees.athleticFee;
-        const totalFees = tuitionFee + fees.miscFee + labFee + otherFeesTotal;
-        const discountAmount = (totalFees * (student.discount || 0)) / 100;
-        const totalAfterDiscount = totalFees - discountAmount;
-        const currentBalance = student.balance !== undefined ? student.balance : totalAfterDiscount;
-
         return {
             departmentName: fees.name,
             tuitionFee,
@@ -126,35 +116,31 @@ const PaymentDetails = ({ student: initialStudent, onClose }) => {
                 { name: 'Medical Fee', amount: fees.medicalFee },
                 { name: 'Athletic Fee', amount: fees.athleticFee }
             ],
-            discount: student.discount || 0,
-            discountAmount,
+            discount: updatedStudent.discount || 0,
             totalUnits,
             labUnits,
             isEnrolled,
             hasSubjects,
             perUnitRate: fees.perUnit,
             labUnitRate: fees.labFeePerUnit,
-            currentBalance,
-            totalFees,
-            totalAfterDiscount,
-            totalPaid: totalAfterDiscount - currentBalance
+            currentBalance: updatedStudent.balance || 0
         };
-    }, [student, feeStructure]);
+    }, [updatedStudent, feeStructure]);
 
     const fetchEnrolledSubjects = useCallback(async () => {
-        if (!student || !student.enrollment || student.enrollment.course === 'Not enrolled') {
+        if (!updatedStudent || !updatedStudent.enrollment || updatedStudent.enrollment.course === 'Not enrolled') {
             setLoading(false);
             return;
         }
 
         try {
-            if (student.customizedSubjects) {
-                setSubjects(student.customizedSubjects);
+            if (updatedStudent.customizedSubjects) {
+                setSubjects(updatedStudent.customizedSubjects);
                 return;
             }
 
-            if (student.enrolledSubjects?.length > 0) {
-                const subjectPromises = student.enrolledSubjects.map(async (subjectId) => {
+            if (updatedStudent.enrolledSubjects?.length > 0) {
+                const subjectPromises = updatedStudent.enrolledSubjects.map(async (subjectId) => {
                     const subjectDoc = await getDocs(query(
                         collection(db, 'subjects'),
                         where('__name__', '==', subjectId)
@@ -167,9 +153,9 @@ const PaymentDetails = ({ student: initialStudent, onClose }) => {
             } else {
                 const q = query(
                     collection(db, 'subjects'),
-                    where('course', '==', student.enrollment.course),
-                    where('yearLevel', '==', student.enrollment.yearLevel),
-                    where('semester', '==', student.enrollment.semester)
+                    where('course', '==', updatedStudent.enrollment.course),
+                    where('yearLevel', '==', updatedStudent.enrollment.yearLevel),
+                    where('semester', '==', updatedStudent.enrollment.semester)
                 );
 
                 const querySnapshot = await getDocs(q);
@@ -189,39 +175,29 @@ const PaymentDetails = ({ student: initialStudent, onClose }) => {
         } finally {
             setLoading(false);
         }
-    }, [student]);
+    }, [updatedStudent]);
 
-    const refreshStudentData = useCallback(async () => {
+    // Add this function to fetch updated student data
+    const fetchUpdatedStudent = useCallback(async () => {
         try {
-            // Fetch the latest student data from Firestore
-            const studentDoc = await getDoc(doc(db, 'students', student.id));
+            const studentRef = doc(db, 'students', student.id);
+            const studentDoc = await getDoc(studentRef);
             if (studentDoc.exists()) {
-                const updatedStudentData = {
+                setUpdatedStudent({
                     id: studentDoc.id,
                     ...studentDoc.data()
-                };
-                setStudent(updatedStudentData);
+                });
             }
         } catch (error) {
-            console.error('Error refreshing student data:', error);
+            console.error('Error fetching updated student:', error);
         }
     }, [student.id]);
 
-    const handlePaymentSuccess = useCallback(async (updatedStudentData = null) => {
-        if (updatedStudentData) {
-            // Use the updated data passed from AddPayment component
-            setStudent(updatedStudentData);
-        } else {
-            // Fallback: refresh from Firestore
-            await refreshStudentData();
-        }
-        
-        // Refresh subjects data as well
+    const handlePaymentSuccess = useCallback(async () => {
+        // Fetch the latest student data after payment
+        await fetchUpdatedStudent();
         setRefreshKey(prev => prev + 1);
-        
-        // Close the payment modal
-        setShowAddPayment(false);
-    }, [refreshStudentData]);
+    }, [fetchUpdatedStudent]);
 
     useEffect(() => {
         fetchEnrolledSubjects();
@@ -231,13 +207,13 @@ const PaymentDetails = ({ student: initialStudent, onClose }) => {
         return `${student.lastName}, ${student.firstName}${student.middleName ? ` ${student.middleName.charAt(0)}.` : ''}`;
     };
 
-    if (!student) return null;
+    if (!updatedStudent) return null;
 
     return (
         <div className={styles.modalOverlay}>
             {showAddPayment && (
                 <AddPayment
-                    student={student}
+                    student={updatedStudent}
                     onClose={() => setShowAddPayment(false)}
                     onPaymentSuccess={handlePaymentSuccess}
                 />
@@ -260,47 +236,47 @@ const PaymentDetails = ({ student: initialStudent, onClose }) => {
                     {/* Student Profile */}
                     <div className={styles.studentDetails}>
                         <div className={styles.profileSection}>
-                            {student.profilePhoto ? (
+                            {updatedStudent.profilePhoto ? (
                                 <img
-                                    src={student.profilePhoto}
-                                    alt={`${student.firstName} ${student.lastName}'s profile`}
+                                    src={updatedStudent.profilePhoto}
+                                    alt={`${updatedStudent.firstName} ${updatedStudent.lastName}'s profile`}
                                     className={styles.profileImage}
                                 />
                             ) : (
                                 <div className={styles.profilePlaceholder}>
-                                    {student.firstName?.charAt(0)}{student.lastName?.charAt(0)}
+                                    {updatedStudent.firstName?.charAt(0)}{updatedStudent.lastName?.charAt(0)}
                                 </div>
                             )}
-                            <h3 className={styles.studentName}>{formatFullName(student)}</h3>
+                            <h3 className={styles.studentName}>{formatFullName(updatedStudent)}</h3>
                         </div>
 
                         <div className={styles.detailsList}>
                             <div className={styles.detailItem}>
                                 <span className={styles.detailLabel}>Student ID:</span>
-                                <span className={styles.detailValue}>{student.studentId}</span>
+                                <span className={styles.detailValue}>{updatedStudent.studentId}</span>
                             </div>
                             <div className={styles.detailItem}>
                                 <span className={styles.detailLabel}>Course:</span>
                                 <span className={styles.detailValue}>
-                                    {student.enrollment?.course || 'Not enrolled'}
+                                    {updatedStudent.enrollment?.course || 'Not enrolled'}
                                 </span>
                             </div>
                             <div className={styles.detailItem}>
                                 <span className={styles.detailLabel}>Year:</span>
                                 <span className={styles.detailValue}>
-                                    {student.enrollment?.yearLevel || 'Not enrolled'}
+                                    {updatedStudent.enrollment?.yearLevel || 'Not enrolled'}
                                 </span>
                             </div>
                             <div className={styles.detailItem}>
                                 <span className={styles.detailLabel}>Semester:</span>
                                 <span className={styles.detailValue}>
-                                    {student.enrollment?.semester || 'Not enrolled'}
+                                    {updatedStudent.enrollment?.semester || 'Not enrolled'}
                                 </span>
                             </div>
                             <div className={styles.detailItem}>
-                                <span className={styles.detailLabel}>Current Balance:</span>
-                                <span className={`${styles.detailValue} ${styles.balanceAmount}`}>
-                                    ₱{(student.balance || 0).toLocaleString()}
+                                <span className={styles.detailLabel}>Status:</span>
+                                <span className={`${styles.detailValue} ${styles.statusBadge} ${updatedStudent.status?.toLowerCase()}`}>
+                                    {updatedStudent.status || 'Unknown'}
                                 </span>
                             </div>
                         </div>
@@ -338,7 +314,7 @@ const PaymentDetails = ({ student: initialStudent, onClose }) => {
                             <>
                                 {activeTab === 'balance' && (
                                     <BalanceBreakdown
-                                        student={student}
+                                        student={updatedStudent} // Use updatedStudent instead of student
                                         subjects={subjects}
                                         calculateBalance={calculateBalance}
                                         onMakePayment={() => setShowAddPayment(true)}
@@ -346,12 +322,12 @@ const PaymentDetails = ({ student: initialStudent, onClose }) => {
                                 )}
                                 {activeTab === 'history' && (
                                     <PaymentHistory
-                                        student={student}
+                                        student={updatedStudent} // Use updatedStudent instead of student
                                         refreshData={handlePaymentSuccess}
                                     />
                                 )}
                                 {activeTab === 'subjects' && (
-                                    <SubjectLoad student={student} subjects={subjects} />
+                                    <SubjectLoad student={updatedStudent} subjects={subjects} />
                                 )}
                             </>
                         )}
