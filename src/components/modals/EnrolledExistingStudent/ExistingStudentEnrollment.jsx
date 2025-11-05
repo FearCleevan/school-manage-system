@@ -357,10 +357,10 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
     };
 
     const loadSubjects = async () => {
-        if (!studentData?.enrollment) {
-            alert('Please complete enrollment details first');
-            return;
-        }
+        // if (!studentData?.enrollment) {
+        //     alert('Please complete enrollment details first');
+        //     return;
+        // }
 
         setLoading(true);
         setError(null);
