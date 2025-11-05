@@ -1,22 +1,29 @@
-import React, { useState } from 'react';
-import { FaPrint, FaFileExcel, FaEllipsisV, FaTrash, FaEdit, FaPlus } from 'react-icons/fa';
-import { doc, updateDoc, getDoc } from 'firebase/firestore';
-import { db } from '../../../lib/firebase/config';
-import styles from './PaymentHistory.module.css';
-import AddPayment from '../../modals/AddPayment/AddPayment';
-import ConfirmationModal from './ConfirmationModal';
+import React, { useState } from "react";
+import {
+  FaPrint,
+  FaFileExcel,
+  FaEllipsisV,
+  FaTrash,
+  FaEdit,
+  FaPlus,
+} from "react-icons/fa";
+import { doc, updateDoc, getDoc } from "firebase/firestore";
+import { db } from "../../../lib/firebase/config";
+import styles from "./PaymentHistory.module.css";
+import AddPayment from "../../modals/AddPayment/AddPayment";
+import ConfirmationModal from "./ConfirmationModal";
 
 const PaymentHistory = ({ student, refreshData }) => {
   const [showAddPayment, setShowAddPayment] = useState(false);
-  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [selectedPayment, setSelectedPayment] = useState(null); // ✅ used when editing
   const [actionMenu, setActionMenu] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [paymentToDelete, setPaymentToDelete] = useState(null); // stores payment id
+  const [paymentToDelete, setPaymentToDelete] = useState(null); // stores payment ID
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const printReceipt = (payment) => {
-    const receiptWindow = window.open('', '_blank');
+    const receiptWindow = window.open("", "_blank");
     receiptWindow.document.write(`
       <html>
         <head>
@@ -84,49 +91,38 @@ const PaymentHistory = ({ student, refreshData }) => {
     receiptWindow.document.close();
   };
 
+  // ✅ FIXED DELETE PAYMENT FUNCTION
   const handleDeletePayment = async () => {
-    if (!paymentToDelete) {
-      setError('No payment selected for deletion.');
-      return;
-    }
+    if (!paymentToDelete) return;
 
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
-      const studentRef = doc(db, 'students', student.id);
+      const studentRef = doc(db, "students", student.id);
       const studentDoc = await getDoc(studentRef);
 
-      if (!studentDoc.exists()) {
-        throw new Error('Student record not found');
-      }
+      if (!studentDoc.exists()) throw new Error("Student record not found");
 
       const studentData = studentDoc.data();
-      const currentHistory = Array.isArray(studentData.paymentHistory) ? studentData.paymentHistory : [];
+      const currentHistory = studentData.paymentHistory || [];
 
-      // Find the payment object by id
       const paymentRecord = currentHistory.find((p) => p.id === paymentToDelete);
+      if (!paymentRecord) throw new Error("Payment not found");
 
-      if (!paymentRecord) {
-        throw new Error('Payment not found in student record');
-      }
+      const updatedHistory = currentHistory.filter((p) => p.id !== paymentToDelete);
 
-      // New paymentHistory without the removed payment
-      const newPaymentHistory = currentHistory.filter((p) => p.id !== paymentToDelete);
-
-      // Update student's document: set new history and add amount back to balance
       await updateDoc(studentRef, {
-        paymentHistory: newPaymentHistory,
-        balance: (studentData.balance || 0) + (paymentRecord.amount || 0)
+        paymentHistory: updatedHistory,
+        balance: (studentData.balance || 0) + (paymentRecord.amount || 0),
       });
 
-      // Cleanup and refresh
       setShowDeleteModal(false);
       setPaymentToDelete(null);
       refreshData();
     } catch (err) {
-      console.error('Error deleting payment:', err);
-      setError(err.message || 'Failed to delete payment');
+      console.error("Error deleting payment:", err);
+      setError(err.message || "Failed to delete payment");
     } finally {
       setLoading(false);
     }
@@ -144,11 +140,11 @@ const PaymentHistory = ({ student, refreshData }) => {
 
   return (
     <div className={styles.historySection}>
-      {/* Add Payment Modal */}
+      {/* ✅ Add / Edit Payment Modal */}
       {showAddPayment && (
         <AddPayment
           student={student}
-          paymentToEdit={selectedPayment}
+          paymentToEdit={selectedPayment} // ✅ passes the payment object to modal
           onClose={() => {
             setShowAddPayment(false);
             setSelectedPayment(null);
@@ -161,7 +157,7 @@ const PaymentHistory = ({ student, refreshData }) => {
         />
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* ✅ Delete Confirmation Modal */}
       {showDeleteModal && (
         <ConfirmationModal
           title="Delete Payment"
@@ -170,7 +166,7 @@ const PaymentHistory = ({ student, refreshData }) => {
           onCancel={() => {
             setShowDeleteModal(false);
             setPaymentToDelete(null);
-            setError('');
+            setError("");
           }}
           loading={loading}
           error={error}
@@ -183,7 +179,7 @@ const PaymentHistory = ({ student, refreshData }) => {
           <button
             className={styles.exportButton}
             onClick={() => {
-              setSelectedPayment(null);
+              setSelectedPayment(null); // ✅ ensures it's NOT edit mode
               setShowAddPayment(true);
             }}
           >
@@ -194,8 +190,6 @@ const PaymentHistory = ({ student, refreshData }) => {
           </button>
         </div>
       </div>
-
-      {error && <div className={styles.errorMessage}>{error}</div>}
 
       {student.paymentHistory?.length > 0 ? (
         <div className={styles.historyTableContainer}>
@@ -210,27 +204,26 @@ const PaymentHistory = ({ student, refreshData }) => {
                 <th>Actions</th>
               </tr>
             </thead>
+
             <tbody>
               {student.paymentHistory.map((payment) => (
                 <tr key={payment.id}>
                   <td>{payment.id}</td>
-                  <td>{payment.date ? new Date(payment.date).toLocaleDateString() : 'N/A'}</td>
-                  <td>₱{(payment.amount || 0).toLocaleString()}</td>
-                  <td>{payment.description || payment.type || 'N/A'}</td>
+                  <td>{new Date(payment.date).toLocaleDateString()}</td>
+                  <td>₱{payment.amount.toLocaleString()}</td>
+                  <td>{payment.description || payment.type}</td>
                   <td>
-                    <span className={`${styles.statusBadge} ${payment.status?.toLowerCase() || 'pending'}`}>
-                      {payment.status || 'Pending'}
+                    <span className={`${styles.statusBadge} ${payment.status?.toLowerCase() || "pending"}`}>
+                      {payment.status || "Pending"}
                     </span>
                   </td>
+
                   <td>
                     <div className={styles.actionCell}>
-                      <button
-                        className={styles.actionButton}
-                        onClick={(e) => toggleActionMenu(payment.id, e)}
-                        aria-label="Payment actions"
-                      >
+                      <button className={styles.actionButton} onClick={(e) => toggleActionMenu(payment.id, e)}>
                         <FaEllipsisV />
                       </button>
+
                       {actionMenu === payment.id && (
                         <div className={styles.actionMenu}>
                           <button
@@ -241,15 +234,18 @@ const PaymentHistory = ({ student, refreshData }) => {
                           >
                             <FaPrint /> Print Receipt
                           </button>
+
+                          {/* ✅ FIXED — Edit button passes full payment object */}
                           <button
                             onClick={() => {
-                              setSelectedPayment(payment);
+                              setSelectedPayment(payment); // ✅ Pass object to modal
                               setShowAddPayment(true);
                               setActionMenu(null);
                             }}
                           >
                             <FaEdit /> Edit
                           </button>
+
                           <button
                             onClick={() => {
                               confirmDelete(payment.id);
@@ -266,15 +262,13 @@ const PaymentHistory = ({ student, refreshData }) => {
                 </tr>
               ))}
             </tbody>
+
           </table>
         </div>
       ) : (
         <div className={styles.noPayments}>
-          No payment history found for this student
-          <button
-            className={styles.addFirstPayment}
-            onClick={() => setShowAddPayment(true)}
-          >
+          No payment history available.
+          <button className={styles.addFirstPayment} onClick={() => setShowAddPayment(true)}>
             Add First Payment
           </button>
         </div>
