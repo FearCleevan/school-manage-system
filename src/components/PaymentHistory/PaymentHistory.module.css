@@ -1,0 +1,637 @@
+.paymentHistoryContainer {
+    width: 100%;
+}
+
+/* Loading and Error States */
+.loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 40px;
+    justify-content: center;
+    color: #6c757d;
+}
+
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #e0e0e0;
+    border-top: 2px solid #2c3e50;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Table Controls */
+.tableControls {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.leftControls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: flex-end;
+}
+
+.rightControls {
+    display: flex;
+    align-items: center;
+}
+
+.searchBar {
+    position: relative;
+    display: flex;
+    align-items: center;
+    min-width: 300px;
+}
+
+.searchBar input {
+    padding: 8px 15px 8px 35px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.searchBar input:focus {
+    outline: none;
+    border-color: #4361ee;
+    box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+}
+
+.searchIcon {
+    position: absolute;
+    left: 10px;
+    color: #6c757d;
+}
+
+.filterControls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.filterDropdown {
+    display: flex;
+    flex-direction: column;
+}
+
+.filterDropdown label {
+    font-size: 0.8rem;
+    color: #555;
+    margin-bottom: 4px;
+}
+
+.filterDropdown select {
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    background-color: white;
+    min-width: 120px;
+}
+
+.resetFiltersBtn {
+    padding: 6px 12px;
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.9rem;
+}
+
+.resetFiltersBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.resetFiltersBtn:hover:not(:disabled) {
+    background-color: #e0e0e0;
+}
+
+.exportButton {
+    padding: 8px 15px;
+    background-color: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.exportButton:hover {
+    background-color: #219a52;
+}
+
+/* Summary Section */
+.summarySection {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.summaryCard {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.summaryCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.summaryIcon {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: white;
+}
+
+.summaryCard:nth-child(1) .summaryIcon {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+}
+
+.summaryCard:nth-child(2) .summaryIcon {
+    background: linear-gradient(135deg, #9b59b6, #8e44ad);
+}
+
+.summaryCard:nth-child(3) .summaryIcon {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+}
+
+.summaryContent {
+    flex: 1;
+}
+
+.summaryValue {
+    font-size: 20px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0 0 4px 0;
+}
+
+.summaryLabel {
+    font-size: 14px;
+    color: #6c757d;
+    margin: 0;
+}
+
+/* Payments Table */
+.paymentsTable {
+    overflow-x: auto;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    background: white;
+}
+
+.showEntries {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #6c757d;
+    font-size: 11px;
+    margin-bottom: 15px;
+    padding: 15px 15px 0 15px;
+}
+
+.showEntries select {
+    padding: 6px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+}
+
+.tableWrapper {
+    overflow-x: auto;
+}
+
+.paymentsTable table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 1200px;
+}
+
+.paymentsTable th,
+.paymentsTable td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.paymentsTable th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #212529;
+}
+
+.sortableHeader {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.sortableHeader {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.3s ease;
+    /* display: flex; */
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.sortIcon {
+    font-size: 12px;
+    color: #6c757d;
+    flex-shrink: 0;
+}
+
+.tableRow {
+    transition: background-color 0.2s ease;
+    cursor: pointer;
+}
+
+.tableRow:hover {
+    background-color: #f8f9fa;
+}
+
+.studentName {
+    font-weight: 500;
+    color: #2c3e50;
+}
+
+.amount {
+    font-weight: 600;
+    font-family: 'Courier New', monospace;
+}
+
+.noResults {
+    text-align: center;
+    padding: 20px;
+    color: #6c757d;
+}
+
+/* Status Badges */
+.statusBadge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: capitalize;
+    display: inline-block;
+    text-align: center;
+    min-width: 70px;
+}
+
+.statusPaid {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.statusPartial {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.statusUnpaid {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.statusUnknown {
+    background-color: #e2e3e5;
+    color: #383d41;
+}
+
+/* Action Buttons */
+.receiptButton {
+    background: none;
+    border: none;
+    color: #3498db;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.receiptButton:hover {
+    background-color: #ebf5fb;
+    color: #2980b9;
+}
+
+/* Pagination */
+.paginationContainer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.paginationInfo {
+    color: #6c757d;
+    font-size: 11px;
+}
+
+.paginationButtons {
+    display: flex;
+    gap: 5px;
+}
+
+.paginationButtons button {
+    padding: 6px 12px;
+    border: 1px solid #ddd;
+    background-color: white;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.paginationButtons button:hover:not(:disabled) {
+    background-color: #f1f3f5;
+}
+
+.paginationButtons button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.paginationButtons button.active {
+    background-color: #2c3e50;
+    color: white;
+    border-color: #2c3e50;
+}
+
+/* Side Panel */
+.sidePanelOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: flex-end;
+    z-index: 1000;
+}
+
+.sidePanel {
+    width: 400px;
+    height: 100vh;
+    background-color: white;
+    box-shadow: -2px 0 8px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+}
+
+.sidePanelHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid #e0e0e0;
+    background-color: #f8f9fa;
+}
+
+.sidePanelHeader h3 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 18px;
+}
+
+.closeButton {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+.closeButton:hover {
+    background-color: #e0e0e0;
+}
+
+.sidePanelContent {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+}
+
+/* Student Profile in Side Panel */
+.studentProfile {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.profileImage {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 18px;
+}
+
+.profileInfo h4 {
+    margin: 0 0 4px 0;
+    color: #2c3e50;
+    font-size: 18px;
+}
+
+.profileInfo p {
+    margin: 0;
+    color: #6c757d;
+    font-size: 14px;
+}
+
+/* Payment Details in Side Panel */
+.paymentDetails h4 {
+    margin: 0 0 16px 0;
+    color: #2c3e50;
+    font-size: 16px;
+}
+
+.detailGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.detailItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+}
+
+.detailLabel {
+    font-weight: 600;
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.detailValue {
+    color: #2c3e50;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+/* Side Panel Actions */
+.sidePanelActions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.printButton,
+.downloadButton {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.printButton {
+    background-color: #3498db;
+    color: white;
+}
+
+.printButton:hover {
+    background-color: #2980b9;
+}
+
+.downloadButton {
+    background-color: #27ae60;
+    color: white;
+}
+
+.downloadButton:hover {
+    background-color: #219a52;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .tableControls {
+        flex-direction: column;
+    }
+
+    .leftControls,
+    .rightControls {
+        width: 100%;
+    }
+
+    .searchBar {
+        width: 100%;
+        min-width: auto;
+    }
+
+    .filterControls {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .exportButton {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .paginationContainer {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .summarySection {
+        grid-template-columns: 1fr;
+    }
+
+    .summaryCard {
+        padding: 15px;
+    }
+
+    .sidePanel {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .filterControls {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .filterDropdown {
+        width: 100%;
+    }
+
+    .filterDropdown select {
+        width: 100%;
+    }
+
+    .summaryIcon {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+
+    .summaryValue {
+        font-size: 18px;
+    }
+}

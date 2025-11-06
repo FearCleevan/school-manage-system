@@ -4,6 +4,7 @@ import { FaMoneyBillWave } from 'react-icons/fa';
 import styles from './Payment.module.css';
 import AllStudents from './AllStudents';
 import FeesManagement from '../FeesManagement/FeesManagement';
+import PaymentHistory from '../PaymentHistory/PaymentHistory';
 
 
 const Payment = () => {
@@ -48,7 +49,7 @@ const Payment = () => {
         <div className={styles.tabContent}>
           {activeTab === "allStudents" && <AllStudents />}
           {activeTab === "feesManagement" && <FeesManagement />} {/* Updated this line */}
-          {activeTab === "paymentHistory" && <div>Payment History Content Coming Soon</div>}
+          {activeTab === "paymentHistory" && <PaymentHistory />}
           {activeTab === "paymentAnalytics" && <div>Payment Analytics Content Coming Soon</div>}
         </div>
       </div>

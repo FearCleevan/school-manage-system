@@ -58,29 +58,28 @@ const FeesManagement = () => {
   };
 
   // Load fee structure from Firestore
-  useEffect(() => {
-    const loadFeeStructure = async () => {
-      try {
-        const feeDoc = await getDoc(doc(db, 'system', 'feeStructure'));
-        
-        if (feeDoc.exists()) {
-          setFeeStructure(feeDoc.data());
-        } else {
-          // Initialize with default structure if not exists
-          await setDoc(doc(db, 'system', 'feeStructure'), defaultFeeStructure);
-          setFeeStructure(defaultFeeStructure);
-        }
-      } catch (error) {
-        console.error('Error loading fee structure:', error);
-        setMessage({ type: 'error', text: 'Failed to load fee structure' });
+useEffect(() => {
+  const loadFeeStructure = async () => {
+    try {
+      const feeDoc = await getDoc(doc(db, 'system', 'feeStructure'));
+      
+      if (feeDoc.exists()) {
+        setFeeStructure(feeDoc.data());
+      } else {
+        await setDoc(doc(db, 'system', 'feeStructure'), defaultFeeStructure);
         setFeeStructure(defaultFeeStructure);
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (error) {
+      console.error('Error loading fee structure:', error);
+      setMessage({ type: 'error', text: 'Failed to load fee structure' });
+      setFeeStructure(defaultFeeStructure);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    loadFeeStructure();
-  }, []);
+  loadFeeStructure();
+}, []);
 
   const startEditing = (department) => {
     setEditingDepartment(department);
