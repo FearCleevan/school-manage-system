@@ -2,10 +2,14 @@ import React, { useCallback, useEffect, useState } from 'react';
 import styles from './BalanceBreakdown.module.css';
 import { FaFileInvoiceDollar, FaMoneyBillWave, FaWallet } from 'react-icons/fa';
 
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../../lib/firebase/config';
+
 const BalanceBreakdown = ({ student, subjects, onMakePayment }) => {
     const [balanceData, setBalanceData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [totalPaid, setTotalPaid] = useState(0);
+    const [feeStructure, setFeeStructure] = useState(null);
 
     // Calculate total paid amount from payment history
     const calculateTotalPaid = useCallback((paymentHistory) => {
@@ -15,55 +19,29 @@ const BalanceBreakdown = ({ student, subjects, onMakePayment }) => {
         }, 0);
     }, []);
 
+    // Load fee structure from Firestore
     useEffect(() => {
-        if (!student || !subjects) return;
+        const loadFeeStructure = async () => {
+            try {
+                const feeDoc = await getDoc(doc(db, 'system', 'feeStructure'));
+                if (feeDoc.exists()) {
+                    setFeeStructure(feeDoc.data());
+                }
+            } catch (error) {
+                console.error('Error loading fee structure:', error);
+            }
+        };
+
+        loadFeeStructure();
+    }, []);
+
+    useEffect(() => {
+        if (!student || !subjects || !feeStructure) return;
 
         const calculateBalance = () => {
             const department = student.department || 'college';
-            const feeStructure = {
-                college: {
-                    name: "College",
-                    perUnit: 365,
-                    miscFee: 2500,
-                    labFeePerUnit: 150,
-                    libraryFee: 500,
-                    athleticFee: 200,
-                    medicalFee: 300,
-                    registrationFee: 1000
-                },
-                tvet: {
-                    name: "TVET",
-                    perUnit: 320,
-                    miscFee: 2000,
-                    labFeePerUnit: 200,
-                    libraryFee: 400,
-                    athleticFee: 150,
-                    medicalFee: 250,
-                    registrationFee: 800
-                },
-                shs: {
-                    name: "Senior High School",
-                    perUnit: 0, // FIXED: Set to 0 for SHS
-                    fixedFee: 8000,
-                    miscFee: 1500,
-                    libraryFee: 300,
-                    athleticFee: 100,
-                    medicalFee: 200,
-                    registrationFee: 500
-                },
-                jhs: {
-                    name: "Junior High School",
-                    perUnit: 0, // FIXED: Set to 0 for JHS
-                    fixedFee: 6000,
-                    miscFee: 1200,
-                    libraryFee: 250,
-                    athleticFee: 80,
-                    medicalFee: 150,
-                    registrationFee: 400
-                }
-            };
-
             const fees = feeStructure[department] || feeStructure.college;
+
             let totalUnits = 0;
             let labUnits = 0;
             let tuitionFee = 0;
@@ -91,7 +69,7 @@ const BalanceBreakdown = ({ student, subjects, onMakePayment }) => {
                 });
 
                 if (department === 'shs' || department === 'jhs') {
-                    tuitionFee = fees.fixedFee || 0; // FIXED: Ensure it's a number
+                    tuitionFee = fees.fixedFee || 0;
                 } else {
                     tuitionFee = totalUnits * (fees.perUnit || 0);
                 }
@@ -103,9 +81,9 @@ const BalanceBreakdown = ({ student, subjects, onMakePayment }) => {
 
             setBalanceData({
                 departmentName: fees.name,
-                tuitionFee: tuitionFee || 0, // FIXED: Ensure it's a number
+                tuitionFee: tuitionFee || 0,
                 miscFee: isEnrolled ? (fees.miscFee || 0) : 0,
-                labFee: labFee || 0, // FIXED: Ensure it's a number
+                labFee: labFee || 0,
                 otherFees: [
                     { name: 'Library Fee', amount: fees.libraryFee || 0 },
                     { name: 'Medical Fee', amount: fees.medicalFee || 0 },
@@ -126,7 +104,12 @@ const BalanceBreakdown = ({ student, subjects, onMakePayment }) => {
         };
 
         calculateBalance();
-    }, [student, subjects, calculateTotalPaid]);
+    }, [student, subjects, feeStructure, calculateTotalPaid]);
+
+    
+    if (!feeStructure) {
+        return <div className={styles.loading}>Loading fee structure...</div>;
+    }
 
     const calculateTotalUnits = () => {
         let totalUnits = 0;
@@ -275,7 +258,7 @@ const BalanceBreakdown = ({ student, subjects, onMakePayment }) => {
 
                 <div className={`${styles.balanceItem} ${styles.totalPaid}`}>
                     <span className={styles.balanceLabel}>
-                        <FaMoneyBillWave/>Total Paid:
+                        <FaMoneyBillWave />Total Paid:
                     </span>
                     <span className={styles.balanceValue}>
                         ₱{totalPaid.toLocaleString()}

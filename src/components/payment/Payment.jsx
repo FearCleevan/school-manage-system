@@ -1,8 +1,10 @@
-// src/components/payment/Payment.jsx
+// Update the Payment.jsx to include FeesManagement
 import React, { useState } from 'react';
 import { FaMoneyBillWave } from 'react-icons/fa';
 import styles from './Payment.module.css';
 import AllStudents from './AllStudents';
+import FeesManagement from '../FeesManagement/FeesManagement';
+
 
 const Payment = () => {
   const [activeTab, setActiveTab] = useState("allStudents");
@@ -45,7 +47,7 @@ const Payment = () => {
         {/* Tab Content */}
         <div className={styles.tabContent}>
           {activeTab === "allStudents" && <AllStudents />}
-          {activeTab === "feesManagement" && <div>Fees Management Content Coming Soon</div>}
+          {activeTab === "feesManagement" && <FeesManagement />} {/* Updated this line */}
           {activeTab === "paymentHistory" && <div>Payment History Content Coming Soon</div>}
           {activeTab === "paymentAnalytics" && <div>Payment Analytics Content Coming Soon</div>}
         </div>
