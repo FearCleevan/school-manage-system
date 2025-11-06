@@ -136,11 +136,19 @@ const PaymentHistory = () => {
                 }));
                 setStudents(studentsData);
 
-                // Process payments from student data - UPDATED FIELD MAPPING
+                // Process payments from student data - FIXED REMAINING BALANCE CALCULATION
                 const allPayments = [];
                 studentsData.forEach(student => {
                     if (student.paymentHistory && Array.isArray(student.paymentHistory)) {
+                        // Calculate total paid up to each payment
+                        let cumulativePaid = 0;
+                        const totalFees = student.totalFees || 0; // You need to store total fees in student document
+
                         student.paymentHistory.forEach(payment => {
+                            const paymentAmount = payment.amount || 0;
+                            cumulativePaid += paymentAmount;
+                            const remainingBalance = Math.max(0, totalFees - cumulativePaid);
+
                             allPayments.push({
                                 ...payment,
                                 studentId: student.studentId,
@@ -149,15 +157,14 @@ const PaymentHistory = () => {
                                 yearLevel: student.enrollment?.yearLevel || 'Not enrolled',
                                 semester: student.enrollment?.semester || 'Not enrolled',
                                 academicYear: student.enrollment?.academicYear || '2024-2025',
-                                // Map the fields correctly
-                                orNumber: payment.id || payment.orNumber || 'N/A', // Use payment.id as OR Number
-                                datePaid: payment.date || payment.datePaid || 'N/A', // Use payment.date as Date Paid
-                                processedBy: payment.processedBy || payment.currentUser || 'System', // Use cashier or default
+                                orNumber: payment.id || payment.orNumber || 'N/A',
+                                datePaid: payment.date || payment.datePaid || 'N/A',
+                                processedBy: payment.processedBy || payment.currentUser || 'System',
                                 type: payment.type || payment.description || 'N/A',
-                                amount: payment.amount || 0,
-                                remainingBalance: payment.remainingBalance || student.balance || 0,
+                                amount: paymentAmount,
+                                remainingBalance: remainingBalance,
                                 status: payment.status || 'pending',
-                                studentData: student // Include full student data for reference
+                                studentData: student
                             });
                         });
                     }
