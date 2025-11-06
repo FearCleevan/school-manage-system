@@ -136,7 +136,7 @@ const PaymentHistory = () => {
                 }));
                 setStudents(studentsData);
 
-                // Process payments from student data
+                // Process payments from student data - UPDATED FIELD MAPPING
                 const allPayments = [];
                 studentsData.forEach(student => {
                     if (student.paymentHistory && Array.isArray(student.paymentHistory)) {
@@ -149,6 +149,14 @@ const PaymentHistory = () => {
                                 yearLevel: student.enrollment?.yearLevel || 'Not enrolled',
                                 semester: student.enrollment?.semester || 'Not enrolled',
                                 academicYear: student.enrollment?.academicYear || '2024-2025',
+                                // Map the fields correctly
+                                orNumber: payment.id || payment.orNumber || 'N/A', // Use payment.id as OR Number
+                                datePaid: payment.date || payment.datePaid || 'N/A', // Use payment.date as Date Paid
+                                processedBy: payment.processedBy || payment.currentUser || 'System', // Use cashier or default
+                                type: payment.type || payment.description || 'N/A',
+                                amount: payment.amount || 0,
+                                remainingBalance: payment.remainingBalance || student.balance || 0,
+                                status: payment.status || 'pending',
                                 studentData: student // Include full student data for reference
                             });
                         });
@@ -321,12 +329,12 @@ const PaymentHistory = () => {
         const csvData = filteredPayments.map(payment => [
             payment.studentId,
             payment.studentName,
-            payment.orNumber || 'N/A',
-            payment.type || payment.description || 'N/A',
+            payment.orNumber,
+            payment.paymentType || payment.type || 'N/A',
             payment.amount || 0,
             payment.remainingBalance || 0,
-            payment.datePaid || 'N/A',
-            payment.processedBy || 'N/A',
+            payment.datePaid ? new Date(payment.datePaid).toLocaleDateString() : 'N/A',
+            payment.processedBy,
             payment.status || 'unknown'
         ]);
 
@@ -530,7 +538,7 @@ const PaymentHistory = () => {
                                 <th onClick={() => handleSort('studentId')}>
                                     <span className={styles.sortableHeader}>
                                         Student ID {getSortIcon('studentId')}
-                                    </span> 
+                                    </span>
                                 </th>
                                 <th onClick={() => handleSort('studentName')}>
                                     <span className={styles.sortableHeader}>
@@ -545,7 +553,7 @@ const PaymentHistory = () => {
                                 <th onClick={() => handleSort('type')}>
                                     <span className={styles.sortableHeader}>
                                         Payment Type {getSortIcon('type')}
-                                    </span> 
+                                    </span>
                                 </th>
                                 <th onClick={() => handleSort('amount')}>
                                     <span className={styles.sortableHeader}>
