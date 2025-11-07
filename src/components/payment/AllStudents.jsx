@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import styles from './AllStudents.module.css';
 import { FaSearch, FaPlus, FaMoneyBillWave, FaSyncAlt, FaFilter, FaExclamationTriangle } from 'react-icons/fa';
 import { db } from '../../lib/firebase/config';
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, getDoc } from 'firebase/firestore';
 import PaymentDetails from './PaymentDetails';
 
 // Constants configuration
@@ -32,6 +32,136 @@ const config = {
     { value: 'no-balance', label: 'No Balance' },
     { value: 'overdue', label: 'Overdue' }
   ]
+};
+
+// Default fee structure (fallback if Firestore fails)
+const defaultFeeStructure = {
+  college: {
+    name: "College",
+    perUnit: 365,
+    miscFee: 2500,
+    labFeePerUnit: 150,
+    libraryFee: 500,
+    athleticFee: 200,
+    medicalFee: 300,
+    registrationFee: 1000
+  },
+  tvet: {
+    name: "TVET",
+    perUnit: 320,
+    miscFee: 2000,
+    labFeePerUnit: 200,
+    libraryFee: 400,
+    athleticFee: 150,
+    medicalFee: 250,
+    registrationFee: 800
+  },
+  shs: {
+    name: "Senior High School",
+    perUnit: 0,
+    fixedFee: 8000,
+    miscFee: 1500,
+    libraryFee: 300,
+    athleticFee: 100,
+    medicalFee: 200,
+    registrationFee: 500
+  },
+  jhs: {
+    name: "Junior High School",
+    perUnit: 0,
+    fixedFee: 6000,
+    miscFee: 1200,
+    libraryFee: 250,
+    athleticFee: 80,
+    medicalFee: 150,
+    registrationFee: 400
+  }
+};
+
+// Fee Calculation Utility Functions
+const calculateStudentFees = (student, feeStructure) => {
+  if (!student || !feeStructure) {
+    return {
+      totalTuition: 0,
+      totalFees: 0,
+      totalDiscount: 0,
+      totalAmountDue: 0,
+      totalPaid: 0,
+      remainingBalance: 0,
+      lastUpdated: new Date()
+    };
+  }
+
+  const department = student.department || 'college';
+  const fees = feeStructure[department] || feeStructure.college;
+  
+  // Calculate total paid from payment history
+  const totalPaid = student.paymentHistory?.reduce((sum, payment) => {
+    return payment.status === 'completed' ? sum + (parseFloat(payment.amount) || 0) : sum;
+  }, 0) || 0;
+
+  const isEnrolled = student.enrollment?.course && student.enrollment.course !== 'Not enrolled';
+  
+  if (!isEnrolled) {
+    return {
+      totalTuition: 0,
+      totalFees: 0,
+      totalDiscount: 0,
+      totalAmountDue: 0,
+      totalPaid: totalPaid,
+      remainingBalance: 0,
+      lastUpdated: new Date()
+    };
+  }
+
+  // Calculate based on enrollment type
+  let tuitionFee = 0;
+  let miscFee = 0;
+  let labFee = 0;
+  let otherFees = 0;
+
+  if (department === 'shs' || department === 'jhs') {
+    // Fixed fee for SHS/JHS
+    tuitionFee = fees.fixedFee || 0;
+  } else {
+    // College/TVET - calculate based on units if available
+    const totalUnits = student.enrollment?.totalUnits || 0;
+    const labUnits = student.enrollment?.labUnits || 0;
+    tuitionFee = totalUnits * (fees.perUnit || 0);
+    labFee = labUnits * (fees.labFeePerUnit || 0);
+  }
+
+  // Add miscellaneous and other fees
+  miscFee = fees.miscFee || 0;
+  otherFees = (fees.libraryFee || 0) + (fees.medicalFee || 0) + (fees.athleticFee || 0);
+
+  const discount = student.discount || 0;
+  const totalAmountDue = Math.max(0, tuitionFee + miscFee + labFee + otherFees - discount);
+  const remainingBalance = Math.max(0, totalAmountDue - totalPaid);
+
+  return {
+    totalTuition: tuitionFee,
+    totalFees: tuitionFee + miscFee + labFee + otherFees,
+    totalDiscount: discount,
+    totalAmountDue: totalAmountDue,
+    totalPaid: totalPaid,
+    remainingBalance: remainingBalance,
+    lastUpdated: new Date()
+  };
+};
+
+// Fixed: Remove unused feeStructure parameter
+const recalculateStudentFees = async (studentId) => {
+  try {
+    const studentRef = doc(db, 'students', studentId);
+    await updateDoc(studentRef, {
+      'financialSummary.lastUpdated': new Date()
+    });
+    return true;
+  } catch (error) {
+    console.error('Error recalculating fees:', error);
+    throw error;
+  }
 };
 
 // Pagination Component
@@ -134,21 +264,6 @@ const FinancialStatusBadge = ({ balance, totalDue }) => {
   return <span className={styles.statusBadge}>Pending</span>;
 };
 
-// Recalculate Fees Function
-const recalculateStudentFees = async (studentId) => {
-  try {
-    // Update the lastUpdated timestamp to trigger recalculation
-    const studentRef = doc(db, 'students', studentId);
-    await updateDoc(studentRef, {
-      'financialSummary.lastUpdated': new Date()
-    });
-    return true;
-  } catch (error) {
-    console.error('Error recalculating fees:', error);
-    throw error;
-  }
-};
-
 const AllStudents = () => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -164,6 +279,23 @@ const AllStudents = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [recalculating, setRecalculating] = useState(null);
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [feeStructure, setFeeStructure] = useState(defaultFeeStructure);
+
+  // Load fee structure from Firestore
+  useEffect(() => {
+    const loadFeeStructure = async () => {
+      try {
+        const feeDoc = await getDoc(doc(db, 'system', 'feeStructure'));
+        if (feeDoc.exists()) {
+          setFeeStructure(feeDoc.data());
+        }
+      } catch (error) {
+        console.warn('Using default fee structure:', error);
+        // Continue with default fee structure
+      }
+    };
+    loadFeeStructure();
+  }, []);
 
   // Debounce search term
   useEffect(() => {
@@ -175,48 +307,49 @@ const AllStudents = () => {
     return () => clearTimeout(timerId);
   }, [searchTerm]);
 
-  // Fetch students from Firestore with enhanced financial data
-  const fetchStudents = async () => {
+  // Fetch students from Firestore with real-time fee calculation
+  const fetchStudents = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const querySnapshot = await getDocs(collection(db, 'students'));
       const studentsData = querySnapshot.docs.map(doc => {
         const data = doc.data();
+
+        // Calculate financial summary in real-time
+        const calculatedFinancialSummary = calculateStudentFees(data, feeStructure);
         
-        // Ensure financial summary exists with proper defaults
-        const financialSummary = data.financialSummary || {
-          totalTuition: 0,
-          totalFees: 0,
-          totalDiscount: 0,
-          totalAmountDue: 0,
-          totalPaid: 0,
-          remainingBalance: 0,
-          lastUpdated: new Date()
-        };
+        // Use existing financial summary if it's more recent, otherwise use calculated one
+        const existingFinancialSummary = data.financialSummary || {};
+        const shouldUseCalculated = !existingFinancialSummary.lastUpdated || 
+          (calculatedFinancialSummary.lastUpdated > existingFinancialSummary.lastUpdated);
+
+        const financialSummary = shouldUseCalculated ? 
+          calculatedFinancialSummary : 
+          {
+            ...existingFinancialSummary,
+            // Ensure all values are numbers
+            totalTuition: Number(existingFinancialSummary.totalTuition) || 0,
+            totalFees: Number(existingFinancialSummary.totalFees) || 0,
+            totalDiscount: Number(existingFinancialSummary.totalDiscount) || 0,
+            totalAmountDue: Number(existingFinancialSummary.totalAmountDue) || 0,
+            totalPaid: Number(existingFinancialSummary.totalPaid) || 0,
+            remainingBalance: Number(existingFinancialSummary.remainingBalance) || 0,
+            lastUpdated: existingFinancialSummary.lastUpdated || new Date()
+          };
 
         // Calculate status based on financial data
         const status = financialSummary.totalAmountDue === 0 ? 'not-enrolled' :
-                      financialSummary.remainingBalance === 0 ? 'paid' :
-                      financialSummary.remainingBalance > 0 && financialSummary.remainingBalance < financialSummary.totalAmountDue ? 'partial' :
-                      'overdue';
+          financialSummary.remainingBalance === 0 ? 'paid' :
+            financialSummary.remainingBalance > 0 && financialSummary.remainingBalance < financialSummary.totalAmountDue ? 'partial' :
+              'overdue';
 
         return {
           id: doc.id,
           ...data,
           formattedDepartment: config.departmentMapping[data.department] || 'Not assigned',
-          financialSummary: {
-            ...financialSummary,
-            // Ensure all values are numbers
-            totalTuition: Number(financialSummary.totalTuition) || 0,
-            totalFees: Number(financialSummary.totalFees) || 0,
-            totalDiscount: Number(financialSummary.totalDiscount) || 0,
-            totalAmountDue: Number(financialSummary.totalAmountDue) || 0,
-            totalPaid: Number(financialSummary.totalPaid) || 0,
-            remainingBalance: Number(financialSummary.remainingBalance) || 0,
-            lastUpdated: financialSummary.lastUpdated || new Date()
-          },
+          financialSummary,
           financialStatus: status
         };
       });
@@ -228,11 +361,30 @@ const AllStudents = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [feeStructure]); // Add feeStructure as dependency
 
+  // Refresh data when fee structure changes
+  useEffect(() => {
+    if (feeStructure) {
+      fetchStudents();
+    }
+  }, [feeStructure, fetchStudents]); // Add fetchStudents as dependency
+
+  // Refresh data periodically
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!loading && !showPaymentModal) {
+        fetchStudents();
+      }
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [loading, showPaymentModal, fetchStudents]); // Add fetchStudents as dependency
+
+  // Initial data fetch
   useEffect(() => {
     fetchStudents();
-  }, []);
+  }, [fetchStudents]); // Add fetchStudents as dependency
 
   // Get available courses based on selected department
   const getAvailableCourses = useCallback(() => {
@@ -252,10 +404,10 @@ const AllStudents = () => {
 
       const matchesCourse = courseFilter ? student.enrollment?.course === courseFilter : true;
       const matchesDepartment = departmentFilter ? student.department === departmentFilter : true;
-      
-      const matchesBalance = balanceFilter ? 
-        (balanceFilter === 'has-balance' ? student.financialSummary.remainingBalance > 0 : 
-         balanceFilter === 'no-balance' ? student.financialSummary.remainingBalance <= 0 : true) : true;
+
+      const matchesBalance = balanceFilter ?
+        (balanceFilter === 'has-balance' ? student.financialSummary.remainingBalance > 0 :
+          balanceFilter === 'no-balance' ? student.financialSummary.remainingBalance <= 0 : true) : true;
 
       const matchesStatus = statusFilter ? student.financialStatus === statusFilter : true;
 
@@ -295,21 +447,37 @@ const AllStudents = () => {
   }, []);
 
   // Handle recalculating fees for a student
-  const handleRecalculateFees = async (studentId, e) => {
+  const handleRecalculateFees = useCallback(async (studentId, e) => {
     if (e) e.stopPropagation();
-    
+
     setRecalculating(studentId);
     try {
+      // Fixed: Remove feeStructure parameter since it's not used
       await recalculateStudentFees(studentId);
-      // Refresh the student data
-      await fetchStudents();
+      
+      // Update the local state with fresh calculation
+      setStudents(prevStudents =>
+        prevStudents.map(student =>
+          student.id === studentId
+            ? {
+                ...student,
+                financialSummary: calculateStudentFees(student, feeStructure)
+              }
+            : student
+        )
+      );
+
+      // Refresh the data after a short delay
+      setTimeout(() => {
+        fetchStudents();
+      }, 1000);
     } catch (error) {
       console.error('Error recalculating fees:', error);
       setError('Failed to recalculate fees. Please try again.');
     } finally {
       setRecalculating(null);
     }
-  };
+  }, [feeStructure, fetchStudents]); // Keep feeStructure here since it's used in calculateStudentFees
 
   // Status filter options
   const statusFilterOptions = [
@@ -530,7 +698,7 @@ const AllStudents = () => {
             </select>
             <span>entries</span>
           </div>
-          
+
           <div className={styles.tableSummary}>
             {filteredStudents.length} student(s) found
           </div>
@@ -574,13 +742,12 @@ const AllStudents = () => {
                     <td className={styles.amountCell}>
                       ₱{student.financialSummary.totalPaid.toLocaleString()}
                     </td>
-                    <td className={`${styles.amountCell} ${
-                      student.financialSummary.remainingBalance > 0 ? styles.hasBalance : styles.noBalance
-                    }`}>
+                    <td className={`${styles.amountCell} ${student.financialSummary.remainingBalance > 0 ? styles.hasBalance : styles.noBalance
+                      }`}>
                       ₱{student.financialSummary.remainingBalance.toLocaleString()}
                     </td>
                     <td>
-                      <FinancialStatusBadge 
+                      <FinancialStatusBadge
                         balance={student.financialSummary.remainingBalance}
                         totalDue={student.financialSummary.totalAmountDue}
                       />
