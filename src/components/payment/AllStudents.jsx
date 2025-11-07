@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import styles from './AllStudents.module.css';
-import { FaSearch, FaPlus } from 'react-icons/fa';
+import { FaSearch, FaPlus, FaMoneyBillWave, FaSyncAlt, FaFilter, FaExclamationTriangle } from 'react-icons/fa';
 import { db } from '../../lib/firebase/config';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
 import PaymentDetails from './PaymentDetails';
 
-// Constants moved to a separate configuration object
+// Constants configuration
 const config = {
   departmentMapping: {
     'college': 'College',
@@ -25,15 +25,20 @@ const config = {
     { value: 'shs', label: 'SHS' },
     { value: 'jhs', label: 'JHS' }
   ],
-  pageSizeOptions: [5, 10, 20, 50, 100]
+  pageSizeOptions: [5, 10, 20, 50, 100],
+  balanceFilterOptions: [
+    { value: '', label: 'All Balances' },
+    { value: 'has-balance', label: 'Has Balance' },
+    { value: 'no-balance', label: 'No Balance' },
+    { value: 'overdue', label: 'Overdue' }
+  ]
 };
 
-// Extracted Pagination component for better reusability
+// Pagination Component
 const Pagination = ({
   currentPage,
   totalPages,
   paginate,
-  // itemsPerPage,
   totalItems,
   indexOfFirstItem,
   indexOfLastItem
@@ -73,6 +78,7 @@ const Pagination = ({
         <button
           onClick={() => paginate(1)}
           disabled={currentPage === 1}
+          className={styles.paginationButton}
           aria-label="First page"
         >
           First
@@ -80,6 +86,7 @@ const Pagination = ({
         <button
           onClick={() => paginate(Math.max(1, currentPage - 1))}
           disabled={currentPage === 1}
+          className={styles.paginationButton}
           aria-label="Previous page"
         >
           Previous
@@ -89,7 +96,7 @@ const Pagination = ({
           <button
             key={pageNum}
             onClick={() => paginate(pageNum)}
-            className={currentPage === pageNum ? styles.active : ''}
+            className={`${styles.paginationButton} ${currentPage === pageNum ? styles.active : ''}`}
             aria-label={`Page ${pageNum}`}
             aria-current={currentPage === pageNum ? 'page' : undefined}
           >
@@ -100,6 +107,7 @@ const Pagination = ({
         <button
           onClick={() => paginate(Math.min(totalPages, currentPage + 1))}
           disabled={currentPage === totalPages}
+          className={styles.paginationButton}
           aria-label="Next page"
         >
           Next
@@ -107,6 +115,7 @@ const Pagination = ({
         <button
           onClick={() => paginate(totalPages)}
           disabled={currentPage === totalPages}
+          className={styles.paginationButton}
           aria-label="Last page"
         >
           Last
@@ -116,6 +125,30 @@ const Pagination = ({
   );
 };
 
+// Student Financial Status Badge
+const FinancialStatusBadge = ({ balance, totalDue }) => {
+  if (totalDue === 0) return <span className={`${styles.statusBadge} ${styles.notEnrolled}`}>Not Enrolled</span>;
+  if (balance === 0) return <span className={`${styles.statusBadge} ${styles.paid}`}>Paid</span>;
+  if (balance > 0 && balance < totalDue) return <span className={`${styles.statusBadge} ${styles.partial}`}>Partial</span>;
+  if (balance >= totalDue) return <span className={`${styles.statusBadge} ${styles.overdue}`}>Overdue</span>;
+  return <span className={styles.statusBadge}>Pending</span>;
+};
+
+// Recalculate Fees Function
+const recalculateStudentFees = async (studentId) => {
+  try {
+    // Update the lastUpdated timestamp to trigger recalculation
+    const studentRef = doc(db, 'students', studentId);
+    await updateDoc(studentRef, {
+      'financialSummary.lastUpdated': new Date()
+    });
+    return true;
+  } catch (error) {
+    console.error('Error recalculating fees:', error);
+    throw error;
+  }
+};
+
 const AllStudents = () => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -123,35 +156,16 @@ const AllStudents = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [courseFilter, setCourseFilter] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState('');
+  const [balanceFilter, setBalanceFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-
-  // Fetch students from Firestore with error handling
-  useEffect(() => {
-    const fetchStudents = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, 'students'));
-        const studentsData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          formattedDepartment: config.departmentMapping[doc.data().department] || 'Not assigned'
-        }));
-        setStudents(studentsData);
-      } catch (err) {
-        console.error('Error fetching students:', err);
-        setError('Failed to load students. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStudents();
-  }, []);
-
-  // Debounced search term
+  const [recalculating, setRecalculating] = useState(null);
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  // Debounce search term
   useEffect(() => {
     const timerId = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
@@ -161,19 +175,93 @@ const AllStudents = () => {
     return () => clearTimeout(timerId);
   }, [searchTerm]);
 
+  // Fetch students from Firestore with enhanced financial data
+  const fetchStudents = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const querySnapshot = await getDocs(collection(db, 'students'));
+      const studentsData = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        
+        // Ensure financial summary exists with proper defaults
+        const financialSummary = data.financialSummary || {
+          totalTuition: 0,
+          totalFees: 0,
+          totalDiscount: 0,
+          totalAmountDue: 0,
+          totalPaid: 0,
+          remainingBalance: 0,
+          lastUpdated: new Date()
+        };
+
+        // Calculate status based on financial data
+        const status = financialSummary.totalAmountDue === 0 ? 'not-enrolled' :
+                      financialSummary.remainingBalance === 0 ? 'paid' :
+                      financialSummary.remainingBalance > 0 && financialSummary.remainingBalance < financialSummary.totalAmountDue ? 'partial' :
+                      'overdue';
+
+        return {
+          id: doc.id,
+          ...data,
+          formattedDepartment: config.departmentMapping[data.department] || 'Not assigned',
+          financialSummary: {
+            ...financialSummary,
+            // Ensure all values are numbers
+            totalTuition: Number(financialSummary.totalTuition) || 0,
+            totalFees: Number(financialSummary.totalFees) || 0,
+            totalDiscount: Number(financialSummary.totalDiscount) || 0,
+            totalAmountDue: Number(financialSummary.totalAmountDue) || 0,
+            totalPaid: Number(financialSummary.totalPaid) || 0,
+            remainingBalance: Number(financialSummary.remainingBalance) || 0,
+            lastUpdated: financialSummary.lastUpdated || new Date()
+          },
+          financialStatus: status
+        };
+      });
+
+      setStudents(studentsData);
+    } catch (err) {
+      console.error('Error fetching students:', err);
+      setError('Failed to load students. Please check your internet connection and try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStudents();
+  }, []);
+
+  // Get available courses based on selected department
+  const getAvailableCourses = useCallback(() => {
+    if (!departmentFilter) {
+      return Array.from(new Set(Object.values(config.courseOptions).flat()));
+    }
+    return config.courseOptions[departmentFilter] || [];
+  }, [departmentFilter]);
+
   // Memoized filtered students
   const filteredStudents = useMemo(() => {
     return students.filter(student => {
       const matchesSearch =
-        student.studentId.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        `${student.firstName} ${student.lastName}`.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
+        student.studentId?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        `${student.firstName || ''} ${student.lastName || ''}`.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+        student.email?.toLowerCase().includes(debouncedSearchTerm.toLowerCase());
 
       const matchesCourse = courseFilter ? student.enrollment?.course === courseFilter : true;
       const matchesDepartment = departmentFilter ? student.department === departmentFilter : true;
+      
+      const matchesBalance = balanceFilter ? 
+        (balanceFilter === 'has-balance' ? student.financialSummary.remainingBalance > 0 : 
+         balanceFilter === 'no-balance' ? student.financialSummary.remainingBalance <= 0 : true) : true;
 
-      return matchesSearch && matchesCourse && matchesDepartment;
+      const matchesStatus = statusFilter ? student.financialStatus === statusFilter : true;
+
+      return matchesSearch && matchesCourse && matchesDepartment && matchesBalance && matchesStatus;
     });
-  }, [students, debouncedSearchTerm, courseFilter, departmentFilter]);
+  }, [students, debouncedSearchTerm, courseFilter, departmentFilter, balanceFilter, statusFilter]);
 
   // Memoized pagination data
   const paginationData = useMemo(() => {
@@ -190,19 +278,13 @@ const AllStudents = () => {
     };
   }, [currentPage, itemsPerPage, filteredStudents]);
 
-  // Get available courses based on selected department
-  const getAvailableCourses = useCallback(() => {
-    if (!departmentFilter) {
-      return Object.values(config.courseOptions).flat();
-    }
-    return config.courseOptions[departmentFilter] || [];
-  }, [departmentFilter]);
-
   // Reset all filters
   const resetFilters = useCallback(() => {
     setSearchTerm('');
     setCourseFilter('');
     setDepartmentFilter('');
+    setBalanceFilter('');
+    setStatusFilter('');
     setCurrentPage(1);
   }, []);
 
@@ -211,6 +293,32 @@ const AllStudents = () => {
     setSelectedStudent(student);
     setShowPaymentModal(true);
   }, []);
+
+  // Handle recalculating fees for a student
+  const handleRecalculateFees = async (studentId, e) => {
+    if (e) e.stopPropagation();
+    
+    setRecalculating(studentId);
+    try {
+      await recalculateStudentFees(studentId);
+      // Refresh the student data
+      await fetchStudents();
+    } catch (error) {
+      console.error('Error recalculating fees:', error);
+      setError('Failed to recalculate fees. Please try again.');
+    } finally {
+      setRecalculating(null);
+    }
+  };
+
+  // Status filter options
+  const statusFilterOptions = [
+    { value: '', label: 'All Status' },
+    { value: 'paid', label: 'Fully Paid' },
+    { value: 'partial', label: 'Partial Payment' },
+    { value: 'overdue', label: 'Overdue' },
+    { value: 'not-enrolled', label: 'Not Enrolled' }
+  ];
 
   if (loading) {
     return (
@@ -221,22 +329,53 @@ const AllStudents = () => {
     );
   }
 
-  if (error) {
-    return (
-      <div className={styles.error} role="alert">
-        {error}
-        <button
-          className={styles.retryButton}
-          onClick={() => window.location.reload()}
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className={styles.allStudentsContainer}>
+      {/* Header Section */}
+      <div className={styles.header}>
+        <h1 className={styles.title}>Student Financial Management</h1>
+        <p className={styles.subtitle}>
+          Manage student payments, view balances, and track financial status
+        </p>
+      </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className={styles.errorBanner}>
+          <FaExclamationTriangle />
+          <span>{error}</span>
+          <button onClick={fetchStudents} className={styles.retryBtn}>
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* Statistics Overview */}
+      <div className={styles.statsOverview}>
+        <div className={styles.statCard}>
+          <div className={styles.statValue}>{students.length}</div>
+          <div className={styles.statLabel}>Total Students</div>
+        </div>
+        <div className={styles.statCard}>
+          <div className={styles.statValue}>
+            {students.filter(s => s.financialSummary.remainingBalance > 0).length}
+          </div>
+          <div className={styles.statLabel}>With Balance</div>
+        </div>
+        <div className={styles.statCard}>
+          <div className={styles.statValue}>
+            {students.filter(s => s.financialSummary.remainingBalance === 0 && s.financialSummary.totalAmountDue > 0).length}
+          </div>
+          <div className={styles.statLabel}>Fully Paid</div>
+        </div>
+        <div className={styles.statCard}>
+          <div className={styles.statValue}>
+            ₱{students.reduce((sum, student) => sum + student.financialSummary.totalPaid, 0).toLocaleString()}
+          </div>
+          <div className={styles.statLabel}>Total Collected</div>
+        </div>
+      </div>
+
       {/* Table Controls */}
       <div className={styles.tableControls}>
         <div className={styles.leftControls}>
@@ -245,16 +384,19 @@ const AllStudents = () => {
             <input
               id="studentSearch"
               type="text"
-              placeholder="Search students..."
+              placeholder="Search by ID, name, or email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              aria-label="Search students by ID or name"
+              aria-label="Search students"
+              className={styles.searchInput}
             />
           </div>
 
           <div className={styles.filterControls}>
-            <div className={styles.filterDropdown}>
-              <label htmlFor="departmentFilter">Department</label>
+            <div className={styles.filterGroup}>
+              <label htmlFor="departmentFilter" className={styles.filterLabel}>
+                <FaFilter /> Department
+              </label>
               <select
                 id="departmentFilter"
                 value={departmentFilter}
@@ -263,6 +405,7 @@ const AllStudents = () => {
                   setCourseFilter('');
                   setCurrentPage(1);
                 }}
+                className={styles.filterSelect}
                 aria-label="Filter by department"
               >
                 <option value="">All Departments</option>
@@ -274,8 +417,10 @@ const AllStudents = () => {
               </select>
             </div>
 
-            <div className={styles.filterDropdown}>
-              <label htmlFor="courseFilter">Course</label>
+            <div className={styles.filterGroup}>
+              <label htmlFor="courseFilter" className={styles.filterLabel}>
+                Course
+              </label>
               <select
                 id="courseFilter"
                 value={courseFilter}
@@ -284,8 +429,8 @@ const AllStudents = () => {
                   setCurrentPage(1);
                 }}
                 disabled={!departmentFilter}
+                className={styles.filterSelect}
                 aria-label="Filter by course"
-                aria-disabled={!departmentFilter}
               >
                 <option value="">All Courses</option>
                 {getAvailableCourses().map(course => (
@@ -296,87 +441,188 @@ const AllStudents = () => {
               </select>
             </div>
 
+            <div className={styles.filterGroup}>
+              <label htmlFor="balanceFilter" className={styles.filterLabel}>
+                Balance
+              </label>
+              <select
+                id="balanceFilter"
+                value={balanceFilter}
+                onChange={(e) => {
+                  setBalanceFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className={styles.filterSelect}
+                aria-label="Filter by balance status"
+              >
+                {config.balanceFilterOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className={styles.filterGroup}>
+              <label htmlFor="statusFilter" className={styles.filterLabel}>
+                Status
+              </label>
+              <select
+                id="statusFilter"
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className={styles.filterSelect}
+                aria-label="Filter by payment status"
+              >
+                {statusFilterOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <button
               className={styles.resetFiltersBtn}
               onClick={resetFilters}
-              disabled={!searchTerm && !courseFilter && !departmentFilter}
+              disabled={!searchTerm && !courseFilter && !departmentFilter && !balanceFilter && !statusFilter}
               aria-label="Reset all filters"
             >
-              Reset Filters
+              Clear Filters
             </button>
           </div>
         </div>
 
         <div className={styles.rightControls}>
           <button
-            className={styles.addPaymentBtn}
-            aria-label="Add new payment"
+            className={styles.refreshButton}
+            onClick={fetchStudents}
+            aria-label="Refresh data"
           >
-            <FaPlus aria-hidden="true" /> Add New Payment
+            <FaSyncAlt /> Refresh
           </button>
         </div>
       </div>
 
       {/* Students Table */}
       <div className={styles.studentsTable}>
-        <div className={styles.showEntries}>
-          <label htmlFor="itemsPerPage">Show</label>
-          <select
-            id="itemsPerPage"
-            value={itemsPerPage}
-            onChange={(e) => {
-              setItemsPerPage(Number(e.target.value));
-              setCurrentPage(1);
-            }}
-            aria-label="Items per page"
-          >
-            {config.pageSizeOptions.map(size => (
-              <option key={size} value={size}>
-                {size}
-              </option>
-            ))}
-          </select>
-          <span>entries</span>
+        <div className={styles.tableHeader}>
+          <div className={styles.showEntries}>
+            <label htmlFor="itemsPerPage">Show</label>
+            <select
+              id="itemsPerPage"
+              value={itemsPerPage}
+              onChange={(e) => {
+                setItemsPerPage(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className={styles.itemsSelect}
+              aria-label="Items per page"
+            >
+              {config.pageSizeOptions.map(size => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+            <span>entries</span>
+          </div>
+          
+          <div className={styles.tableSummary}>
+            {filteredStudents.length} student(s) found
+          </div>
         </div>
 
         <div className={styles.tableWrapper}>
-          <table aria-label="Students list">
+          <table className={styles.table} aria-label="Students list">
             <thead>
               <tr>
                 <th scope="col">Student ID</th>
                 <th scope="col">Full Name</th>
                 <th scope="col">Course</th>
                 <th scope="col">Year</th>
-                <th scope="col">Semester</th>
                 <th scope="col">Department</th>
-                <th scope="col">Actions</th>
+                <th scope="col" className={styles.amountColumn}>Total Due</th>
+                <th scope="col" className={styles.amountColumn}>Total Paid</th>
+                <th scope="col" className={styles.amountColumn}>Balance</th>
+                <th scope="col">Status</th>
+                <th scope="col" className={styles.actionsColumn}>Actions</th>
               </tr>
             </thead>
             <tbody>
               {paginationData.currentItems.length > 0 ? (
                 paginationData.currentItems.map(student => (
-                  <tr key={student.id}>
-                    <td>{student.studentId}</td>
-                    <td>{`${student.firstName} ${student.lastName}`}</td>
+                  <tr key={student.id} className={styles.studentRow}>
+                    <td className={styles.studentId}>{student.studentId}</td>
+                    <td className={styles.studentName}>
+                      <div className={styles.namePrimary}>
+                        {student.firstName} {student.lastName}
+                      </div>
+                      {student.email && (
+                        <div className={styles.nameSecondary}>{student.email}</div>
+                      )}
+                    </td>
                     <td>{student.enrollment?.course || 'Not enrolled'}</td>
-                    <td>{student.enrollment?.yearLevel || 'Not enrolled'}</td>
-                    <td>{student.enrollment?.semester || 'Not enrolled'}</td>
+                    <td>{student.enrollment?.yearLevel || '-'}</td>
                     <td>{student.formattedDepartment}</td>
+                    <td className={styles.amountCell}>
+                      ₱{student.financialSummary.totalAmountDue.toLocaleString()}
+                    </td>
+                    <td className={styles.amountCell}>
+                      ₱{student.financialSummary.totalPaid.toLocaleString()}
+                    </td>
+                    <td className={`${styles.amountCell} ${
+                      student.financialSummary.remainingBalance > 0 ? styles.hasBalance : styles.noBalance
+                    }`}>
+                      ₱{student.financialSummary.remainingBalance.toLocaleString()}
+                    </td>
                     <td>
-                      <button
-                        className={styles.detailsBtn}
-                        onClick={() => handleOpenPaymentModal(student)}
-                        aria-label={`View payment details for ${student.firstName} ${student.lastName}`}
-                      >
-                        ...
-                      </button>
+                      <FinancialStatusBadge 
+                        balance={student.financialSummary.remainingBalance}
+                        totalDue={student.financialSummary.totalAmountDue}
+                      />
+                    </td>
+                    <td className={styles.actionsCell}>
+                      <div className={styles.actionButtons}>
+                        <button
+                          className={styles.detailsBtn}
+                          onClick={() => handleOpenPaymentModal(student)}
+                          aria-label={`View payment details for ${student.firstName} ${student.lastName}`}
+                          title="View Payment Details"
+                        >
+                          <FaMoneyBillWave />
+                        </button>
+                        <button
+                          className={styles.recalculateBtn}
+                          onClick={(e) => handleRecalculateFees(student.id, e)}
+                          disabled={recalculating === student.id}
+                          aria-label={`Recalculate fees for ${student.firstName} ${student.lastName}`}
+                          title="Recalculate Fees"
+                        >
+                          <FaSyncAlt className={recalculating === student.id ? styles.spinning : ''} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan="7" className={styles.noResults}>
-                    No students found matching your criteria
+                  <td colSpan="10" className={styles.noResults}>
+                    <div className={styles.noResultsContent}>
+                      <div className={styles.noResultsIcon}>📊</div>
+                      <div className={styles.noResultsText}>
+                        No students found matching your criteria
+                      </div>
+                      <button
+                        className={styles.noResultsAction}
+                        onClick={resetFilters}
+                      >
+                        Clear all filters
+                      </button>
+                    </div>
                   </td>
                 </tr>
               )}
@@ -386,21 +632,26 @@ const AllStudents = () => {
       </div>
 
       {/* Pagination */}
-      <Pagination
-        currentPage={currentPage}
-        totalPages={paginationData.totalPages}
-        paginate={setCurrentPage}
-        itemsPerPage={itemsPerPage}
-        totalItems={filteredStudents.length}
-        indexOfFirstItem={paginationData.indexOfFirstItem}
-        indexOfLastItem={paginationData.indexOfLastItem}
-      />
+      {filteredStudents.length > 0 && (
+        <Pagination
+          currentPage={currentPage}
+          totalPages={paginationData.totalPages}
+          paginate={setCurrentPage}
+          totalItems={filteredStudents.length}
+          indexOfFirstItem={paginationData.indexOfFirstItem}
+          indexOfLastItem={paginationData.indexOfLastItem}
+        />
+      )}
 
       {/* Payment Details Modal */}
-      {showPaymentModal && (
+      {showPaymentModal && selectedStudent && (
         <PaymentDetails
           student={selectedStudent}
-          onClose={() => setShowPaymentModal(false)}
+          onClose={() => {
+            setShowPaymentModal(false);
+            setSelectedStudent(null);
+          }}
+          onDataUpdate={fetchStudents}
         />
       )}
     </div>

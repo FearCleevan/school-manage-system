@@ -1,145 +1,367 @@
-/* src/components/modals/AddPayment/AddPayment.module.css */
+/* AddPayment.module.css */
 .modalOverlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
+  align-items: center;
   justify-content: center;
-  align-items: center;
   z-index: 1000;
-}
-
-.modalContainer {
-  background-color: white;
-  border-radius: 8px;
-  width: 100%;
-  max-width: 500px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-}
-
-.modalHeader {
-  padding: 16px;
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #dee2e6;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.closeButton {
-  background: none;
-  border: none;
-  font-size: 1.2rem;
-  cursor: pointer;
-  color: #6c757d;
-}
-
-.paymentForm {
   padding: 20px;
 }
 
+.modalContainer {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  animation: modalAppear 0.3s ease-out;
+}
+
+@keyframes modalAppear {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 2px solid #e9ecef;
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: white;
+  border-radius: 12px 12px 0 0;
+}
+
+.modalHeader h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.closeButton {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: background 0.3s ease;
+}
+
+.closeButton:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.studentInfo {
+  padding: 1.5rem;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.studentInfo h3 {
+  margin: 0 0 0.5rem 0;
+  color: #2c3e50;
+  font-size: 1.25rem;
+}
+
+.studentInfo p {
+  margin: 0.25rem 0;
+  color: #6c757d;
+}
+
+.balanceInfo {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+}
+
+.balanceInfo p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.paymentForm {
+  padding: 1.5rem;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
 .formGroup {
-  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
 }
 
 .formGroup label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: 500;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.9rem;
 }
 
 .formGroup input,
 .formGroup select {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
+  padding: 0.75rem;
+  border: 2px solid #e9ecef;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.formGroup input:focus,
+.formGroup select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+.formGroup input:disabled {
+  background: #f8f9fa;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+.errorMessage {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 1rem;
+  border-radius: 6px;
+  border: 1px solid #f5c6cb;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
 }
 
 .buttonGroup {
   display: flex;
+  gap: 1rem;
   justify-content: flex-end;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.submitButton {
-  background-color: #28a745;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e9ecef;
 }
 
 .cancelButton {
-  background-color: #6c757d;
+  padding: 0.75rem 1.5rem;
+  border: 2px solid #6c757d;
+  background: white;
+  color: #6c757d;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.cancelButton:hover:not(:disabled) {
+  background: #6c757d;
+  color: white;
+}
+
+.submitButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #28a745;
   color: white;
   border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
 }
 
-.errorMessage {
-  color: #dc3545;
-  margin-bottom: 15px;
+.submitButton:hover:not(:disabled) {
+  background: #218838;
+  transform: translateY(-1px);
 }
 
+.submitButton:disabled,
+.cancelButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Success View Styles */
 .successContent {
-  padding: 20px;
+  padding: 2rem;
   text-align: center;
 }
 
+.successIcon {
+  font-size: 4rem;
+  color: #28a745;
+  margin-bottom: 1rem;
+  animation: successBounce 0.6s ease;
+}
+
+@keyframes successBounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+.successContent h3 {
+  color: #28a745;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.successContent p {
+  color: #6c757d;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
 .receiptPreview {
-  background-color: #f8f9fa;
-  padding: 15px;
-  border-radius: 4px;
-  margin: 15px 0;
-  text-align: left;
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border: 1px solid #e9ecef;
+}
+
+.receiptPreview h4 {
+  margin: 0 0 1rem 0;
+  color: #2c3e50;
+  font-size: 1.1rem;
+}
+
+.receiptDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.receiptRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.receiptRow:last-child {
+  border-bottom: none;
+}
+
+.receiptRow .amount {
+  color: #28a745;
+  font-size: 1.1rem;
 }
 
 .printButton {
-  background-color: #17a2b8;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #007bff;
   color: white;
   border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 5px;
+  font-weight: 500;
+  transition: all 0.3s ease;
 }
 
-/* Add these styles to your AddPayment.module.css */
-.balanceInfo {
-  background: #e3f2fd;
-  border: 1px solid #2196f3;
-  border-radius: 4px;
-  padding: 8px 12px;
-  margin-bottom: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
+.printButton:hover {
+  background: #0056b3;
+  transform: translateY(-1px);
 }
 
-.infoIcon {
-  color: #2196f3;
+.closeSuccessButton {
+  padding: 0.75rem 1.5rem;
+  border: 2px solid #6c757d;
+  background: white;
+  color: #6c757d;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
 }
 
-.amountHint {
-  font-size: 12px;
-  color: #666;
-  margin-top: 4px;
+.closeSuccessButton:hover {
+  background: #6c757d;
+  color: white;
 }
 
-.warning {
-  background: #fff3e0;
-  border: 1px solid #ff9800;
-  color: #e65100;
+/* Responsive Design */
+@media (max-width: 768px) {
+  .modalContainer {
+    margin: 10px;
+    max-height: 95vh;
+  }
+
+  .formRow {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .buttonGroup {
+    flex-direction: column;
+  }
+
+  .balanceInfo {
+    grid-template-columns: 1fr;
+  }
+
+  .modalHeader {
+    padding: 1rem;
+  }
+
+  .modalHeader h2 {
+    font-size: 1.25rem;
+  }
+
+  .paymentForm {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .modalOverlay {
+    padding: 10px;
+  }
+
+  .studentInfo {
+    padding: 1rem;
+  }
+
+  .successContent {
+    padding: 1rem;
+  }
 }
