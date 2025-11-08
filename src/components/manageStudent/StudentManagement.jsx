@@ -300,6 +300,7 @@ const StudentManagement = () => {
     setDeleteModalOpen(true);
   };
 
+  // In StudentManagement.jsx - update the confirmDelete function
   const confirmDelete = async () => {
     if (!studentToDelete) return;
 
@@ -308,10 +309,31 @@ const StudentManagement = () => {
       const idsToDelete = Array.isArray(studentToDelete) ? studentToDelete : [studentToDelete.id];
       const studentsToDelete = students.filter(student => idsToDelete.includes(student.id));
 
+      // Get all payment IDs for the students being deleted
+      const paymentIdsToDelete = [];
+
+      // Query payments collection for each student
+      for (const student of studentsToDelete) {
+        const paymentsQuery = query(
+          collection(db, "payments"),
+          where("studentId", "==", student.id)
+        );
+        const paymentsSnapshot = await getDocs(paymentsQuery);
+        paymentsSnapshot.forEach((doc) => {
+          paymentIdsToDelete.push(doc.id);
+        });
+      }
+
       // Delete all selected students in batch
       idsToDelete.forEach(id => {
         const docRef = doc(db, "students", id);
         batch.delete(docRef);
+      });
+
+      // Delete all associated payments in batch
+      paymentIdsToDelete.forEach(paymentId => {
+        const paymentRef = doc(db, "payments", paymentId);
+        batch.delete(paymentRef);
       });
 
       await batch.commit();
@@ -320,7 +342,8 @@ const StudentManagement = () => {
       studentsToDelete.forEach(student => {
         logActivity('deleted a student', {
           studentId: student.studentId,
-          studentName: `${student.firstName} ${student.lastName}`
+          studentName: `${student.firstName} ${student.lastName}`,
+          deletedPayments: paymentIdsToDelete.length
         }, auth.currentUser.displayName);
       });
 
@@ -329,6 +352,7 @@ const StudentManagement = () => {
         logActivity('deleted multiple students', {
           count: idsToDelete.length,
           studentIds: studentsToDelete.map(s => s.studentId),
+          deletedPayments: paymentIdsToDelete.length,
           department: departmentTab
         }, auth.currentUser.displayName);
       }
@@ -338,12 +362,12 @@ const StudentManagement = () => {
       setStudentToDelete(null);
 
       const message = idsToDelete.length > 1
-        ? `${idsToDelete.length} students deleted successfully!`
-        : "Student deleted successfully!";
+        ? `${idsToDelete.length} students and ${paymentIdsToDelete.length} associated payments deleted successfully!`
+        : `Student and ${paymentIdsToDelete.length} associated payments deleted successfully!`;
       toast.success(message);
     } catch (error) {
-      console.error("Error deleting student(s):", error);
-      toast.error("Failed to delete student(s)!");
+      console.error("Error deleting student(s) and payments:", error);
+      toast.error("Failed to delete student(s) and associated payments!");
     }
   };
 

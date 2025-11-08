@@ -68,10 +68,44 @@ const BalanceBreakdown = ({ student, subjects, onMakePayment, refreshData }) => 
         loadFeeStructure();
     }, []);
 
-    // Calculate fees locally (fallback when Firestore writes fail)
+    // Replace the calculateFeesLocally function in BalanceBreakdown.js
     const calculateFeesLocally = useCallback((student, subjects, feeStructure) => {
-        if (!student || !feeStructure) return null;
+        if (!student) return null;
 
+        // Use stored financial data if available and recent
+        if (student.financialSummary && student.feeBreakdown) {
+            const financialSummary = student.financialSummary;
+            const feeBreakdown = student.feeBreakdown;
+            
+            return {
+                financialSummary: {
+                    totalTuition: Number(financialSummary.totalTuition) || 0,
+                    totalFees: Number(financialSummary.totalFees) || 0,
+                    totalDiscount: Number(financialSummary.totalDiscount) || 0,
+                    totalAmountDue: Number(financialSummary.totalAmountDue) || 0,
+                    totalPaid: Number(financialSummary.totalPaid) || 0,
+                    remainingBalance: Number(financialSummary.remainingBalance) || 0,
+                    lastUpdated: financialSummary.lastUpdated || new Date()
+                },
+                feeBreakdown: {
+                    tuitionFee: Number(feeBreakdown.tuitionFee) || 0,
+                    miscFee: Number(feeBreakdown.miscFee) || 0,
+                    labFee: Number(feeBreakdown.labFee) || 0,
+                    otherFees: feeBreakdown.otherFees || [],
+                    registrationFee: Number(feeBreakdown.registrationFee) || 0,
+                    discount: Number(feeBreakdown.discount) || 0,
+                    totalUnits: Number(feeBreakdown.totalUnits) || 0,
+                    labUnits: Number(feeBreakdown.labUnits) || 0,
+                    perUnitRate: Number(feeBreakdown.perUnitRate) || 0,
+                    labUnitRate: Number(feeBreakdown.labUnitRate) || 0,
+                    calculationDate: feeBreakdown.calculationDate || new Date(),
+                    isEnrolled: feeBreakdown.isEnrolled !== undefined ? feeBreakdown.isEnrolled : true,
+                    hasSubjects: feeBreakdown.hasSubjects !== undefined ? feeBreakdown.hasSubjects : false
+                }
+            };
+        }
+
+        // Fallback to calculation only if no stored data
         const department = student.department || 'college';
         const fees = feeStructure[department] || feeStructure.college;
 
@@ -105,13 +139,17 @@ const BalanceBreakdown = ({ student, subjects, onMakePayment, refreshData }) => 
             if (department === 'shs' || department === 'jhs') {
                 tuitionFee = fees.fixedFee || 0;
             } else {
+                // College/TVET - tuition fee already includes lab units in the per unit rate
                 tuitionFee = totalUnits * (fees.perUnit || 0);
             }
         } else if (isEnrolled) {
             tuitionFee = fees.registrationFee || 0;
         }
 
-        const labFee = labUnits * (fees.labFeePerUnit || 0);
+        // Laboratory fee is now a fixed amount included in the tuition
+        // Remove lab fee calculation since it's already included in tuition
+        const labFee = 0; // Set to 0 since it's included in tuition
+        
         const miscFee = isEnrolled ? (fees.miscFee || 0) : 0;
         const otherFees = [
             { name: 'Library Fee', amount: fees.libraryFee || 0 },
@@ -120,23 +158,27 @@ const BalanceBreakdown = ({ student, subjects, onMakePayment, refreshData }) => 
         ];
 
         const totalOtherFees = otherFees.reduce((sum, fee) => sum + (fee.amount || 0), 0);
-        const discount = student.discount || 0;
-        
-        const totalFees = Math.max(0, tuitionFee + miscFee + labFee + totalOtherFees - discount);
-        
-        // Calculate total paid from payment history - ensure we're using the latest data
+        const registrationFee = fees.registrationFee || 0;
+        const discount = parseFloat(student.discount) || 0;
+
+        const totalFees = tuitionFee + miscFee + labFee + totalOtherFees + registrationFee;
+        const totalAmountDue = Math.max(0, totalFees - discount);
+
         const totalPaid = student.paymentHistory?.reduce((sum, payment) => {
-            return payment.status === 'completed' ? sum + (parseFloat(payment.amount) || 0) : sum;
+            if (payment.status === 'completed' || payment.status === 'verified') {
+                return sum + (parseFloat(payment.amount) || 0);
+            }
+            return sum;
         }, 0) || 0;
 
-        const remainingBalance = Math.max(0, totalFees - totalPaid);
+        const remainingBalance = Math.max(0, totalAmountDue - totalPaid);
 
         return {
             financialSummary: {
                 totalTuition: tuitionFee,
-                totalFees: tuitionFee + miscFee + labFee + totalOtherFees,
+                totalFees: totalFees,
                 totalDiscount: discount,
-                totalAmountDue: totalFees,
+                totalAmountDue: totalAmountDue,
                 totalPaid: totalPaid,
                 remainingBalance: remainingBalance,
                 lastUpdated: new Date()
@@ -146,6 +188,7 @@ const BalanceBreakdown = ({ student, subjects, onMakePayment, refreshData }) => 
                 miscFee,
                 labFee,
                 otherFees,
+                registrationFee,
                 discount,
                 totalUnits,
                 labUnits,
@@ -164,10 +207,10 @@ const BalanceBreakdown = ({ student, subjects, onMakePayment, refreshData }) => 
 
         setCalculating(true);
         setError(null);
-        
+
         try {
             const calculatedData = calculateFeesLocally(student, subjects, feeStructure);
-            
+
             if (!calculatedData) {
                 throw new Error('Failed to calculate fees');
             }
@@ -227,7 +270,7 @@ const BalanceBreakdown = ({ student, subjects, onMakePayment, refreshData }) => 
                     console.warn('Could not load student data from Firestore:', firestoreError);
                 }
 
-                const hasRecentCalculation = studentData?.feeBreakdown?.calculationDate && 
+                const hasRecentCalculation = studentData?.feeBreakdown?.calculationDate &&
                     (new Date() - studentData.feeBreakdown.calculationDate.toDate()) < (24 * 60 * 60 * 1000);
 
                 if (hasRecentCalculation && studentData.financialSummary) {
@@ -270,7 +313,10 @@ const BalanceBreakdown = ({ student, subjects, onMakePayment, refreshData }) => 
         if (student?.paymentHistory && balanceData) {
             // Recalculate totals when payment history changes
             const currentTotalPaid = student.paymentHistory.reduce((sum, payment) => {
-                return payment.status === 'completed' ? sum + (parseFloat(payment.amount) || 0) : sum;
+                if (payment.status === 'completed' || payment.status === 'verified') {
+                    return sum + (parseFloat(payment.amount) || 0);
+                }
+                return sum;
             }, 0);
 
             // Update local state if there's a discrepancy
@@ -281,7 +327,7 @@ const BalanceBreakdown = ({ student, subjects, onMakePayment, refreshData }) => 
                     remainingBalance: Math.max(0, balanceData.financialSummary.totalAmountDue - currentTotalPaid),
                     lastUpdated: new Date()
                 };
-                
+
                 setBalanceData(prev => ({
                     ...prev,
                     financialSummary: updatedFinancialSummary
@@ -292,7 +338,7 @@ const BalanceBreakdown = ({ student, subjects, onMakePayment, refreshData }) => 
 
     const handleRecalculate = async () => {
         if (!student || !feeStructure) return;
-        
+
         try {
             const calculatedData = await calculateAndStoreFees(student, subjects, feeStructure);
             if (calculatedData) {
@@ -339,7 +385,7 @@ const BalanceBreakdown = ({ student, subjects, onMakePayment, refreshData }) => 
                             <FaExclamationTriangle /> {error}
                         </div>
                     )}
-                    <button 
+                    <button
                         className={styles.recalculateBtn}
                         onClick={handleRecalculate}
                         disabled={calculating}
@@ -372,17 +418,8 @@ const BalanceBreakdown = ({ student, subjects, onMakePayment, refreshData }) => 
                             </span>
                         </div>
 
-                        {breakdown.labFee > 0 && (
-                            <div className={styles.balanceItem}>
-                                <span className={styles.balanceLabel}>
-                                    Laboratory Fee ({breakdown.labUnits} units @ ₱${breakdown.labUnitRate}/unit)
-                                </span>
-                                <span className={styles.balanceValue}>
-                                    ₱{breakdown.labFee.toLocaleString()}
-                                </span>
-                            </div>
-                        )}
-
+                        {/* Remove lab fee display since it's included in tuition */}
+                        
                         {breakdown.otherFees.map((fee, index) => (
                             <div key={index} className={styles.balanceItem}>
                                 <span className={styles.balanceLabel}>{fee.name}:</span>

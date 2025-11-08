@@ -62,7 +62,7 @@ const AddPayment = ({ student, paymentToEdit, onClose, onPaymentSuccess, loading
   // Enhanced payment processing with proper financial integration
   const processPaymentUpdate = async (studentId, paymentData, isDelete = false) => {
     const studentRef = doc(db, "students", studentId);
-    
+
     try {
       const result = await runTransaction(db, async (transaction) => {
         const studentDoc = await transaction.get(studentRef);
@@ -107,7 +107,7 @@ const AddPayment = ({ student, paymentToEdit, onClose, onPaymentSuccess, loading
         } else {
           // Add or update payment
           const existingPaymentIndex = currentHistory.findIndex(p => p.id === paymentData.id);
-          
+
           if (existingPaymentIndex >= 0) {
             // Update existing payment
             const oldPayment = currentHistory[existingPaymentIndex];
@@ -207,8 +207,8 @@ const AddPayment = ({ student, paymentToEdit, onClose, onPaymentSuccess, loading
         amount: paymentAmount,
         paymentType: formData.paymentType,
         paymentMethod: formData.paymentMethod,
-        description: formData.paymentType === 'other' 
-          ? formData.description 
+        description: formData.paymentType === 'other'
+          ? formData.description
           : paymentTypes.find(t => t.value === formData.paymentType)?.label || formData.paymentType,
         status: formData.status,
         date: formData.date,
@@ -233,7 +233,7 @@ const AddPayment = ({ student, paymentToEdit, onClose, onPaymentSuccess, loading
 
       setReceiptData(receiptInfo);
       setSuccess(true);
-      
+
       // Call success callback
       if (onPaymentSuccess) {
         onPaymentSuccess(paymentData);
@@ -336,12 +336,12 @@ const AddPayment = ({ student, paymentToEdit, onClose, onPaymentSuccess, loading
             <div class="header">
               <div class="institution">EDUCATIONAL INSTITUTION</div>
               <h2>OFFICIAL PAYMENT RECEIPT</h2>
-              <p>${new Date(receiptData.date).toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}</p>
+              <p>${new Date(receiptData.date).toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })}</p>
             </div>
             
             <div class="details">
@@ -370,10 +370,9 @@ const AddPayment = ({ student, paymentToEdit, onClose, onPaymentSuccess, loading
               </div>
               <div class="detail-row">
                 <span><strong>Status:</strong></span>
-                <span style="color: ${
-                  receiptData.status === 'completed' ? '#28a745' : 
-                  receiptData.status === 'pending' ? '#ffc107' : '#dc3545'
-                }">${receiptData.status}</span>
+                <span style="color: ${receiptData.status === 'completed' ? '#28a745' :
+        receiptData.status === 'pending' ? '#ffc107' : '#dc3545'
+      }">${receiptData.status}</span>
               </div>
               
               <div class="detail-row">
@@ -641,17 +640,17 @@ const AddPayment = ({ student, paymentToEdit, onClose, onPaymentSuccess, loading
           </div>
 
           <div className={styles.buttonGroup}>
-            <button 
-              type="button" 
-              className={styles.cancelButton} 
+            <button
+              type="button"
+              className={styles.cancelButton}
               onClick={onClose}
               disabled={loading || externalLoading}
             >
               Cancel
             </button>
-            <button 
-              type="submit" 
-              className={styles.submitButton} 
+            <button
+              type="submit"
+              className={styles.submitButton}
               disabled={loading || externalLoading}
             >
               {loading || externalLoading ? (
