@@ -196,7 +196,7 @@ const recalculateStudentFees = async (studentId, currentStudentData) => {
         });
         return true;
     } catch (error) {
-        console.error('Error recalculating fees:', error);
+        console.error('Error recalculat fees:', error);
         throw error;
     }
 };
