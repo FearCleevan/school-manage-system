@@ -25,6 +25,9 @@ const SubjectHistory = ({ subjectHistory, loading, error }) => {
               {historyItem.semester || 'Unknown Semester'}
             </span>
           </div>
+          <div className={styles.historyCourseMeta}>
+            Recent Course: {[historyItem.course, historyItem.yearLevel].filter(Boolean).join(' - ') || 'N/A'}
+          </div>
           
           <div className={styles.historySubjects}>
             {historyItem.subjects.map((subject, subIndex) => (

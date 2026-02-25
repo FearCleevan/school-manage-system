@@ -101,8 +101,16 @@ const EnrollmentForm = ({
     <button
       type="button"
       className={styles.submitBtn}
-      onClick={handleSubmit}
-      disabled={loading || !enrollmentData.course || !enrollmentData.yearLevel || !enrollmentData.semester}
+      onClick={() => handleSubmit()}
+      disabled={
+        loading ||
+        !enrollmentData.course ||
+        !enrollmentData.yearLevel ||
+        !enrollmentData.semester ||
+        enrollmentData.course === 'Select Course' ||
+        enrollmentData.yearLevel.includes('Select') ||
+        enrollmentData.semester === 'Select Semester'
+      }
     >
       {loading ? 'Updating...' : 'Submit Enrollment'}
     </button>

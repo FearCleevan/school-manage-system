@@ -394,6 +394,13 @@
   font-size: 0.9rem;
 }
 
+.historyCourseMeta {
+  margin-bottom: 0.75rem;
+  font-size: 0.9rem;
+  color: #2c3e50;
+  font-weight: 500;
+}
+
 .historySubjects {
   display: flex;
   flex-direction: column;

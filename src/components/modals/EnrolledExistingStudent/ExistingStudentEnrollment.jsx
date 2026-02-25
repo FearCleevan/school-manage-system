@@ -1,11 +1,11 @@
 // src/components/modals/ExistingStudentEnrollment.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { doc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../../../lib/firebase/config';
 import { logActivity } from '../../../lib/firebase/activityLogger';
 import { auth } from '../../../lib/firebase/config';
 import styles from './ExistingStudentEnroll.module.css';
-import { FaPrint } from 'react-icons/fa';
+import { FaPrint, FaClipboardList, FaChartLine } from 'react-icons/fa';
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -13,6 +13,9 @@ import StudentSearchForm from './StudentSearchForm';
 import StudentDetailsSection from './StudentDetailsSection';
 import EnrollmentForm from './EnrollmentForm';
 import SubjectsDisplay from './SubjectsDisplay';
+
+const GRADE_STATUS_OPTIONS = ['No Grade', 'Passed', 'Failed', 'INC', 'Lacking', 'Dropped'];
+const BLOCKING_GRADE_STATUSES = new Set(['FAILED', 'INC', 'LACKING', 'DROPPED']);
 
 const ExistingStudentEnrollment = ({ show, onClose }) => {
     // State declarations
@@ -28,6 +31,8 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
     const [subjectToDelete, setSubjectToDelete] = useState(null);
     const [availableSubjects, setAvailableSubjects] = useState([]);
     const [subjectHistory, setSubjectHistory] = useState([]);
+    const [activeSection, setActiveSection] = useState('subjects');
+    const [gradeRecords, setGradeRecords] = useState([]);
 
     const [enrollmentData, setEnrollmentData] = useState({
         course: '',
@@ -53,6 +58,88 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
 
     const semesters = ['Select Semester', '1st Semester', '2nd Semester', 'Summer'];
 
+    const normalizeSubjectCode = useCallback((value = '') => value.toString().trim().toUpperCase(), []);
+
+    const parsePreReqCodes = useCallback((preReq = '') => {
+        if (!preReq || typeof preReq !== 'string') return [];
+        const normalized = preReq.trim().toUpperCase();
+        if (!normalized || normalized === 'NONE' || normalized === 'N/A') return [];
+        return normalized
+            .split(/[,&/]/)
+            .map((token) => token.trim())
+            .filter(Boolean);
+    }, []);
+
+    const flattenSubjectCourses = useCallback((subjectCollections = []) => {
+        const courses = [];
+        subjectCollections.forEach((subject) => {
+            if (!subject) return;
+            if (Array.isArray(subject)) {
+                courses.push(...subject);
+                return;
+            }
+            if (subject.terms) {
+                courses.push(...(subject.terms.firstTerm || []), ...(subject.terms.secondTerm || []));
+                return;
+            }
+            if (subject.subjectCode || subject.description) {
+                courses.push(subject);
+            }
+        });
+        return courses.filter(Boolean);
+    }, []);
+
+    const buildGradeRows = useCallback((subjectCollections = [], existingRows = []) => {
+        const existingByCode = new Map(
+            (existingRows || [])
+                .filter((row) => row?.subjectCode)
+                .map((row) => [normalizeSubjectCode(row.subjectCode), row])
+        );
+
+        return flattenSubjectCourses(subjectCollections).map((course) => {
+            const subjectCode = normalizeSubjectCode(course.subjectCode || '');
+            const existing = existingByCode.get(subjectCode);
+            return {
+                subjectCode: subjectCode || (course.subjectCode || ''),
+                description: course.description || existing?.description || '',
+                preReq: course.preReq || existing?.preReq || 'NONE',
+                gradeValue: existing?.gradeValue || '',
+                status: existing?.status || 'No Grade',
+                remarks: existing?.remarks || '',
+                updatedAt: new Date()
+            };
+        });
+    }, [flattenSubjectCourses, normalizeSubjectCode]);
+
+    const getBlockingGradeIssues = useCallback((subjectCollections = [], rows = []) => {
+        const gradeByCode = new Map(
+            (rows || [])
+                .filter((row) => row?.subjectCode)
+                .map((row) => [normalizeSubjectCode(row.subjectCode), row])
+        );
+
+        const issues = [];
+        const courses = flattenSubjectCourses(subjectCollections);
+        courses.forEach((course) => {
+            const code = normalizeSubjectCode(course.subjectCode || '');
+            if (!code) return;
+
+            const subjectGrade = gradeByCode.get(code);
+            if (subjectGrade && BLOCKING_GRADE_STATUSES.has((subjectGrade.status || '').toUpperCase())) {
+                issues.push(`${code} (${subjectGrade.status})`);
+            }
+
+            parsePreReqCodes(course.preReq).forEach((preReqCode) => {
+                const preReqGrade = gradeByCode.get(preReqCode);
+                if (preReqGrade && BLOCKING_GRADE_STATUSES.has((preReqGrade.status || '').toUpperCase())) {
+                    issues.push(`${code} blocked by prerequisite ${preReqCode} (${preReqGrade.status})`);
+                }
+            });
+        });
+
+        return [...new Set(issues)];
+    }, [flattenSubjectCourses, normalizeSubjectCode, parsePreReqCodes]);
+
     // Reset form when modal is closed
     useEffect(() => {
         if (!show) {
@@ -63,8 +150,20 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
             setError(null);
             setSearchPerformed(false);
             setEditingMode(false);
+            setActiveSection('subjects');
+            setGradeRecords([]);
         }
     }, [show]);
+
+    // Keep grade rows in sync with currently loaded subject rows.
+    useEffect(() => {
+        if (!subjects.length) {
+            setGradeRecords([]);
+            return;
+        }
+
+        setGradeRecords((prev) => buildGradeRows(subjects, prev));
+    }, [subjects, buildGradeRows]);
 
     // Fetch student data function
     const fetchStudentData = async () => {
@@ -91,7 +190,8 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
                     ...docSnap.data(),
                     id: docSnap.id,
                     customizedSubjects: docSnap.data().customizedSubjects || null,
-                    subjectHistory: docSnap.data().subjectHistory || [] // Initialize subject history
+                    subjectHistory: docSnap.data().subjectHistory || [],
+                    gradeRecords: docSnap.data().gradeRecords || []
                 };
             } else {
                 // Fallback to searching by document ID
@@ -103,7 +203,8 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
                         ...docSnap.data(),
                         id: docSnap.id,
                         customizedSubjects: docSnap.data().customizedSubjects || null,
-                        subjectHistory: docSnap.data().subjectHistory || [] // Initialize subject history
+                        subjectHistory: docSnap.data().subjectHistory || [],
+                        gradeRecords: docSnap.data().gradeRecords || []
                     };
                 }
             }
@@ -111,7 +212,8 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
             if (foundStudent) {
                 setStudentData(foundStudent);
                 setStudentId(foundStudent.studentId || studentId);
-                setSubjectHistory(foundStudent.subjectHistory); // Set subject history state
+                setSubjectHistory(foundStudent.subjectHistory);
+                setGradeRecords(foundStudent.gradeRecords || []);
 
                 // Set default course based on department
                 let defaultCourse = '';
@@ -158,9 +260,12 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
                 if (foundStudent.customizedSubjects) {
                     setSubjects(foundStudent.customizedSubjects);
                     setShowSubjects(true);
+                    setActiveSection('subjects');
                 } else if (foundStudent.enrollment) {
-                    // Load standard subjects if no customized subjects exist
-                    await loadSubjects(foundStudent.enrollment, foundStudent);
+                    const loadedSubjects = await fetchSubjectsByEnrollment(foundStudent.enrollment);
+                    setSubjects(loadedSubjects);
+                    setShowSubjects(loadedSubjects.length > 0);
+                    setActiveSection('subjects');
                 }
             } else {
                 setError('Student not found. Please check the ID and try again.');
@@ -237,12 +342,56 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
         }
     };
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    const fetchSubjectsByEnrollment = async (enrollment) => {
+        if (!enrollment?.course || !enrollment?.yearLevel || !enrollment?.semester) {
+            return [];
+        }
+
+        const subjectsRef = collection(db, 'subjects');
+        const q = query(
+            subjectsRef,
+            where('course', '==', enrollment.course),
+            where('yearLevel', '==', enrollment.yearLevel),
+            where('semester', '==', enrollment.semester)
+        );
+
+        const querySnapshot = await getDocs(q);
+        if (querySnapshot.empty) return [];
+
+        return querySnapshot.docs.map((subjectDoc) => ({
+            id: subjectDoc.id,
+            ...subjectDoc.data(),
+            terms: subjectDoc.data().terms || {
+                firstTerm: subjectDoc.data().firstTerm || [],
+                secondTerm: subjectDoc.data().secondTerm || []
+            }
+        }));
+    };
+
+    const handleSubmit = async () => {
         setLoading(true);
 
         try {
             if (!studentData) throw new Error('No student data loaded');
+            if (!subjects.length) {
+                throw new Error('Please load subjects first before submitting enrollment');
+            }
+
+            const schoolYear = `${enrollmentData.schoolYearFrom}-${enrollmentData.schoolYearTo}`;
+            const currentEnrollment = studentData.enrollment || {};
+            const enrollmentChanged =
+                (currentEnrollment.course || '') !== (enrollmentData.course || '') ||
+                (currentEnrollment.yearLevel || '') !== (enrollmentData.yearLevel || '') ||
+                (currentEnrollment.semester || '') !== (enrollmentData.semester || '') ||
+                (currentEnrollment.schoolYear || '') !== schoolYear;
+
+            const blockingIssues = getBlockingGradeIssues(subjects, gradeRecords);
+            if (blockingIssues.length) {
+                throw new Error(
+                    `Cannot proceed with enrollment due to unresolved grades: ${blockingIssues.join(', ')}. ` +
+                    'Remove conflicting subjects in Customize Subjects or resolve grades first.'
+                );
+            }
 
             const studentsRef = collection(db, 'students');
             const q = query(studentsRef, where('studentId', '==', studentId));
@@ -258,32 +407,37 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
             const updateData = {
                 enrollment: {
                     ...enrollmentData,
-                    schoolYear: `${enrollmentData.schoolYearFrom}-${enrollmentData.schoolYearTo}`,
+                    schoolYear,
                     enrolledAt: new Date(),
                     isIrregular: editingMode
                 },
                 updatedAt: new Date(),
-                status: 'Enrolled'
+                status: 'Enrolled',
+                customizedSubjects: editingMode ? subjects : null,
+                gradeRecords: buildGradeRows(subjects, gradeRecords)
             };
 
-            if (editingMode) {
-                // Get the current subjects (either customized or standard)
-                const currentSubjects = studentData.customizedSubjects || subjects;
+            if (enrollmentChanged && currentEnrollment.course && currentEnrollment.course !== 'Not enrolled') {
+                let previousSubjects = studentData.customizedSubjects || [];
+                if (!previousSubjects.length) {
+                    previousSubjects = await fetchSubjectsByEnrollment(currentEnrollment);
+                }
 
-                // Create a new history entry
-                const newHistoryEntry = {
-                    schoolYear: `${enrollmentData.schoolYearFrom}-${enrollmentData.schoolYearTo}`,
-                    semester: enrollmentData.semester,
-                    subjects: currentSubjects,
-                    updatedAt: new Date()
-                };
+                if (previousSubjects.length) {
+                    const newHistoryEntry = {
+                        schoolYear: currentEnrollment.schoolYear || '',
+                        course: currentEnrollment.course || '',
+                        yearLevel: currentEnrollment.yearLevel || '',
+                        semester: currentEnrollment.semester || '',
+                        subjects: previousSubjects,
+                        updatedAt: new Date()
+                    };
 
-                // Add to update data
-                updateData.subjectHistory = [
-                    ...(studentData.subjectHistory || []),
-                    newHistoryEntry
-                ];
-                updateData.customizedSubjects = subjects;
+                    updateData.subjectHistory = [
+                        ...(studentData.subjectHistory || []),
+                        newHistoryEntry
+                    ];
+                }
             }
 
             await updateDoc(docRef, updateData);
@@ -296,18 +450,18 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
                 yearLevel: enrollmentData.yearLevel,
                 semester: enrollmentData.semester,
                 subjectCount: subjects.length,
-                historyEntryAdded: editingMode
+                historyEntryAdded: !!updateData.subjectHistory
             }, auth.currentUser.displayName);
 
             // Refresh student data
             const updatedDoc = await getDoc(docRef);
-            const updatedData = updatedDoc.data();
+            const updatedData = {
+                id: updatedDoc.id,
+                ...updatedDoc.data()
+            };
             setStudentData(updatedData);
-
-            // Update local state with the new history
-            if (editingMode) {
-                setSubjectHistory(updatedData.subjectHistory || []);
-            }
+            setSubjectHistory(updatedData.subjectHistory || []);
+            setGradeRecords(updatedData.gradeRecords || []);
 
             setError(null);
             toast.success(
@@ -347,10 +501,12 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
             if (editingMode) {
                 setEditingMode(false);
             }
+            return true;
 
         } catch (err) {
             console.error('Error updating enrollment:', err);
             setError(err.message || 'Failed to update enrollment');
+            return false;
         } finally {
             setLoading(false);
         }
@@ -366,26 +522,8 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
         setError(null);
 
         try {
-            if (editingMode && studentData.customizedSubjects) {
-                setSubjects(studentData.customizedSubjects);
-                setShowSubjects(true);
-                return;
-            }
-
-            const { course, yearLevel, semester } = enrollmentData;
-
-            // Load standard subjects for the selected course/year/semester
-            const subjectsRef = collection(db, 'subjects');
-            const q = query(
-                subjectsRef,
-                where('course', '==', course),
-                where('yearLevel', '==', yearLevel),
-                where('semester', '==', semester)
-            );
-
-            const querySnapshot = await getDocs(q);
-
-            if (querySnapshot.empty) {
+            const loadedSubjects = await fetchSubjectsByEnrollment(enrollmentData);
+            if (!loadedSubjects.length) {
                 setError('No subjects found for the selected course, year level, and semester');
                 setSubjects([]);
                 setShowSubjects(false);
@@ -416,17 +554,9 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
 
             setAvailableSubjects(allSubjects);
 
-            const loadedSubjects = querySnapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data(),
-                terms: doc.data().terms || {
-                    firstTerm: doc.data().firstTerm || [],
-                    secondTerm: doc.data().secondTerm || []
-                }
-            }));
-
             setSubjects(loadedSubjects);
             setShowSubjects(true);
+            setActiveSection('subjects');
         } catch (err) {
             console.error('Error loading subjects:', err);
             setError(`Failed to load subjects: ${err.message}`);
@@ -437,11 +567,14 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
         }
     };
 
-    const toggleEditingMode = () => {
+    const toggleEditingMode = async () => {
         if (editingMode) {
-            handleSubmit(new Event('submit'));
+            const didSave = await handleSubmit();
+            if (!didSave) return;
+            setEditingMode(false);
+            return;
         }
-        setEditingMode(!editingMode);
+        setEditingMode(true);
     };
 
     const handleAddRow = (subjectIndex, term) => {
@@ -497,6 +630,17 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
         }
 
         setSubjects(newSubjects);
+    };
+
+    const handleGradeChange = (subjectCode, field, value) => {
+        const normalizedCode = normalizeSubjectCode(subjectCode);
+        setGradeRecords((prev) =>
+            prev.map((record) =>
+                normalizeSubjectCode(record.subjectCode) === normalizedCode
+                    ? { ...record, [field]: value, updatedAt: new Date() }
+                    : record
+            )
+        );
     };
 
     const getAvailableCourses = () => {
@@ -1116,23 +1260,109 @@ const ExistingStudentEnrollment = ({ show, onClose }) => {
                         </div>
                     )}
 
-                    <SubjectsDisplay
-                        showSubjects={showSubjects}
-                        subjects={subjects}
-                        subjectHistory={subjectHistory}
-                        enrollmentData={enrollmentData}
-                        editingMode={editingMode}
-                        toggleEditingMode={toggleEditingMode}
-                        handleClearCustomization={handleClearCustomization}
-                        loading={loading}
-                        handleAddRow={handleAddRow}
-                        handleSubjectChange={handleSubjectChange}
-                        handleDeleteRow={handleDeleteRow}
-                        showDeleteModal={showDeleteModal}
-                        setShowDeleteModal={setShowDeleteModal}
-                        confirmDeleteRow={confirmDeleteRow}
-                        subjectToDelete={subjectToDelete}
-                    />
+                    {showSubjects && (
+                        <div className={styles.gradeNavigationWrapper}>
+                            <div className={styles.gradeTabs}>
+                                <button
+                                    type="button"
+                                    className={`${styles.gradeTab} ${activeSection === 'subjects' ? styles.gradeTabActive : ''}`}
+                                    onClick={() => setActiveSection('subjects')}
+                                >
+                                    <FaClipboardList /> Subject Load
+                                </button>
+                                <button
+                                    type="button"
+                                    className={`${styles.gradeTab} ${activeSection === 'grading' ? styles.gradeTabActive : ''}`}
+                                    onClick={() => setActiveSection('grading')}
+                                >
+                                    <FaChartLine /> Subject Grading
+                                </button>
+                            </div>
+
+                            {activeSection === 'subjects' && (
+                                <SubjectsDisplay
+                                    showSubjects={showSubjects}
+                                    subjects={subjects}
+                                    subjectHistory={subjectHistory}
+                                    enrollmentData={enrollmentData}
+                                    editingMode={editingMode}
+                                    toggleEditingMode={toggleEditingMode}
+                                    handleClearCustomization={handleClearCustomization}
+                                    loading={loading}
+                                    handleAddRow={handleAddRow}
+                                    handleSubjectChange={handleSubjectChange}
+                                    handleDeleteRow={handleDeleteRow}
+                                    showDeleteModal={showDeleteModal}
+                                    setShowDeleteModal={setShowDeleteModal}
+                                    confirmDeleteRow={confirmDeleteRow}
+                                    subjectToDelete={subjectToDelete}
+                                />
+                            )}
+
+                            {activeSection === 'grading' && (
+                                <div className={styles.gradingPanel}>
+                                    <h4 className={styles.gradingTitle}>Grading Per Subject</h4>
+                                    <p className={styles.gradingHint}>
+                                        Students with unresolved statuses (`INC`, `Lacking`, `Failed`, `Dropped`) on selected subjects or prerequisites cannot proceed to enrollment.
+                                    </p>
+                                    <div className={styles.tableWrapper}>
+                                        <table className={styles.subjectsTable}>
+                                            <thead>
+                                                <tr>
+                                                    <th>Subject Code</th>
+                                                    <th>Description</th>
+                                                    <th>Status</th>
+                                                    <th>Grade</th>
+                                                    <th>Remarks</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {gradeRecords.length === 0 ? (
+                                                    <tr>
+                                                        <td colSpan="5">No subjects loaded for grading.</td>
+                                                    </tr>
+                                                ) : (
+                                                    gradeRecords.map((record, index) => (
+                                                        <tr key={`${record.subjectCode}-${index}`}>
+                                                            <td>{record.subjectCode || '-'}</td>
+                                                            <td>{record.description || '-'}</td>
+                                                            <td>
+                                                                <select
+                                                                    value={record.status || 'No Grade'}
+                                                                    className={styles.tableInput}
+                                                                    onChange={(e) => handleGradeChange(record.subjectCode, 'status', e.target.value)}
+                                                                >
+                                                                    {GRADE_STATUS_OPTIONS.map((status) => (
+                                                                        <option key={status} value={status}>{status}</option>
+                                                                    ))}
+                                                                </select>
+                                                            </td>
+                                                            <td>
+                                                                <input
+                                                                    type="text"
+                                                                    value={record.gradeValue || ''}
+                                                                    className={styles.tableInput}
+                                                                    onChange={(e) => handleGradeChange(record.subjectCode, 'gradeValue', e.target.value)}
+                                                                />
+                                                            </td>
+                                                            <td>
+                                                                <input
+                                                                    type="text"
+                                                                    value={record.remarks || ''}
+                                                                    className={styles.tableInput}
+                                                                    onChange={(e) => handleGradeChange(record.subjectCode, 'remarks', e.target.value)}
+                                                                />
+                                                            </td>
+                                                        </tr>
+                                                    ))
+                                                )}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 <div className={styles.modalFooter}>

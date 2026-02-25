@@ -539,6 +539,54 @@
     cursor: not-allowed;
 }
 
+.gradeNavigationWrapper {
+  margin-top: 1rem;
+}
+
+.gradeTabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.gradeTab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid #d9d9d9;
+  background: #f7f9fb;
+  color: #2c3e50;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.gradeTabActive {
+  background: #2c3e50;
+  color: #fff;
+  border-color: #2c3e50;
+}
+
+.gradingPanel {
+  border: 1px solid #e6e6e6;
+  border-radius: 8px;
+  padding: 1rem;
+  background: #fff;
+}
+
+.gradingTitle {
+  margin: 0 0 0.5rem 0;
+  font-size: 1rem;
+  color: #2c3e50;
+}
+
+.gradingHint {
+  margin: 0 0 0.75rem 0;
+  color: #666;
+  font-size: 0.85rem;
+}
+
 .subjectActions {
     display: flex;
     gap: 10px;
