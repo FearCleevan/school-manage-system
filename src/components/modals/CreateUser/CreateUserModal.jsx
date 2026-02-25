@@ -6,8 +6,10 @@ import {
   FaChartLine, FaCalendarCheck, FaBell,
   FaShieldAlt, FaCog
 } from 'react-icons/fa';
+import { toast } from 'react-toastify';
 import { auth } from '../../../lib/firebase/config';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import { initializeApp, deleteApp } from 'firebase/app';
+import { createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../../lib/firebase/config';
 import { uploadToCloudinary } from '../../../lib/firebase/storage';
@@ -113,20 +115,6 @@ const CreateUserModal = ({ isOpen, onClose, onCreate, currentUser }) => {
     onClose();
   };
 
-  const reauthenticateCurrentUser = async (currentUser, currentPassword) => {
-    try {
-      const credential = EmailAuthProvider.credential(
-        currentUser.email,
-        currentPassword
-      );
-      await reauthenticateWithCredential(currentUser, credential);
-      return true;
-    } catch (error) {
-      console.error('Reauthentication failed:', error);
-      throw new Error('Current password is incorrect');
-    }
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -172,19 +160,27 @@ const CreateUserModal = ({ isOpen, onClose, onCreate, currentUser }) => {
         }
       }
 
-      // Store current user reference before creating new user
-      const originalUser = auth.currentUser;
-      
-      if (!originalUser) {
+      if (!auth.currentUser) {
         throw new Error('No user is currently logged in');
       }
 
-      // 2. Create auth user
-      const { user: authUser } = await createUserWithEmailAndPassword(
-        auth,
-        formData.email,
-        formData.password
-      );
+      // 2. Create auth user using a secondary auth instance
+      // to avoid replacing the currently logged-in admin session.
+      const secondaryAppName = `create-user-${Date.now()}`;
+      const secondaryApp = initializeApp(auth.app.options, secondaryAppName);
+      const secondaryAuth = getAuth(secondaryApp);
+      let authUser;
+      try {
+        const { user } = await createUserWithEmailAndPassword(
+          secondaryAuth,
+          formData.email,
+          formData.password
+        );
+        authUser = user;
+      } finally {
+        await secondaryAuth.signOut().catch(() => {});
+        await deleteApp(secondaryApp).catch(() => {});
+      }
 
       // 3. Create user document in Firestore
       const userDocRef = doc(db, 'users', authUser.uid);
@@ -202,19 +198,7 @@ const CreateUserModal = ({ isOpen, onClose, onCreate, currentUser }) => {
         lastUpdated: serverTimestamp()
       });
 
-      // 4. IMPORTANT: Re-authenticate as the original user
-      // For admin users, we'll sign back in as the original admin
-      // In a real app, you might want to ask for the admin's password again
-      // For now, we'll sign out and let the auth context handle the redirect
-      
-      // Sign out the newly created user
-      await auth.signOut();
-      
-      // The AuthContext will detect the sign-out and redirect to login
-      // The admin will need to log in again
-
       try {
-        // Log the activity before we lose the admin context
         await logUserActivity('user_created', {
           targetUserId: authUser.uid,
           targetUserEmail: formData.email,
@@ -226,15 +210,19 @@ const CreateUserModal = ({ isOpen, onClose, onCreate, currentUser }) => {
         console.error("Activity logging failed:", logError);
       }
 
-      // Success - show message that admin needs to log in again
-      toast.success('User created successfully! Please log in again to continue.');
+      toast.success('User created successfully!');
       
       // Reset form and close modal
       resetForm();
       onClose();
       
-      // Call the onCreate callback
-      onCreate();
+      // Call the onCreate callback with created user payload
+      onCreate?.({
+        uid: authUser.uid,
+        email: formData.email,
+        role: formData.role,
+        status: formData.status
+      });
 
     } catch (error) {
       console.error('Error in user creation process:', error);

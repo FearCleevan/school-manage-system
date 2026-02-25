@@ -1,7 +1,9 @@
 //src/lib/firebase/auth.js
 import { auth, db } from './config';
+import { initializeApp, deleteApp } from "firebase/app";
 import { 
   createUserWithEmailAndPassword,
+  getAuth,
   reauthenticateWithCredential,
   updatePassword,
   EmailAuthProvider 
@@ -9,16 +11,22 @@ import {
 import { doc, setDoc } from "firebase/firestore";
 
 export async function createAuthUser(email, password) {
+  const secondaryAppName = `create-auth-user-${Date.now()}`;
+  const secondaryApp = initializeApp(auth.app.options, secondaryAppName);
+  const secondaryAuth = getAuth(secondaryApp);
   try {
     const userCredential = await createUserWithEmailAndPassword(
-      auth,
+      secondaryAuth,
       email,
       password
     );
+    await secondaryAuth.signOut().catch(() => {});
     return userCredential.user; // Returns user object with UID
   } catch (error) {
     console.error("Error creating auth user:", error);
     throw error;
+  } finally {
+    await deleteApp(secondaryApp).catch(() => {});
   }
 }
 

@@ -63,20 +63,8 @@ const AccountUserSettings = () => {
     }, []);
 
     // Handler functions
-    const handleCreateUser = async (newUser) => {
-        try {
-            await logUserActivity('user_created', {
-                userId: newUser.uid,
-                email: newUser.email,
-                role: newUser.role,
-                status: newUser.status
-            });
-            setShowCreateModal(false);
-            toast.success('User created successfully!');
-        } catch (error) {
-            console.error("Error logging user creation:", error);
-            toast.error('User created but activity log failed');
-        }
+    const handleCreateUser = () => {
+        setShowCreateModal(false);
     };
 
     const handleSaveUser = async (updatedUser) => {
